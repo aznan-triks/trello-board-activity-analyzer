@@ -1,0 +1,509 @@
+
+<style>
+  #tapp { font-family: var(--font-mono, monospace); padding: 1rem 0; }
+  .setup-card { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; max-width: 560px; margin: 0 auto; }
+  .setup-card h2 { font-size: 16px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary); }
+  .setup-card p { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 1rem; }
+  .saved-notice { background: var(--color-background-success); border: 0.5px solid var(--color-border-success); border-radius: var(--border-radius-md); padding: 10px 14px; margin-bottom: 1rem; font-size: 12px; color: var(--color-text-success); display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+  .saved-notice button { background: none; border: 0.5px solid var(--color-border-success); border-radius: 4px; padding: 3px 8px; font-size: 10px; cursor: pointer; color: var(--color-text-success); font-family: var(--font-mono); }
+  .field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+  .field-group label { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .05em; }
+  .field-row { display: flex; flex-direction: column; gap: 4px; }
+  .hint { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .analyze-btn { width: 100%; padding: 10px; background: #BA7517; color: #FAEEDA; border: none; border-radius: var(--border-radius-md); font-size: 13px; font-family: var(--font-mono); cursor: pointer; font-weight: 500; transition: background .15s; }
+  .analyze-btn:hover { background: #854F0B; }
+  #loading { display: none; text-align: center; padding: 3rem 1rem; }
+  #loading .spinner { width: 32px; height: 32px; border: 2px solid var(--color-border-tertiary); border-top-color: #EF9F27; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading .prog-bar { height: 3px; background: var(--color-border-tertiary); border-radius: 2px; margin: 1rem auto; max-width: 300px; }
+  #loading .prog-fill { height: 100%; background: #EF9F27; border-radius: 2px; transition: width .3s; }
+  #loading p { font-size: 12px; color: var(--color-text-secondary); }
+  #dashboard { display: none; }
+  .dash-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .board-name { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  .date-range { font-size: 11px; color: var(--color-text-tertiary); }
+  .dash-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .dash-btn { font-size: 11px; background: none; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 4px 10px; cursor: pointer; color: var(--color-text-secondary); font-family: var(--font-mono); }
+  .dash-btn:hover { background: var(--color-background-secondary); }
+  .dash-btn.refresh { border-color: #EF9F27; color: #BA7517; }
+  .dash-btn.refresh:hover { background: rgba(239,159,39,.08); }
+  .save-status { font-size: 10px; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 4px; }
+  .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #639922; flex-shrink:0; }
+  .save-dot.saving { background: #EF9F27; animation: pulse .6s ease-in-out infinite; }
+  .save-dot.err { background: #E24B4A; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 1rem; }
+  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+  .stat-label { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); line-height: 1; }
+  .stat-sub { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; }
+  .chart-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; margin-bottom: 8px; }
+  .chart-card h3 { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 12px; }
+  .chart-row { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 8px; margin-bottom: 8px; }
+  .toggle-group { display: flex; gap: 4px; margin-bottom: 10px; }
+  .tgl { font-size: 10px; padding: 3px 8px; border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; cursor: pointer; background: none; color: var(--color-text-secondary); font-family: var(--font-mono); }
+  .tgl.active { background: #BA7517; color: #FAEEDA; border-color: #BA7517; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-secondary); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .heatmap-grid { display: grid; grid-template-columns: 28px repeat(24, 1fr); gap: 2px; font-size: 9px; }
+  .hm-label { color: var(--color-text-tertiary); display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-size:9px; }
+  .hm-cell { height: 18px; border-radius: 2px; cursor: default; position: relative; }
+  .hm-cell:hover::after { content: attr(data-tip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; padding: 3px 6px; font-size: 10px; white-space: nowrap; z-index: 10; pointer-events: none; color: var(--color-text-primary); }
+  .hm-hour-labels { display: grid; grid-template-columns: 28px repeat(24, 1fr); gap: 2px; margin-bottom: 4px; }
+  .hm-hour-lbl { font-size: 8px; color: var(--color-text-tertiary); text-align: center; }
+  .error-msg { background: var(--color-background-danger); color: var(--color-text-danger); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 12px; margin-top: 12px; display: none; }
+  @media (max-width: 520px) { .stat-row { grid-template-columns: repeat(2, 1fr); } .chart-row { grid-template-columns: 1fr; } }
+</style>
+
+<div id="tapp">
+  <div id="setup">
+    <div class="setup-card">
+      <h2>Trello Board Analyzer</h2>
+      <p>Analyse complète de l'historique d'un tableau — toutes les modifications, membres, tendances.</p>
+      <div id="saved-banner" style="display:none" class="saved-notice">
+        <span id="saved-banner-text">—</span>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button onclick="loadSaved()">Recharger ↗</button>
+          <button onclick="clearSaved()" style="border-color:var(--color-border-danger);color:var(--color-text-danger)">Effacer</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-row">
+          <label>API Key</label>
+          <input type="text" id="api-key" placeholder="votre clé API Trello" style="font-family:var(--font-mono);font-size:12px;">
+          <span class="hint">→ <a href="https://trello.com/app-key" target="_blank" style="color:#EF9F27;">trello.com/app-key</a></span>
+        </div>
+        <div class="field-row">
+          <label>Token</label>
+          <input type="text" id="api-token" placeholder="votre token d'autorisation" style="font-family:var(--font-mono);font-size:12px;">
+        </div>
+        <div class="field-row">
+          <label>Board ID ou URL</label>
+          <input type="text" id="board-id" placeholder="https://trello.com/b/xxxxxxxx/... ou ID" style="font-family:var(--font-mono);font-size:12px;">
+        </div>
+      </div>
+      <div class="error-msg" id="err-msg"></div>
+      <button class="analyze-btn" onclick="startAnalysis()">Analyser tout le tableau →</button>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p id="load-status">Connexion à Trello...</p>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <p id="load-detail" style="font-size:11px;color:var(--color-text-tertiary);">—</p>
+  </div>
+
+  <div id="dashboard">
+    <div class="dash-header">
+      <span class="board-name" id="d-name">—</span>
+      <span class="date-range" id="d-range">—</span>
+      <div class="dash-actions">
+        <span class="save-status"><span class="save-dot" id="save-dot"></span><span id="save-label">Sauvegardé</span></span>
+        <button class="dash-btn refresh" onclick="refreshData()">↻ Mettre à jour</button>
+        <button class="dash-btn" onclick="resetApp()">← Changer</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-label">Total actions</div><div class="stat-val" id="s-total">—</div><div class="stat-sub" id="s-days">—</div></div>
+      <div class="stat-card"><div class="stat-label">Membres actifs</div><div class="stat-val" id="s-members">—</div><div class="stat-sub" id="s-top-member">—</div></div>
+      <div class="stat-card"><div class="stat-label">Jour le + actif</div><div class="stat-val" id="s-peak-day">—</div><div class="stat-sub" id="s-peak-count">—</div></div>
+      <div class="stat-card"><div class="stat-label">Moy. / semaine</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
+    </div>
+    <div class="chart-card">
+      <h3>Activité dans le temps</h3>
+      <div class="toggle-group">
+        <button class="tgl active" onclick="setGran('week',this)">Semaine</button>
+        <button class="tgl" onclick="setGran('month',this)">Mois</button>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="c-timeline"></canvas></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Actions par membre</h3>
+        <div class="legend" id="leg-members"></div>
+        <div id="c-members-wrap" style="position:relative;"><canvas id="c-members"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Types d'actions</h3>
+        <div class="legend" id="leg-types"></div>
+        <div style="position:relative;height:220px;"><canvas id="c-types"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Heatmap — Heure × Jour de la semaine</h3>
+      <div class="hm-hour-labels" id="hm-hour-labels"></div>
+      <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid"></div></div>
+    </div>
+    <div class="chart-card">
+      <h3>Tendances membres dans le temps</h3>
+      <div class="legend" id="leg-trends"></div>
+      <div style="position:relative;height:220px;"><canvas id="c-trends"></canvas></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Cartes les + actives</h3>
+        <div id="c-topcards-wrap" style="position:relative;"><canvas id="c-topcards"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Activité par heure</h3>
+        <div style="position:relative;height:200px;"><canvas id="c-hours"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const MEMBER_COLORS = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#E24B4A','#888780','#5DCAA5'];
+const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const SK = 'trello-v3';
+let allActions = [], charts = {}, currentGran = 'week', boardData = null;
+let savedCreds = {};
+
+// Slim down actions before storing — keep only what the charts need
+function slimAction(a) {
+  return {
+    t: a.type,
+    d: a.date,
+    m: a._memberName || '',
+    c: (a.data && a.data.card && a.data.card.name) ? a.data.card.name : ''
+  };
+}
+function expandAction(s) {
+  return { type: s.t, date: s.d, _memberName: s.m, data: s.c ? { card: { name: s.c } } : {} };
+}
+
+function setSaveStatus(st) {
+  const dot = document.getElementById('save-dot');
+  const lbl = document.getElementById('save-label');
+  if (st === 'saving') { dot.className = 'save-dot saving'; lbl.textContent = 'Sauvegarde...'; }
+  else if (st === 'saved') { dot.className = 'save-dot'; lbl.textContent = 'Sauvegardé'; }
+  else { dot.className = 'save-dot err'; lbl.textContent = st; }
+}
+
+async function safeGet(key) {
+  try { return await window.storage.get(key); } catch(e) { return null; }
+}
+async function safeSet(key, val) {
+  try { return await window.storage.set(key, val); } catch(e) { return null; }
+}
+async function safeDel(key) {
+  try { return await window.storage.delete(key); } catch(e) { return null; }
+}
+
+async function persistData() {
+  setSaveStatus('saving');
+  const slim = allActions.map(slimAction);
+  const payload = JSON.stringify({ boardData, actions: slim, creds: savedCreds, savedAt: new Date().toISOString() });
+  const mb = (payload.length / 1024 / 1024).toFixed(2);
+  if (payload.length > 4.8 * 1024 * 1024) {
+    setSaveStatus(`Trop volumineux (${mb} MB)`);
+    return;
+  }
+  const ok = await safeSet(SK, payload);
+  setSaveStatus(ok ? 'saved' : 'Erreur sauvegarde');
+}
+
+async function checkSaved() {
+  const result = await safeGet(SK);
+  if (!result) return;
+  let data;
+  try { data = JSON.parse(result.value); } catch(e) { return; }
+  if (!data || !data.boardData || !data.actions || !data.actions.length) return;
+  const date = new Date(data.savedAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('saved-banner-text').textContent =
+    `${data.boardData.name} — ${data.actions.length.toLocaleString()} actions sauvegardées le ${date}`;
+  document.getElementById('saved-banner').style.display = 'flex';
+  if (data.creds) {
+    document.getElementById('api-key').value = data.creds.key || '';
+    document.getElementById('api-token').value = data.creds.token || '';
+    document.getElementById('board-id').value = data.creds.boardId || '';
+  }
+}
+
+async function loadSaved() {
+  const result = await safeGet(SK);
+  if (!result) { showError('Aucune donnée trouvée.'); return; }
+  let data;
+  try { data = JSON.parse(result.value); } catch(e) { showError('Données corrompues.'); return; }
+  boardData = data.boardData;
+  allActions = data.actions.map(expandAction);
+  savedCreds = data.creds || {};
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  renderDashboard(boardData.name);
+  setSaveStatus('saved');
+}
+
+async function clearSaved() {
+  await safeDel(SK);
+  document.getElementById('saved-banner').style.display = 'none';
+}
+
+function extractBoardId(input) {
+  const m = input.match(/trello\.com\/b\/([a-zA-Z0-9]+)/);
+  return m ? m[1] : input.trim();
+}
+
+function showError(msg) {
+  const el = document.getElementById('err-msg');
+  el.style.display = 'block'; el.textContent = msg;
+}
+
+function setProgress(pct, status, detail) {
+  document.getElementById('prog-fill').style.width = pct + '%';
+  if (status) document.getElementById('load-status').textContent = status;
+  if (detail !== undefined) document.getElementById('load-detail').textContent = detail;
+}
+
+async function fetchAllActions(key, token, boardId) {
+  const mr = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=${key}&token=${token}&fields=fullName,username`);
+  const members = await mr.json();
+  const memberMap = {};
+  members.forEach(m => { memberMap[m.id] = m.fullName || m.username; });
+  setProgress(15, 'Chargement de l\'historique...', '');
+  let actions = [], before = null, page = 0;
+  while (true) {
+    let url = `https://api.trello.com/1/boards/${boardId}/actions?key=${key}&token=${token}&limit=1000&filter=all&fields=type,date,idMemberCreator,data`;
+    if (before) url += `&before=${before}`;
+    const ar = await fetch(url);
+    if (!ar.ok) throw new Error(`Erreur API page ${page+1} (${ar.status})`);
+    const batch = await ar.json();
+    if (!batch.length) break;
+    batch.forEach(a => { a._memberName = memberMap[a.idMemberCreator] || 'Inconnu'; });
+    actions = actions.concat(batch);
+    before = batch[batch.length - 1].id;
+    page++;
+    setProgress(Math.min(85, 15 + page * 4), 'Chargement...', `${actions.length.toLocaleString()} actions (page ${page})`);
+    if (batch.length < 1000) break;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  return actions;
+}
+
+async function startAnalysis() {
+  const key = document.getElementById('api-key').value.trim();
+  const token = document.getElementById('api-token').value.trim();
+  const boardInput = document.getElementById('board-id').value.trim();
+  document.getElementById('err-msg').style.display = 'none';
+  if (!key || !token || !boardInput) { showError('Veuillez remplir tous les champs.'); return; }
+  const boardId = extractBoardId(boardInput);
+  savedCreds = { key, token, boardId };
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  try {
+    setProgress(5, 'Connexion à Trello...', '');
+    const br = await fetch(`https://api.trello.com/1/boards/${boardId}?key=${key}&token=${token}&fields=name`);
+    if (!br.ok) throw new Error(`Erreur API (${br.status}) — vérifiez vos identifiants.`);
+    boardData = await br.json();
+    allActions = await fetchAllActions(key, token, boardId);
+    setProgress(90, 'Sauvegarde...', '');
+    await persistData();
+    setProgress(100, 'Terminé !', `${allActions.length.toLocaleString()} actions chargées`);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    renderDashboard(boardData.name);
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+    showError(e.message);
+  }
+}
+
+async function refreshData() {
+  const key = savedCreds.key; const token = savedCreds.token; const boardId = savedCreds.boardId;
+  if (!key || !token || !boardId) { resetApp(); return; }
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  try {
+    setProgress(5, 'Mise à jour...', '');
+    allActions = await fetchAllActions(key, token, boardId);
+    setProgress(90, 'Sauvegarde...', '');
+    await persistData();
+    setProgress(100, 'Terminé !', '');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    renderDashboard(boardData.name);
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    setSaveStatus('Erreur : ' + e.message.slice(0, 30));
+  }
+}
+
+function resetApp() {
+  allActions = []; boardData = null;
+  Object.values(charts).forEach(c => { if (c && c.destroy) c.destroy(); });
+  charts = {};
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+  checkSaved();
+}
+
+// ── chart helpers ──
+const ACTION_GROUPS = {
+  'Création cartes': ['createCard','copyCard','convertToCardFromCheckItem'],
+  'Modification cartes': ['updateCard'],
+  'Commentaires': ['commentCard'],
+  'Checklists': ['createChecklist','updateChecklist','deleteChecklist','updateCheckItemStateOnCard','createCheckItem','deleteCheckItem'],
+  'Listes': ['createList','updateList'],
+  'Membres': ['addMemberToCard','removeMemberFromCard','addMemberToBoard','removeMemberFromBoard'],
+  'Pièces jointes': ['addAttachmentToCard','deleteAttachmentFromCard'],
+  'Autres': []
+};
+function classify(type) {
+  for (const [g, ts] of Object.entries(ACTION_GROUPS)) { if (g !== 'Autres' && ts.includes(type)) return g; }
+  return 'Autres';
+}
+function byPeriod(actions, gran) {
+  const c = {};
+  actions.forEach(a => {
+    const d = new Date(a.date);
+    let k;
+    if (gran === 'week') { const t = new Date(d); t.setDate(d.getDate()-d.getDay()); t.setHours(0,0,0,0); k = t.toISOString().slice(0,10); }
+    else k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    c[k] = (c[k]||0)+1;
+  });
+  const keys = Object.keys(c).sort();
+  return { labels: keys, data: keys.map(k=>c[k]) };
+}
+function byMemberPeriod(actions, gran) {
+  const m = {};
+  actions.forEach(a => {
+    const name = a._memberName, d = new Date(a.date);
+    let k;
+    if (gran === 'week') { const t = new Date(d); t.setDate(d.getDate()-d.getDay()); t.setHours(0,0,0,0); k = t.toISOString().slice(0,10); }
+    else k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if (!m[name]) m[name] = {};
+    m[name][k] = (m[name][k]||0)+1;
+  });
+  return m;
+}
+
+function renderDashboard(name) {
+  const sorted = [...allActions].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const oldest = sorted[0] ? new Date(sorted[0].date) : new Date();
+  const newest = sorted[sorted.length-1] ? new Date(sorted[sorted.length-1].date) : new Date();
+  const fmt = d => d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('d-name').textContent = name;
+  document.getElementById('d-range').textContent = fmt(oldest)+' → '+fmt(newest);
+  const mc = {};
+  allActions.forEach(a => { mc[a._memberName] = (mc[a._memberName]||0)+1; });
+  const ms = Object.entries(mc).sort((a,b)=>b[1]-a[1]);
+  const dc = {};
+  allActions.forEach(a => { const k=new Date(a.date).toISOString().slice(0,10); dc[k]=(dc[k]||0)+1; });
+  const ds = Object.entries(dc).sort((a,b)=>b[1]-a[1]);
+  const days = Math.max(1,(newest-oldest)/864e5);
+  document.getElementById('s-total').textContent = allActions.length.toLocaleString();
+  document.getElementById('s-days').textContent = `sur ${Math.round(days)} jours`;
+  document.getElementById('s-members').textContent = ms.length;
+  document.getElementById('s-top-member').textContent = ms[0] ? `↑ ${ms[0][0].split(' ')[0]}` : '';
+  document.getElementById('s-peak-day').textContent = ds[0] ? new Date(ds[0][0]).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '—';
+  document.getElementById('s-peak-count').textContent = ds[0] ? ds[0][1]+' actions' : '';
+  document.getElementById('s-avg').textContent = Math.round(allActions.length / Math.max(1, days/7));
+
+  renderTimeline();
+
+  const mColors = ms.map((_,i)=>MEMBER_COLORS[i%MEMBER_COLORS.length]);
+  document.getElementById('c-members-wrap').style.height = Math.max(120, ms.length*32+40)+'px';
+  if (charts.members) charts.members.destroy();
+  charts.members = new Chart(document.getElementById('c-members'), {
+    type:'bar', data:{ labels:ms.map(m=>m[0].length>18?m[0].slice(0,16)+'…':m[0]), datasets:[{data:ms.map(m=>m[1]),backgroundColor:mColors,borderRadius:3,borderSkipped:false}] },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.1)'},ticks:{color:'#888',font:{size:10,family:'monospace'}}},y:{grid:{display:false},ticks:{color:'#888',font:{size:10,family:'monospace'}}}}}
+  });
+  document.getElementById('leg-members').innerHTML = ms.slice(0,6).map((m,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${mColors[i]}"></span>${m[0].split(' ')[0]} — ${m[1]}</span>`).join('');
+
+  const tc = {}; allActions.forEach(a=>{const g=classify(a.type);tc[g]=(tc[g]||0)+1;});
+  const tl = Object.keys(tc).sort((a,b)=>tc[b]-tc[a]);
+  const tColors = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#888780'];
+  if (charts.types) charts.types.destroy();
+  charts.types = new Chart(document.getElementById('c-types'), {
+    type:'doughnut', data:{labels:tl,datasets:[{data:tl.map(l=>tc[l]),backgroundColor:tColors,borderWidth:0,hoverBorderWidth:2,hoverBorderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+  const tot = allActions.length;
+  document.getElementById('leg-types').innerHTML = tl.slice(0,6).map((l,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${tColors[i]}"></span>${l} ${Math.round(tc[l]/tot*100)}%</span>`).join('');
+
+  renderHeatmap();
+  renderTrends(ms.slice(0,5).map(m=>m[0]));
+  renderTopCards();
+  renderHourly();
+}
+
+function renderTimeline() {
+  const {labels,data} = byPeriod(allActions, currentGran);
+  if (charts.timeline) charts.timeline.destroy();
+  charts.timeline = new Chart(document.getElementById('c-timeline'), {
+    type:'line', data:{labels,datasets:[{data,borderColor:'#EF9F27',backgroundColor:'rgba(239,159,39,.12)',fill:true,tension:.35,pointRadius:data.length<30?3:0,borderWidth:2,pointBackgroundColor:'#EF9F27'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'},maxTicksLimit:12,maxRotation:45}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:10,family:'monospace'}},beginAtZero:true}}}
+  });
+}
+
+function setGran(gran, btn) {
+  currentGran = gran;
+  document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTimeline(); renderTrends(null);
+}
+
+function renderHeatmap() {
+  const grid = document.getElementById('hm-grid');
+  document.getElementById('hm-hour-labels').innerHTML = '<div></div>'+Array.from({length:24},(_,h)=>`<div class="hm-hour-lbl">${h}</div>`).join('');
+  const c = {}; let mx = 0;
+  allActions.forEach(a => { const d=new Date(a.date), k=`${d.getDay()}-${d.getHours()}`; c[k]=(c[k]||0)+1; if(c[k]>mx)mx=c[k]; });
+  grid.innerHTML = '';
+  for (let day=1;day<=7;day++) {
+    const d = day%7;
+    const lbl = document.createElement('div'); lbl.className='hm-label'; lbl.textContent=DAYS[d]; grid.appendChild(lbl);
+    for (let h=0;h<24;h++) {
+      const v=c[`${d}-${h}`]||0, alpha=mx>0?Math.pow(v/mx,.5):0;
+      const cell=document.createElement('div'); cell.className='hm-cell';
+      cell.style.background=`rgba(239,159,39,${alpha})`;
+      cell.setAttribute('data-tip',`${DAYS[d]} ${h}h: ${v} action${v>1?'s':''}`);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function renderTrends(top) {
+  const members = top || charts._trendMembers || [];
+  if (top) charts._trendMembers = top;
+  const map = byMemberPeriod(allActions, currentGran);
+  const allKeys = new Set();
+  members.forEach(m=>{if(map[m])Object.keys(map[m]).forEach(k=>allKeys.add(k));});
+  const labels = [...allKeys].sort();
+  document.getElementById('leg-trends').innerHTML = members.map((m,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${MEMBER_COLORS[i%MEMBER_COLORS.length]}"></span>${m.split(' ')[0]}</span>`).join('');
+  if (charts.trends) charts.trends.destroy();
+  charts.trends = new Chart(document.getElementById('c-trends'), {
+    type:'line', data:{labels,datasets:members.map((m,i)=>({label:m,data:labels.map(l=>(map[m]||{})[l]||0),borderColor:MEMBER_COLORS[i%MEMBER_COLORS.length],backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:0}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'},maxTicksLimit:12,maxRotation:45}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:10,family:'monospace'}},beginAtZero:true}}}
+  });
+}
+
+function renderTopCards() {
+  const cc = {};
+  allActions.forEach(a=>{if(a.data&&a.data.card&&a.data.card.name){const n=a.data.card.name;cc[n]=(cc[n]||0)+1;}});
+  const top = Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  document.getElementById('c-topcards-wrap').style.height = Math.max(120,top.length*32+40)+'px';
+  if (charts.topcards) charts.topcards.destroy();
+  charts.topcards = new Chart(document.getElementById('c-topcards'), {
+    type:'bar', data:{labels:top.map(t=>t[0].length>22?t[0].slice(0,20)+'…':t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:'#3B8BD4',borderRadius:3,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.1)'},ticks:{color:'#888',font:{size:10,family:'monospace'}}},y:{grid:{display:false},ticks:{color:'#888',font:{size:9,family:'monospace'}}}}}
+  });
+}
+
+function renderHourly() {
+  const h = Array(24).fill(0);
+  allActions.forEach(a=>{ h[new Date(a.date).getHours()]++; });
+  const mx = Math.max(...h);
+  if (charts.hours) charts.hours.destroy();
+  charts.hours = new Chart(document.getElementById('c-hours'), {
+    type:'bar', data:{labels:Array.from({length:24},(_,i)=>i+'h'),datasets:[{data:h,backgroundColor:h.map(v=>`rgba(239,159,39,${.25+.75*(v/mx)})`),borderRadius:2,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888',font:{size:8,family:'monospace'},maxRotation:0,autoSkip:false}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'}},beginAtZero:true}}}
+  });
+}
+
+checkSaved();
+</script>
