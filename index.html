@@ -1961,9 +1961,9 @@
       data: {
         labels,
         datasets: [{
-          data, borderColor: '#0C66E4', backgroundColor: 'rgba(113,88,217,.14)',
+          data, borderColor: '#7158D9', backgroundColor: 'rgba(113,88,217,.14)',
           fill: true, tension: .35, pointRadius: data.length < 30 ? 3 : 0,
-          borderWidth: 2, pointBackgroundColor: '#0C66E4'
+          borderWidth: 2, pointBackgroundColor: '#7158D9'
         }]
       },
       options: {
@@ -2050,7 +2050,7 @@
         let bg, tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
         if (shareMode) {
           const r = hourTotals[h] ? v / hourTotals[h] : 0;
-          bg = v === 0 ? 'rgba(113,88,217,0)' : r >= .12 ? '#0747A6' : r >= .06 ? '#0C66E4' : r >= .02 ? '#669DF1' : 'rgba(102,157,241,.4)';
+          bg = v === 0 ? 'rgba(113,88,217,0)' : r >= .12 ? '#5140B5' : r >= .06 ? '#7158D9' : r >= .02 ? '#B6A6FF' : 'rgba(182,166,255,.4)';
           tip += hourTotals[h] ? ' · ' + Math.round(r * 100) + '% de ' + h + 'h' : '';
         } else {
           const alpha = st.heatMax > 0 ? Math.pow(v / st.heatMax, .5) : 0;
@@ -2061,9 +2061,9 @@
     }
     $('hm-grid').innerHTML = html;
     $('hm-scale').innerHTML = shareMode
-      ? 'part de l\'heure : ' + ['rgba(102,157,241,.4)', '#669DF1', '#0C66E4', '#0747A6']
+      ? 'part de l\'heure : ' + ['rgba(182,166,255,.4)', '#B6A6FF', '#7158D9', '#5140B5']
         .map(c => '<span class="sw" style="background:' + c + '"></span>').join('') + ' 0% → ≥12%'
-      : 'volume : <span class="sw" style="background:rgba(12,102,228,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(12,102,228,1)"></span>' + st.heatMax + ' actions/case';
+      : 'volume : <span class="sw" style="background:rgba(113,88,217,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(113,88,217,1)"></span>' + st.heatMax + ' actions/case';
   }
 
   /**
@@ -2679,7 +2679,7 @@
     imgMap = imgMap || {};
     const PW = PDF_PAGE.w, PH = PDF_PAGE.h, M = PDF_PAGE.m, CW = PW - 2 * M;
     const COL = {
-      accent: '0.047 0.400 0.894',   /* #0C66E4 */
+      accent: '0.443 0.345 0.851',   /* #7158D9 */
       title: '0.090 0.169 0.302',   /* #172B4D */
       text: '0.259 0.322 0.431',   /* #42526E */
       soft: '0.369 0.424 0.518',   /* #5E6C84 */
@@ -3221,7 +3221,7 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
 
       /* en-tête */
-      ctx.fillStyle = '#0C66E4'; ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = '#7158D9'; ctx.fillRect(0, 0, W, 6);
       ctx.fillStyle = '#2b2a27'; ctx.font = '600 25px Arial';
       ctx.fillText(truncate(model.boardName, 64, 60), M, 44);
       ctx.fillStyle = '#5c594f'; ctx.font = '13px Arial';
@@ -3369,7 +3369,7 @@
         const v = hm.cells[d][h];
         const alpha = hm.max > 0 ? Math.pow(v / hm.max, .5) : 0;
         const tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
-        html += '<div class="hm-cell" style="background:rgba(12,102,228,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
+        html += '<div class="hm-cell" style="background:rgba(113,88,217,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
       }
     }
     return html + '</div></div>';
