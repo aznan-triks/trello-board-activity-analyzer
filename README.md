@@ -3,6 +3,10 @@
 Analyse complète de l'historique d'un tableau Trello (API REST v1) — 100 % côté
 client, dans un seul fichier `index.html` autonome (aucun build, aucun serveur).
 
+> **v5.1.0** — refonte visuelle : palette claire/sombre fraîche (bleu
+> Atlassian + neutres froids), surfaces avec ombres légères, coins arrondis
+> modernisés, série principale des graphiques et heatmap assorties au bleu,
+> rapport PDF et export PNG harmonisés.
 > **v5.0.0** — exports enrichis et confort d'usage : **rapport HTML interactif
 > hors-ligne** (fichier autonome), **rapport PDF A4** (générateur PDF intégré,
 > zéro dépendance), **Markdown**, **Classeur Excel .xlsx**, **archive ZIP
