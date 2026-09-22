@@ -2,13 +2,21 @@ name: Validation UI et fonctionnelle
 on:
   pull_request:
   push:
-    branches: [main, arena/01a0cb12-trello-board-activity-analyzer]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'URL du site publié à tester (vide = serveur local)'
+        required: false
+        default: ''
+        type: string
 permissions:
   contents: read
 jobs:
   browser-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      BASE_URL: ${{ inputs.base_url || '' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

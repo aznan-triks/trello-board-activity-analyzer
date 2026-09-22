@@ -9,6 +9,10 @@ async function openApp(page) {
   await page.waitForFunction(() => window.tba && typeof Chart !== 'undefined');
   return errors;
 }
+async function settleMotion(page) {
+  // Audit the settled UI, not an intermediate frame of the entrance fade.
+  await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+}
 async function demo(page) {
   await page.locator('#btn-demo').click();
   await expect(page.locator('#dashboard')).toBeVisible();
@@ -135,9 +139,11 @@ for (const theme of ['light', 'dark']) {
   test(`accessibilité WCAG AA : accueil et dashboard ${theme}`, async ({ page }) => {
     await openApp(page);
     await page.evaluate(theme => tba.Theme.apply(theme), theme);
+    await settleMotion(page);
     let results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await demo(page);
+    await settleMotion(page);
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.screenshot({ path: `test-results/dashboard-${theme}.png`, fullPage: true });
