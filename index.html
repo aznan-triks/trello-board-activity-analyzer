@@ -1,5 +1,15 @@
-
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Analyse complète de l'historique d'un tableau Trello — modifications, membres, tendances. 100 % local, aucune donnée envoyée ailleurs qu'à l'API Trello.">
+<title>Trello Board Activity Analyzer</title>
 <style>
+  /* ════════════════════════════════════════════════════════════════════════
+     1. Styles d'origine (conservés verbatim — aucune règle ne change)
+     ════════════════════════════════════════════════════════════════════════ */
   #tapp { font-family: var(--font-mono, monospace); padding: 1rem 0; }
   .setup-card { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; max-width: 560px; margin: 0 auto; }
   .setup-card h2 { font-size: 16px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary); }
@@ -54,8 +64,59 @@
   .hm-hour-lbl { font-size: 8px; color: var(--color-text-tertiary); text-align: center; }
   .error-msg { background: var(--color-background-danger); color: var(--color-text-danger); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 12px; margin-top: 12px; display: none; }
   @media (max-width: 520px) { .stat-row { grid-template-columns: repeat(2, 1fr); } .chart-row { grid-template-columns: 1fr; } }
-</style>
 
+  /* ════════════════════════════════════════════════════════════════════════
+     2. Styles additionnels (nouvelles briques — n'affectent rien d'existant)
+     ════════════════════════════════════════════════════════════════════════ */
+  .app-footer { text-align: center; font-size: 10px; color: var(--color-text-tertiary); margin: 1rem 0 0; padding: 0 1rem; }
+  .keep-creds { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-secondary); margin: 2px 0 1rem; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .keep-creds input { accent-color: #BA7517; }
+  .cancel-btn { margin-top: .75rem; background: none; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 5px 12px; font-size: 11px; cursor: pointer; color: var(--color-text-secondary); font-family: var(--font-mono); }
+  .cancel-btn:hover { border-color: var(--color-border-danger); color: var(--color-text-danger); }
+  .filters { display: none; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; margin-bottom: 8px; font-size: 11px; }
+  .filters label { color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: .04em; font-size: 10px; }
+  .filters input[type=search], .filters input[type=datetime-local] { font-family: var(--font-mono); font-size: 11px; background: var(--color-background-primary); color: var(--color-text-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; padding: 4px 8px; }
+  .filters input[type=search] { width: 170px; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; background: #BA7517; color: #FAEEDA; border-radius: 99px; padding: 2px 8px; }
+  .chip button { background: none; border: none; color: inherit; cursor: pointer; font-size: 11px; padding: 0; line-height: 1; font-family: var(--font-mono); }
+  .filter-count { margin-left: auto; color: var(--color-text-tertiary); font-size: 10px; white-space: nowrap; }
+  .menu { position: relative; }
+  .menu-pop { position: absolute; right: 0; top: calc(100% + 4px); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); box-shadow: 0 4px 16px rgba(0,0,0,.14); display: none; flex-direction: column; min-width: 210px; z-index: 40; padding: 4px; }
+  .menu-pop.open { display: flex; }
+  .menu-pop button { background: none; border: none; text-align: left; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-primary); padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+  .menu-pop button:hover { background: var(--color-background-secondary); }
+  .menu-pop .muted { color: var(--color-text-tertiary); font-size: 9px; padding: 2px 8px 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .tbl-wrap { max-height: 300px; overflow: auto; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; }
+  table.mtable { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .mtable th { position: sticky; top: 0; z-index: 1; background: var(--color-background-secondary); text-align: left; font-weight: 500; color: var(--color-text-tertiary); padding: 6px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); cursor: pointer; user-select: none; white-space: nowrap; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .mtable th .ar { font-size: 9px; }
+  .mtable td { padding: 5px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); white-space: nowrap; }
+  .mtable td.num, .mtable th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mtable tbody tr:hover td { background: var(--color-background-primary); }
+  .stat-row.ext .stat-val { font-size: 16px; }
+  .tgl-hm { font-size: 10px; padding: 3px 8px; border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; cursor: pointer; background: none; color: var(--color-text-secondary); font-family: var(--font-mono); }
+  .tgl-hm.active { background: #BA7517; color: #FAEEDA; border-color: #BA7517; }
+  .hm-scale { display: flex; align-items: center; gap: 2px; margin-top: 6px; font-size: 9px; color: var(--color-text-tertiary); flex-wrap: wrap; }
+  .hm-scale .sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+  #toast { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%,12px); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); font-size: 12px; font-family: var(--font-mono, monospace); padding: 8px 14px; border-radius: var(--border-radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 120; box-shadow: 0 6px 24px rgba(0,0,0,.16); max-width: 80vw; }
+  #toast.show { opacity: 1; transform: translate(-50%,0); }
+  #toast.success { border-color: var(--color-border-success); color: var(--color-text-success); }
+  #toast.error { border-color: var(--color-border-danger); color: var(--color-text-danger); }
+  #log-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 110; }
+  #log-overlay.open { display: flex; }
+  #log-panel { width: min(760px, 92vw); max-height: 80vh; display: flex; flex-direction: column; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+  #log-panel .lp-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 12px; color: var(--color-text-primary); }
+  #log-panel .lp-head .grow { margin-left: auto; display: flex; gap: 6px; }
+  #log-dump { margin: 0; padding: 12px 14px; overflow: auto; font-size: 10px; line-height: 1.55; white-space: pre-wrap; color: var(--color-text-secondary); flex: 1; font-family: var(--font-mono, monospace); }
+  button:focus-visible, input:focus-visible { outline: 2px solid #BA7517; outline-offset: 1px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  @media (max-width: 520px) { .filters { flex-direction: column; align-items: stretch; } .filter-count { margin-left: 0; } }
+  @media print { #setup, #loading, .dash-actions, #filters, .app-footer, #toast, #log-overlay { display: none !important; } .chart-card { break-inside: avoid; border: 0.5px solid var(--color-border-tertiary); } #dashboard { display: block !important; } }
+</style>
+</head>
+<body>
+<noscript><p style="text-align:center;font-size:12px;">Cette application nécessite JavaScript pour interroger l'API Trello.</p></noscript>
 <div id="tapp">
   <div id="setup">
     <div class="setup-card">
@@ -64,35 +125,41 @@
       <div id="saved-banner" style="display:none" class="saved-notice">
         <span id="saved-banner-text">—</span>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button onclick="loadSaved()">Recharger ↗</button>
-          <button onclick="clearSaved()" style="border-color:var(--color-border-danger);color:var(--color-text-danger)">Effacer</button>
+          <button id="btn-reload-saved">Recharger ↗</button>
+          <button id="btn-clear-saved" style="border-color:var(--color-border-danger);color:var(--color-text-danger)">Effacer</button>
         </div>
       </div>
       <div class="field-group">
         <div class="field-row">
-          <label>API Key</label>
-          <input type="text" id="api-key" placeholder="votre clé API Trello" style="font-family:var(--font-mono);font-size:12px;">
-          <span class="hint">→ <a href="https://trello.com/app-key" target="_blank" style="color:#EF9F27;">trello.com/app-key</a></span>
+          <label for="api-key">API Key</label>
+          <input type="text" id="api-key" placeholder="votre clé API Trello" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
+          <span class="hint">→ <a href="https://trello.com/app-key" target="_blank" rel="noopener noreferrer" style="color:#EF9F27;">trello.com/app-key</a></span>
         </div>
         <div class="field-row">
-          <label>Token</label>
-          <input type="text" id="api-token" placeholder="votre token d'autorisation" style="font-family:var(--font-mono);font-size:12px;">
+          <label for="api-token">Token</label>
+          <input type="password" id="api-token" placeholder="votre token d'autorisation" autocomplete="off" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
         </div>
         <div class="field-row">
-          <label>Board ID ou URL</label>
-          <input type="text" id="board-id" placeholder="https://trello.com/b/xxxxxxxx/... ou ID" style="font-family:var(--font-mono);font-size:12px;">
+          <label for="board-id">Board ID ou URL</label>
+          <input type="text" id="board-id" placeholder="https://trello.com/b/xxxxxxxx/... ou ID" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
         </div>
       </div>
-      <div class="error-msg" id="err-msg"></div>
-      <button class="analyze-btn" onclick="startAnalysis()">Analyser tout le tableau →</button>
+      <label class="keep-creds" for="keep-creds">
+        <input type="checkbox" id="keep-creds" checked>
+        <span>Conserver les identifiants dans la sauvegarde locale (nécessaire pour « Mettre à jour »)</span>
+      </label>
+      <div class="error-msg" id="err-msg" role="alert"></div>
+      <button class="analyze-btn" id="btn-analyze">Analyser tout le tableau →</button>
+      <p class="app-footer">Exécution 100 % locale : seules vos clés sont envoyées, directement à l'API Trello (aucun intermédiaire).</p>
     </div>
   </div>
 
-  <div id="loading">
-    <div class="spinner"></div>
+  <div id="loading" role="status">
+    <div class="spinner" aria-hidden="true"></div>
     <p id="load-status">Connexion à Trello...</p>
     <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
     <p id="load-detail" style="font-size:11px;color:var(--color-text-tertiary);">—</p>
+    <button class="cancel-btn" id="btn-cancel" style="display:none">✕ Annuler</button>
   </div>
 
   <div id="dashboard">
@@ -100,10 +167,33 @@
       <span class="board-name" id="d-name">—</span>
       <span class="date-range" id="d-range">—</span>
       <div class="dash-actions">
-        <span class="save-status"><span class="save-dot" id="save-dot"></span><span id="save-label">Sauvegardé</span></span>
-        <button class="dash-btn refresh" onclick="refreshData()">↻ Mettre à jour</button>
-        <button class="dash-btn" onclick="resetApp()">← Changer</button>
+        <span class="save-status"><span class="save-dot" id="save-dot"></span><span id="save-label" role="status" aria-live="polite">Sauvegardé</span></span>
+        <button class="dash-btn refresh" id="btn-refresh" title="Recharger toutes les actions depuis Trello">↻ Mettre à jour</button>
+        <button class="dash-btn refresh" id="btn-refresh-inc" title="Recharger uniquement le delta depuis la dernière sauvegarde (rapide, dès que l'historique est sauvegardé au format v3+)">⤒ Delta</button>
+        <span class="menu">
+          <button class="dash-btn" id="btn-export" aria-haspopup="true" aria-expanded="false">⤓ Export ▾</button>
+          <span class="menu-pop" id="export-menu" role="menu">
+            <span class="muted">Télécharger</span>
+            <button id="exp-csv" role="menuitem">Actions — CSV (Excel)</button>
+            <button id="exp-json" role="menuitem">Analyse complète — JSON</button>
+            <button id="exp-png" role="menuitem">Timeline — PNG</button>
+          </span>
+        </span>
+        <button class="dash-btn" id="btn-log" title="Journal technique (identifiants masqués)">☰ Journal</button>
+        <button class="dash-btn" id="btn-reset">← Changer</button>
       </div>
+    </div>
+    <div class="filters" id="filters">
+      <label for="fl-search">Membres</label>
+      <input type="search" id="fl-search" placeholder="Filtrer un membre puis Entrée" list="fl-datalist" autocomplete="off">
+      <datalist id="fl-datalist"></datalist>
+      <span class="chips" id="fl-chips"></span>
+      <label for="fl-from">Du</label>
+      <input type="datetime-local" id="fl-from">
+      <label for="fl-to">Au</label>
+      <input type="datetime-local" id="fl-to">
+      <button class="dash-btn" id="fl-clear">Réinitialiser</button>
+      <span class="filter-count" id="fl-count"></span>
     </div>
     <div class="stat-row">
       <div class="stat-card"><div class="stat-label">Total actions</div><div class="stat-val" id="s-total">—</div><div class="stat-sub" id="s-days">—</div></div>
@@ -113,9 +203,9 @@
     </div>
     <div class="chart-card">
       <h3>Activité dans le temps</h3>
-      <div class="toggle-group">
-        <button class="tgl active" onclick="setGran('week',this)">Semaine</button>
-        <button class="tgl" onclick="setGran('month',this)">Mois</button>
+      <div class="toggle-group" id="tl-toggles">
+        <button class="tgl active" data-gran="week">Semaine</button>
+        <button class="tgl" data-gran="month">Mois</button>
       </div>
       <div style="position:relative;height:200px;"><canvas id="c-timeline"></canvas></div>
     </div>
@@ -133,8 +223,13 @@
     </div>
     <div class="chart-card">
       <h3>Heatmap — Heure × Jour de la semaine</h3>
+      <div class="toggle-group" id="hm-toggles">
+        <button class="tgl-hm active" data-hm="count" title="Volume brut par case">Volume</button>
+        <button class="tgl-hm" data-hm="share" title="Part relative des actions de chaque heure">Répartition %</button>
+      </div>
       <div class="hm-hour-labels" id="hm-hour-labels"></div>
-      <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid"></div></div>
+      <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid" role="img" aria-label="Heatmap de l'activité par jour de semaine et heure"></div></div>
+      <div class="hm-scale" id="hm-scale"></div>
     </div>
     <div class="chart-card">
       <h3>Tendances membres dans le temps</h3>
@@ -151,359 +246,1788 @@
         <div style="position:relative;height:200px;"><canvas id="c-hours"></canvas></div>
       </div>
     </div>
+
+    <!-- ═ Blocs additifs : indicateurs avancés, chronologie par type,
+         semaine/week-end, détail membres, export ═ -->
+    <div class="stat-row ext">
+      <div class="stat-card"><div class="stat-label">Commentaires</div><div class="stat-val" id="s-comments">—</div><div class="stat-sub" id="s-comments-sub">—</div></div>
+      <div class="stat-card"><div class="stat-label">Moyenne / jour</div><div class="stat-val" id="s-dayavg">—</div><div class="stat-sub" id="s-dayavg-sub">—</div></div>
+      <div class="stat-card"><div class="stat-label">Heure de pointe</div><div class="stat-val" id="s-peak-hour">—</div><div class="stat-sub" id="s-peak-hour-sub">—</div></div>
+      <div class="stat-card"><div class="stat-label">Part week-end</div><div class="stat-val" id="s-weekend">—</div><div class="stat-sub" id="s-streak">—</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Types d'actions par période</h3>
+        <div class="legend" id="leg-typetl"></div>
+        <div style="position:relative;height:200px;"><canvas id="c-typetl"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Semaine vs Week-end</h3>
+        <div style="position:relative;height:200px;"><canvas id="c-weekend"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Détail par membre</h3>
+      <div class="tbl-wrap">
+        <table class="mtable" id="mtable">
+          <thead>
+            <tr>
+              <th data-k="name">Membre <span class="ar"></span></th>
+              <th data-k="count" class="num">Actions <span class="ar">▼</span></th>
+              <th data-k="comments" class="num">Comment. <span class="ar"></span></th>
+              <th data-k="cards" class="num">Cartes <span class="ar"></span></th>
+              <th data-k="days" class="num">Jours actifs <span class="ar"></span></th>
+              <th data-k="last" class="num">Dern. activité <span class="ar"></span></th>
+            </tr>
+          </thead>
+          <tbody id="mt-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="app-footer" id="dash-footer">—</p>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="log-overlay" role="dialog" aria-modal="true" aria-label="Journal technique">
+  <div id="log-panel">
+    <div class="lp-head">
+      <strong>Journal technique</strong>
+      <span style="font-size:10px;color:var(--color-text-tertiary)">— identifiants masqués automatiquement</span>
+      <span class="grow">
+        <button class="dash-btn" id="btn-log-copy">Copier</button>
+        <button class="dash-btn" id="btn-log-clear">Vider</button>
+        <button class="dash-btn" id="btn-log-close">Fermer</button>
+      </span>
+    </div>
+    <pre id="log-dump">—</pre>
+  </div>
+</div>
+
+<!-- Bibliothèque de graphiques : URL d'origine conservée ; un plan de
+     secours jsDelivr/unpkg est tenté automatiquement par l'application si
+     ce CDN est injoignable (voir ensureChartLib). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
 <script>
-const MEMBER_COLORS = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#E24B4A','#888780','#5DCAA5'];
-const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-const SK = 'trello-v3';
-let allActions = [], charts = {}, currentGran = 'week', boardData = null;
-let savedCreds = {};
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRELLO BOARD ACTIVITY ANALYZER — v4.0.0
+   Analyse d'historique de tableau Trello, 100 % côté client.
 
-// Slim down actions before storing — keep only what the charts need
-function slimAction(a) {
-  return {
-    t: a.type,
-    d: a.date,
-    m: a._memberName || '',
-    c: (a.data && a.data.card && a.data.card.name) ? a.data.card.name : ''
+   Architecture (le fichier reste autonome : aucun build, aucun module)
+   ─────────────────────────────────────────────────────────────────────────
+   1. CONFIG          constantes et seuils
+   2. UTILS           helpers DOM/format, échappement HTML, sleep
+   3. LOGGER          journal en anneau, masquage des secrets
+   4. STORAGE         adaptateur window.storage → localStorage → mémoire
+   5. TRELLO CLIENT   fetch + timeout, retries backoff, anti rate-limit,
+                      pagination, annulation, since/before
+   6. DATA STORE      normalisation, dédup, (dé)sérialisation slim v3
+   7. STATE           état applicatif unique + machine à écrans
+   8. STATS ENGINE    agrégations pures, mono-passages
+   9. CHART KIT       factory Chart.js (détruit/reconstruit comme v1)
+   10. VIEWS          setup, loading, dashboard (rendus isolés)
+   11. APP            wiring événements, contrôles, export, journal, API
+   ═══════════════════════════════════════════════════════════════════════════ */
+'use strict';
+(function () {
+
+  /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
+
+  /** Identifiants/version applicative (exposée dans l'export JSON). */
+  const APP_VERSION = '4.0.0';
+
+  /** Endpoint de base de l'API REST Trello v1. */
+  const TRELLO_API = 'https://api.trello.com/1';
+
+  /** Clé de persistance — inchangée depuis la v1 (compatibilité de format). */
+  const SK = 'trello-v3';
+
+  /** Taille de page /actions (max API). */
+  const PAGE_LIMIT = 1000;
+  /** Pause courtoise entre deux pages (comme l'original). */
+  const PAGE_DELAY_MS = 150;
+  /** Garde-fou anti-boucle infinie (≤ 1 000 000 d'actions). */
+  const MAX_PAGES = 1000;
+  /** Timeout d'une requête HTTP individuelle. */
+  const FETCH_TIMEOUT_MS = 30000;
+  /** Tentatives supplémentaires sur erreurs transitoires (429/5xx/réseau). */
+  const RETRY_MAX = 3;
+  /** Premier délai de backoff (doublant à chaque tentative). */
+  const RETRY_BASE_MS = 500;
+  /** Plafond du backoff. */
+  const RETRY_CAP_MS = 8000;
+  /** Fenêtre glissante publique Trello : 100 req / 10 s / clé+token. */
+  const RATE_WINDOW_MS = 10000;
+  /** Auto-limitation (marge sous la limite officielle). */
+  const RATE_MAX_PER_WINDOW = 90;
+  /** Réserve de débit après une écriture : l'API impose ~1/2 s pendant 18 s. */
+  const RATE_WRITE_RESERVE_MS = 18000;
+  /** Intervalle minimum estimé entre deux écritures. */
+  const WRITE_INTERVAL_MS = 600;
+  /** Payload de sauvegarde max (limite de stockage ~5 Mo, marge 4 %). */
+  const STORAGE_MAX_BYTES = Math.floor(4.8 * 1024 * 1024);
+  /** Locale d'affichage. */
+  const LS = 'fr-FR';
+  /** Nombre max de membres tracés dans les tendances. */
+  const TREND_MEMBER_COUNT = 5;
+  /** Nombre max de membres affichés en légende. */
+  const LEGEND_MAX = 6;
+
+  /** Palette membres (d'origine). */
+  const MEMBER_COLORS = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#E24B4A','#888780','#5DCAA5'];
+  /** Palette types d'actions (d'origine, indexée sur l'ordre des groupes). */
+  const GROUP_COLORS = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#888780'];
+  /** Libellés de jours (d'origine, index = getDay()). */
+  const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+  /**
+   * Regroupement sémantique des types d'actions (verbatim v1, ordre inclus :
+   * il détermine la couleur de chaque groupe dans le donut et l'aire empilée).
+   * @type {Record<string,string[]>}
+   */
+  const ACTION_GROUPS = {
+    'Création cartes': ['createCard','copyCard','convertToCardFromCheckItem'],
+    'Modification cartes': ['updateCard'],
+    'Commentaires': ['commentCard'],
+    'Checklists': ['createChecklist','updateChecklist','deleteChecklist','updateCheckItemStateOnCard','createCheckItem','deleteCheckItem'],
+    'Listes': ['createList','updateList'],
+    'Membres': ['addMemberToCard','removeMemberFromCard','addMemberToBoard','removeMemberFromBoard'],
+    'Pièces jointes': ['addAttachmentToCard','deleteAttachmentFromCard'],
+    'Autres': []
   };
-}
-function expandAction(s) {
-  return { type: s.t, date: s.d, _memberName: s.m, data: s.c ? { card: { name: s.c } } : {} };
-}
 
-function setSaveStatus(st) {
-  const dot = document.getElementById('save-dot');
-  const lbl = document.getElementById('save-label');
-  if (st === 'saving') { dot.className = 'save-dot saving'; lbl.textContent = 'Sauvegarde...'; }
-  else if (st === 'saved') { dot.className = 'save-dot'; lbl.textContent = 'Sauvegardé'; }
-  else { dot.className = 'save-dot err'; lbl.textContent = st; }
-}
+  /** Index rapide type → groupe (construit une fois, remplace la boucle O(n·g) d'origine). */
+  const TYPE2GROUP = (function () {
+    const m = new Map();
+    Object.keys(ACTION_GROUPS).forEach(g => { ACTION_GROUPS[g].forEach(t => m.set(t, g)); });
+    return m;
+  })();
 
-async function safeGet(key) {
-  try { return await window.storage.get(key); } catch(e) { return null; }
-}
-async function safeSet(key, val) {
-  try { return await window.storage.set(key, val); } catch(e) { return null; }
-}
-async function safeDel(key) {
-  try { return await window.storage.delete(key); } catch(e) { return null; }
-}
+  /** CDN de secours si cdnjs est injoignable. */
+  const CHART_FALLBACK_CDNS = [
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
+    'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js'
+  ];
 
-async function persistData() {
-  setSaveStatus('saving');
-  const slim = allActions.map(slimAction);
-  const payload = JSON.stringify({ boardData, actions: slim, creds: savedCreds, savedAt: new Date().toISOString() });
-  const mb = (payload.length / 1024 / 1024).toFixed(2);
-  if (payload.length > 4.8 * 1024 * 1024) {
-    setSaveStatus(`Trop volumineux (${mb} MB)`);
-    return;
+  /* ═════════════════════════════ 2. UTILS ═════════════════════════════════ */
+
+  /** @param {string} id @returns {HTMLElement|null} */
+  const $ = id => document.getElementById(id);
+  /** @param {string} sel @param {ParentNode} [root] @returns {Element[]} */
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  /** @param {number} ms @returns {Promise<void>} */
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  /** @param {number} n @param {number} min @param {number} max */
+  const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+
+  /**
+   * Échappement HTML systématique pour toute injection en innerHTML.
+   * Les noms de membres/cartes proviennent de l'API : non échappés, ils
+   * permettraient une injection HTML (corrigé par rapport à la v1).
+   * @param {unknown} s @returns {string}
+   */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
   }
-  const ok = await safeSet(SK, payload);
-  setSaveStatus(ok ? 'saved' : 'Erreur sauvegarde');
-}
 
-async function checkSaved() {
-  const result = await safeGet(SK);
-  if (!result) return;
-  let data;
-  try { data = JSON.parse(result.value); } catch(e) { return; }
-  if (!data || !data.boardData || !data.actions || !data.actions.length) return;
-  const date = new Date(data.savedAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-  document.getElementById('saved-banner-text').textContent =
-    `${data.boardData.name} — ${data.actions.length.toLocaleString()} actions sauvegardées le ${date}`;
-  document.getElementById('saved-banner').style.display = 'flex';
-  if (data.creds) {
-    document.getElementById('api-key').value = data.creds.key || '';
-    document.getElementById('api-token').value = data.creds.token || '';
-    document.getElementById('board-id').value = data.creds.boardId || '';
+  /** @param {Date|number} d @returns {string} "5 janv. 2024" (format d'origine) */
+  function fmtDate(d) {
+    return new Date(d).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric' });
   }
-}
 
-async function loadSaved() {
-  const result = await safeGet(SK);
-  if (!result) { showError('Aucune donnée trouvée.'); return; }
-  let data;
-  try { data = JSON.parse(result.value); } catch(e) { showError('Données corrompues.'); return; }
-  boardData = data.boardData;
-  allActions = data.actions.map(expandAction);
-  savedCreds = data.creds || {};
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  renderDashboard(boardData.name);
-  setSaveStatus('saved');
-}
+  /** Prénom d'un nom complet (« Jean Dupont » → « Jean »), comme la v1. */
+  const firstWord = s => String(s).split(' ')[0];
 
-async function clearSaved() {
-  await safeDel(SK);
-  document.getElementById('saved-banner').style.display = 'none';
-}
+  /** Troncature avec ellipsis, sémantique exacte de la v1. */
+  const truncate = (s, over, keep) => (s.length > over ? s.slice(0, keep) + '…' : s);
 
-function extractBoardId(input) {
-  const m = input.match(/trello\.com\/b\/([a-zA-Z0-9]+)/);
-  return m ? m[1] : input.trim();
-}
-
-function showError(msg) {
-  const el = document.getElementById('err-msg');
-  el.style.display = 'block'; el.textContent = msg;
-}
-
-function setProgress(pct, status, detail) {
-  document.getElementById('prog-fill').style.width = pct + '%';
-  if (status) document.getElementById('load-status').textContent = status;
-  if (detail !== undefined) document.getElementById('load-detail').textContent = detail;
-}
-
-async function fetchAllActions(key, token, boardId) {
-  const mr = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=${key}&token=${token}&fields=fullName,username`);
-  const members = await mr.json();
-  const memberMap = {};
-  members.forEach(m => { memberMap[m.id] = m.fullName || m.username; });
-  setProgress(15, 'Chargement de l\'historique...', '');
-  let actions = [], before = null, page = 0;
-  while (true) {
-    let url = `https://api.trello.com/1/boards/${boardId}/actions?key=${key}&token=${token}&limit=1000&filter=all&fields=type,date,idMemberCreator,data`;
-    if (before) url += `&before=${before}`;
-    const ar = await fetch(url);
-    if (!ar.ok) throw new Error(`Erreur API page ${page+1} (${ar.status})`);
-    const batch = await ar.json();
-    if (!batch.length) break;
-    batch.forEach(a => { a._memberName = memberMap[a.idMemberCreator] || 'Inconnu'; });
-    actions = actions.concat(batch);
-    before = batch[batch.length - 1].id;
-    page++;
-    setProgress(Math.min(85, 15 + page * 4), 'Chargement...', `${actions.length.toLocaleString()} actions (page ${page})`);
-    if (batch.length < 1000) break;
-    await new Promise(r => setTimeout(r, 150));
+  /**
+   * Clé de période — calcul identique à la v1 (semaine locale démarrant
+   * dimanche, rendue en ISO UTC ; mois en heures locales).
+   * @param {Date} d date locale déjà parseée
+   * @param {'week'|'month'} gran
+   * @returns {string}
+   */
+  function periodKey(d, gran) {
+    if (gran === 'week') {
+      const t = new Date(d);
+      t.setDate(d.getDate() - d.getDay());
+      t.setHours(0, 0, 0, 0);
+      return t.toISOString().slice(0, 10);
+    }
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
-  return actions;
-}
 
-async function startAnalysis() {
-  const key = document.getElementById('api-key').value.trim();
-  const token = document.getElementById('api-token').value.trim();
-  const boardInput = document.getElementById('board-id').value.trim();
-  document.getElementById('err-msg').style.display = 'none';
-  if (!key || !token || !boardInput) { showError('Veuillez remplir tous les champs.'); return; }
-  const boardId = extractBoardId(boardInput);
-  savedCreds = { key, token, boardId };
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('loading').style.display = 'block';
-  try {
-    setProgress(5, 'Connexion à Trello...', '');
-    const br = await fetch(`https://api.trello.com/1/boards/${boardId}?key=${key}&token=${token}&fields=name`);
-    if (!br.ok) throw new Error(`Erreur API (${br.status}) — vérifiez vos identifiants.`);
-    boardData = await br.json();
-    allActions = await fetchAllActions(key, token, boardId);
-    setProgress(90, 'Sauvegarde...', '');
-    await persistData();
-    setProgress(100, 'Terminé !', `${allActions.length.toLocaleString()} actions chargées`);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    renderDashboard(boardData.name);
-  } catch(e) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('setup').style.display = 'block';
-    showError(e.message);
+  /** #RRGGBB → #RRGGBBAA (alpha 0..1) pour les aires empilées. */
+  function hexA(hex, a) {
+    const h = hex.replace('#', '');
+    const v = Math.round(clamp(a, 0, 1) * 255).toString(16).padStart(2, '0');
+    return '#' + h + v;
   }
-}
 
-async function refreshData() {
-  const key = savedCreds.key; const token = savedCreds.token; const boardId = savedCreds.boardId;
-  if (!key || !token || !boardId) { resetApp(); return; }
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('loading').style.display = 'block';
-  try {
-    setProgress(5, 'Mise à jour...', '');
-    allActions = await fetchAllActions(key, token, boardId);
-    setProgress(90, 'Sauvegarde...', '');
-    await persistData();
-    setProgress(100, 'Terminé !', '');
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    renderDashboard(boardData.name);
-  } catch(e) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    setSaveStatus('Erreur : ' + e.message.slice(0, 30));
+  /** Slug de nom de fichier à partir du nom du tableau. */
+  function fileSlug(name) {
+    const s = String(name || 'board').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return s || 'board';
   }
-}
 
-function resetApp() {
-  allActions = []; boardData = null;
-  Object.values(charts).forEach(c => { if (c && c.destroy) c.destroy(); });
-  charts = {};
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('setup').style.display = 'block';
-  checkSaved();
-}
+  /** ISO date du jour (UTC) pour les noms d'export. */
+  const todayStamp = () => new Date().toISOString().slice(0, 10);
 
-// ── chart helpers ──
-const ACTION_GROUPS = {
-  'Création cartes': ['createCard','copyCard','convertToCardFromCheckItem'],
-  'Modification cartes': ['updateCard'],
-  'Commentaires': ['commentCard'],
-  'Checklists': ['createChecklist','updateChecklist','deleteChecklist','updateCheckItemStateOnCard','createCheckItem','deleteCheckItem'],
-  'Listes': ['createList','updateList'],
-  'Membres': ['addMemberToCard','removeMemberFromCard','addMemberToBoard','removeMemberFromBoard'],
-  'Pièces jointes': ['addAttachmentToCard','deleteAttachmentFromCard'],
-  'Autres': []
-};
-function classify(type) {
-  for (const [g, ts] of Object.entries(ACTION_GROUPS)) { if (g !== 'Autres' && ts.includes(type)) return g; }
-  return 'Autres';
-}
-function byPeriod(actions, gran) {
-  const c = {};
-  actions.forEach(a => {
-    const d = new Date(a.date);
-    let k;
-    if (gran === 'week') { const t = new Date(d); t.setDate(d.getDate()-d.getDay()); t.setHours(0,0,0,0); k = t.toISOString().slice(0,10); }
-    else k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    c[k] = (c[k]||0)+1;
-  });
-  const keys = Object.keys(c).sort();
-  return { labels: keys, data: keys.map(k=>c[k]) };
-}
-function byMemberPeriod(actions, gran) {
-  const m = {};
-  actions.forEach(a => {
-    const name = a._memberName, d = new Date(a.date);
-    let k;
-    if (gran === 'week') { const t = new Date(d); t.setDate(d.getDate()-d.getDay()); t.setHours(0,0,0,0); k = t.toISOString().slice(0,10); }
-    else k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    if (!m[name]) m[name] = {};
-    m[name][k] = (m[name][k]||0)+1;
-  });
-  return m;
-}
+  /* ═════════════════════════════ 3. LOGGER ════════════════════════════════ */
 
-function renderDashboard(name) {
-  const sorted = [...allActions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const oldest = sorted[0] ? new Date(sorted[0].date) : new Date();
-  const newest = sorted[sorted.length-1] ? new Date(sorted[sorted.length-1].date) : new Date();
-  const fmt = d => d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
-  document.getElementById('d-name').textContent = name;
-  document.getElementById('d-range').textContent = fmt(oldest)+' → '+fmt(newest);
-  const mc = {};
-  allActions.forEach(a => { mc[a._memberName] = (mc[a._memberName]||0)+1; });
-  const ms = Object.entries(mc).sort((a,b)=>b[1]-a[1]);
-  const dc = {};
-  allActions.forEach(a => { const k=new Date(a.date).toISOString().slice(0,10); dc[k]=(dc[k]||0)+1; });
-  const ds = Object.entries(dc).sort((a,b)=>b[1]-a[1]);
-  const days = Math.max(1,(newest-oldest)/864e5);
-  document.getElementById('s-total').textContent = allActions.length.toLocaleString();
-  document.getElementById('s-days').textContent = `sur ${Math.round(days)} jours`;
-  document.getElementById('s-members').textContent = ms.length;
-  document.getElementById('s-top-member').textContent = ms[0] ? `↑ ${ms[0][0].split(' ')[0]}` : '';
-  document.getElementById('s-peak-day').textContent = ds[0] ? new Date(ds[0][0]).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '—';
-  document.getElementById('s-peak-count').textContent = ds[0] ? ds[0][1]+' actions' : '';
-  document.getElementById('s-avg').textContent = Math.round(allActions.length / Math.max(1, days/7));
+  /**
+   * Journal en anneau (400 entrées) consultable via « ☰ Journal ».
+   * Les secrets (clé API, token) sont masqués dans chaque message : la v1
+   * n'avait aucun logging ; celui-ci est purement additif et never-throw.
+   */
+  const log = (function () {
+    /** @type {{t:string,lvl:string,msg:string}[]} */
+    const ring = [];
+    const MAX = 400;
+    let level = 1; // 0 debug · 1 info · 2 warn · 3 error
+    const stamp = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
 
-  renderTimeline();
+    function redact(msg) {
+      let out = String(msg);
+      const c = state.creds;
+      if (c) {
+        // Seulement les secrets « crédibles » (≥4 car.) : évite de masquer des
+        // syllabes entières quand un token de test est très court.
+        if (c.token && c.token.length >= 4) out = out.split(c.token).join('••••••••');
+        if (c.key && c.key.length >= 4) out = out.split(c.key).join('••••••••');
+      }
+      return out.slice(0, 4000);
+    }
 
-  const mColors = ms.map((_,i)=>MEMBER_COLORS[i%MEMBER_COLORS.length]);
-  document.getElementById('c-members-wrap').style.height = Math.max(120, ms.length*32+40)+'px';
-  if (charts.members) charts.members.destroy();
-  charts.members = new Chart(document.getElementById('c-members'), {
-    type:'bar', data:{ labels:ms.map(m=>m[0].length>18?m[0].slice(0,16)+'…':m[0]), datasets:[{data:ms.map(m=>m[1]),backgroundColor:mColors,borderRadius:3,borderSkipped:false}] },
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.1)'},ticks:{color:'#888',font:{size:10,family:'monospace'}}},y:{grid:{display:false},ticks:{color:'#888',font:{size:10,family:'monospace'}}}}}
-  });
-  document.getElementById('leg-members').innerHTML = ms.slice(0,6).map((m,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${mColors[i]}"></span>${m[0].split(' ')[0]} — ${m[1]}</span>`).join('');
+    function push(lvl, args) {
+      try {
+        const msg = redact(Array.prototype.map.call(args, a =>
+          (a instanceof Error) ? (a.message || String(a)) :
+          (typeof a === 'object' && a !== null) ? safeStringify(a) : String(a)
+        ).join(' '));
+        ring.push({ t: new Date().toLocaleTimeString(LS, stamp), lvl, msg });
+        if (ring.length > MAX) ring.splice(0, ring.length - MAX);
+        if (overlayOpen) refreshLogDump();
+        if (lvl !== 'debug' && typeof console !== 'undefined' && console[lvl]) console[lvl]('[tba]', msg);
+      } catch (_) { /* le logging ne doit jamais casser l'app */ }
+    }
 
-  const tc = {}; allActions.forEach(a=>{const g=classify(a.type);tc[g]=(tc[g]||0)+1;});
-  const tl = Object.keys(tc).sort((a,b)=>tc[b]-tc[a]);
-  const tColors = ['#EF9F27','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#888780'];
-  if (charts.types) charts.types.destroy();
-  charts.types = new Chart(document.getElementById('c-types'), {
-    type:'doughnut', data:{labels:tl,datasets:[{data:tl.map(l=>tc[l]),backgroundColor:tColors,borderWidth:0,hoverBorderWidth:2,hoverBorderColor:'#fff'}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
-  });
-  const tot = allActions.length;
-  document.getElementById('leg-types').innerHTML = tl.slice(0,6).map((l,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${tColors[i]}"></span>${l} ${Math.round(tc[l]/tot*100)}%</span>`).join('');
+    function safeStringify(o) {
+      const seen = new WeakSet();
+      try {
+        return JSON.stringify(o, (k, v) => {
+          if (typeof v === 'object' && v !== null) { if (seen.has(v)) return '[circular]'; seen.add(v); }
+          return v;
+        }) || '';
+      } catch (_) { return String(o); }
+    }
 
-  renderHeatmap();
-  renderTrends(ms.slice(0,5).map(m=>m[0]));
-  renderTopCards();
-  renderHourly();
-}
+    return {
+      setLevel(n) { level = n; },
+      enabled(n) { return n >= level; },
+      debug(...a) { push('debug', a); },
+      info(...a) { push('info', a); },
+      warn(...a) { push('warn', a); },
+      error(...a) { push('error', a); },
+      dump() { return ring.map(e => `[${e.t}] ${e.lvl.toUpperCase().padEnd(5)} ${e.msg}`).join('\n'); },
+      clear() { ring.length = 0; refreshLogDump(); }
+    };
+  })();
 
-function renderTimeline() {
-  const {labels,data} = byPeriod(allActions, currentGran);
-  if (charts.timeline) charts.timeline.destroy();
-  charts.timeline = new Chart(document.getElementById('c-timeline'), {
-    type:'line', data:{labels,datasets:[{data,borderColor:'#EF9F27',backgroundColor:'rgba(239,159,39,.12)',fill:true,tension:.35,pointRadius:data.length<30?3:0,borderWidth:2,pointBackgroundColor:'#EF9F27'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'},maxTicksLimit:12,maxRotation:45}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:10,family:'monospace'}},beginAtZero:true}}}
-  });
-}
+  /* ════════════════════════════ 4. STORAGE ════════════════════════════════ */
 
-function setGran(gran, btn) {
-  currentGran = gran;
-  document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTimeline(); renderTrends(null);
-}
+  /**
+   * Persistance de session. Ordre de préférence :
+   *   1. window.storage (hôtes type artifacts ; API get/set/delete asynchrone)
+   *   2. localStorage    (contexte navigateur autonome)
+   *   3. mémoire         (jamais de crash — comme safeGet/safeSet/safeDel v1)
+   * L'adaptateur renvoie toujours `{value:string}` comme window.storage.
+   */
+  const Store = (function () {
+    /** @type {Map<string,string>} */ const mem = new Map();
+    let memOnly = false;
 
-function renderHeatmap() {
-  const grid = document.getElementById('hm-grid');
-  document.getElementById('hm-hour-labels').innerHTML = '<div></div>'+Array.from({length:24},(_,h)=>`<div class="hm-hour-lbl">${h}</div>`).join('');
-  const c = {}; let mx = 0;
-  allActions.forEach(a => { const d=new Date(a.date), k=`${d.getDay()}-${d.getHours()}`; c[k]=(c[k]||0)+1; if(c[k]>mx)mx=c[k]; });
-  grid.innerHTML = '';
-  for (let day=1;day<=7;day++) {
-    const d = day%7;
-    const lbl = document.createElement('div'); lbl.className='hm-label'; lbl.textContent=DAYS[d]; grid.appendChild(lbl);
-    for (let h=0;h<24;h++) {
-      const v=c[`${d}-${h}`]||0, alpha=mx>0?Math.pow(v/mx,.5):0;
-      const cell=document.createElement('div'); cell.className='hm-cell';
-      cell.style.background=`rgba(239,159,39,${alpha})`;
-      cell.setAttribute('data-tip',`${DAYS[d]} ${h}h: ${v} action${v>1?'s':''}`);
-      grid.appendChild(cell);
+    const artifact = () => window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+    const local = () => {
+      if (memOnly) return false;
+      try { return !!(window.localStorage && typeof localStorage.getItem === 'function'); }
+      catch (_) { return false; }
+    };
+    function lsOk() { // localStorage peut lever (mode privé / cookies bloqués)
+      try { localStorage.setItem(SK + ':probe', '1'); localStorage.removeItem(SK + ':probe'); return true; }
+      catch (_) { memOnly = true; return false; }
+    }
+
+    async function get(key) {
+      try {
+        if (artifact()) return await window.storage.get(key);
+        if (local() && lsOk()) {
+          const v = localStorage.getItem(key);
+          return v == null ? null : { value: v };
+        }
+      } catch (e) { log.debug('storage.get dégradé :', e); }
+      return mem.has(key) ? { value: mem.get(key) } : null;
+    }
+    async function set(key, value) {
+      try {
+        if (artifact()) return await window.storage.set(key, value);
+        if (local() && lsOk()) { localStorage.setItem(key, value); return true; }
+      } catch (e) {
+        log.warn('storage.set impossible :', e);
+      }
+      mem.set(key, value); // filet mémoire (session courante)
+      return true;
+    }
+    async function del(key) {
+      try {
+        if (artifact()) return await window.storage.delete(key);
+        if (local() && lsOk()) localStorage.removeItem(key);
+      } catch (_) { /* ignore */ }
+      mem.delete(key);
+      return true;
+    }
+    return { get, set, del };
+  })();
+
+  /* ═══════════════════════════ 5. TRELLO CLIENT ═══════════════════════════ */
+
+  /** Erreur API typée (statut HTTP disponible pour les messages utilisateur). */
+  class ApiError extends Error {
+    /** @param {string} msg @param {number} [status] */
+    constructor(msg, status) { super(msg); this.name = 'ApiError'; this.status = status || 0; }
+  }
+  /** Erreur d'annulation utilisateur (non affichée comme une panne). */
+  class CanceledError extends Error {
+    constructor() { super('Annulé'); this.name = 'CanceledError'; }
+  }
+
+  /**
+   * Régulateur de débit Trello :
+   *  • fenêtre glissante 90 requêtes / 10 s ;
+   *  • réserve « écritures » : après un PUT/POST, l'API impose ≈1 requête/2 s
+   *    pendant 18 s — on évite d'y toucher en espaçant les lectures qui
+   *    suivent une écriture connue, et on signale si l'appelant écrit (réservé ici pour des extensions futures).
+   */
+  const Limiter = (function () {
+    /** @type {number[]} */ const times = [];
+    /** @type {number} */ let lastWrite = 0;
+    /** @type {number} */ let lastWriteTs = 0;
+
+    function noteWrite() {
+      lastWrite += WRITE_INTERVAL_MS;
+      lastWriteTs = Date.now();
+    }
+
+    async function wait() {
+      // fenêtre 10 s
+      for (;;) {
+        const now = Date.now();
+        while (times.length && now - times[0] > RATE_WINDOW_MS) times.shift();
+        if (times.length < RATE_MAX_PER_WINDOW) break;
+        await sleep(120);
+      }
+      times.push(Date.now());
+      if (times.length > 400) times.splice(0, times.length - 400);
+      // réserve d'écriture
+      const reserveEnd = lastWrite + RATE_WRITE_RESERVE_MS;
+      const waitMs = reserveEnd - Date.now();
+      if (waitMs > 0) { log.debug('Limiter : pause anti-rate-limit de ' + waitMs + ' ms'); await sleep(waitMs); }
+    }
+
+    return { wait, noteWrite };
+  })();
+
+  /**
+   * Construit une URL Trello v1. L'encodage garde les virgules littérales
+   * (exigence de l'API pour `fields=…,…`) — d'où l'absence d'URLSearchParams.
+   * @param {string} path @param {Record<string,*>} params @returns {string}
+   */
+  function buildUrl(path, params) {
+    const enc = v => encodeURIComponent(v).replace(/%2C/g, ',');
+    const parts = [];
+    for (const k of Object.keys(params)) {
+      const v = params[k];
+      if (v !== null && v !== undefined && v !== '') parts.push(k + '=' + enc(v));
+    }
+    return TRELLO_API + path + (parts.length ? '?' + parts.join('&') : '');
+  }
+
+  /** Retard de retry : Retry-After (429/503) sinon backoff exponentiel + jitter. */
+  function retryDelay(res, attempt) {
+    try {
+      const h = res && res.headers && res.headers.get && res.headers.get('retry-after');
+      if (h) { const s = parseFloat(h); if (Number.isFinite(s)) return clamp(s * 1000, 500, 30000); }
+    } catch (_) { /* headers absentes (mocks) */ }
+    const base = Math.min(RETRY_CAP_MS, RETRY_BASE_MS * Math.pow(2, attempt - 1));
+    return base / 2 + Math.random() * base / 2;
+  }
+
+  /**
+   * GET JSON résilient : timeout, retries (429/5xx/réseau), annulation.
+   * @param {string} url
+   * @param {{signal?:AbortSignal, method?:string, body?:*}} [opts]
+   * @returns {Promise<*>} JSON décodé
+   */
+  async function fetchJSON(url, opts) {
+    opts = opts || {};
+    const method = opts.method || 'GET';
+    if (method !== 'GET') Limiter.noteWrite();
+    let attempt = 0;
+    for (;;) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+      const outer = opts.signal;
+      const relay = () => ctrl.abort();
+      if (outer) { if (outer.aborted) { clearTimeout(timer); throw new CanceledError(); } outer.addEventListener('abort', relay, { once: true }); }
+      try {
+        const t0 = Date.now();
+        const res = await fetch(url, {
+          method,
+          signal: ctrl.signal,
+          headers: method === 'GET' ? { 'Accept': 'application/json' } : { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: opts.body != null ? JSON.stringify(opts.body) : undefined
+        });
+        if (res.ok) {
+          const text = await res.text();
+          try {
+            const parsed = JSON.parse(text);
+            log.debug('fetch ' + method + ' ' + redactUrl(url) + ' → ' + res.status + ' (' + (Date.now() - t0) + ' ms)');
+            return parsed;
+          } catch (e) {
+            throw new ApiError('Réponse invalide du serveur Trello.', res.status);
+          }
+        }
+        if ((res.status === 429 || res.status >= 500) && attempt < RETRY_MAX) {
+          attempt++;
+          const d = retryDelay(res, attempt);
+          log.warn('HTTP ' + res.status + ' — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
+          await sleep(d);
+          continue;
+        }
+        let msg;
+        if (res.status === 401 || res.status === 403) msg = 'Accès refusé par Trello (' + res.status + ') — vérifiez la clé API et le token.';
+        else if (res.status === 404) msg = "Ressource introuvable (404) — vérifiez l'ID du tableau.";
+        else if (res.status === 429) msg = 'Limite de débit Trello atteinte (429) — patientez quelques secondes.';
+        else if (res.status >= 500) msg = 'Erreur serveur Trello (' + res.status + ').';
+        else msg = 'Erreur API (' + res.status + ').';
+        throw new ApiError(msg, res.status);
+      } catch (e) {
+        if (e instanceof ApiError) throw e;
+        if (outer && outer.aborted) throw new CanceledError();
+        // AbortError sans annulation externe = notre timeout → transitoire ;
+        // TypeError = réseau coupé/DNS → transitoire aussi.
+        const transient = (e && (e.name === 'AbortError' || e.name === 'TimeoutError')) || (e instanceof TypeError);
+        if (transient && attempt < RETRY_MAX) {
+          attempt++;
+          const d = retryDelay(null, attempt);
+          log.warn('Réseau/timeout — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
+          await sleep(d);
+          continue;
+        }
+        throw e;
+      } finally {
+        clearTimeout(timer);
+        if (outer) outer.removeEventListener('abort', relay);
+      }
     }
   }
-}
 
-function renderTrends(top) {
-  const members = top || charts._trendMembers || [];
-  if (top) charts._trendMembers = top;
-  const map = byMemberPeriod(allActions, currentGran);
-  const allKeys = new Set();
-  members.forEach(m=>{if(map[m])Object.keys(map[m]).forEach(k=>allKeys.add(k));});
-  const labels = [...allKeys].sort();
-  document.getElementById('leg-trends').innerHTML = members.map((m,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${MEMBER_COLORS[i%MEMBER_COLORS.length]}"></span>${m.split(' ')[0]}</span>`).join('');
-  if (charts.trends) charts.trends.destroy();
-  charts.trends = new Chart(document.getElementById('c-trends'), {
-    type:'line', data:{labels,datasets:members.map((m,i)=>({label:m,data:labels.map(l=>(map[m]||{})[l]||0),borderColor:MEMBER_COLORS[i%MEMBER_COLORS.length],backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:0}))},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'},maxTicksLimit:12,maxRotation:45}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:10,family:'monospace'}},beginAtZero:true}}}
-  });
-}
+  /** URL sans secrets pour le journal. */
+  function redactUrl(u) {
+    return String(u).replace(/([?&])(key|token)=[^&]*/gi, '$1$2=••••');
+  }
 
-function renderTopCards() {
-  const cc = {};
-  allActions.forEach(a=>{if(a.data&&a.data.card&&a.data.card.name){const n=a.data.card.name;cc[n]=(cc[n]||0)+1;}});
-  const top = Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  document.getElementById('c-topcards-wrap').style.height = Math.max(120,top.length*32+40)+'px';
-  if (charts.topcards) charts.topcards.destroy();
-  charts.topcards = new Chart(document.getElementById('c-topcards'), {
-    type:'bar', data:{labels:top.map(t=>t[0].length>22?t[0].slice(0,20)+'…':t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:'#3B8BD4',borderRadius:3,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.1)'},ticks:{color:'#888',font:{size:10,family:'monospace'}}},y:{grid:{display:false},ticks:{color:'#888',font:{size:9,family:'monospace'}}}}}
-  });
-}
+  /**
+   * Charge la carte des membres id → nom (comportement d'origine :
+   * 'Inconnu' quand le créateur n'est pas membre du board).
+   * @returns {Promise<Map<string,string>>}
+   */
+  async function loadMemberMap(key, token, boardId, signal) {
+    const arr = await fetchJSON(buildUrl('/boards/' + encodeURIComponent(boardId) + '/members',
+      { key, token, fields: 'fullName,username' }), { signal });
+    const map = new Map();
+    if (Array.isArray(arr)) {
+      for (const m of arr) {
+        if (m && m.id) {
+          const name = m.fullName || m.username;
+          map.set(m.id, (name == null || name === '') ? 'Inconnu' : name);
+        }
+      }
+    }
+    return map;
+  }
 
-function renderHourly() {
-  const h = Array(24).fill(0);
-  allActions.forEach(a=>{ h[new Date(a.date).getHours()]++; });
-  const mx = Math.max(...h);
-  if (charts.hours) charts.hours.destroy();
-  charts.hours = new Chart(document.getElementById('c-hours'), {
-    type:'bar', data:{labels:Array.from({length:24},(_,i)=>i+'h'),datasets:[{data:h,backgroundColor:h.map(v=>`rgba(239,159,39,${.25+.75*(v/mx)})`),borderRadius:2,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888',font:{size:8,family:'monospace'},maxRotation:0,autoSkip:false}},y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'#888',font:{size:9,family:'monospace'}},beginAtZero:true}}}
-  });
-}
+  /**
+   * Récupère tout l'historique du board par pagination `before` (curseur =
+   * id de la dernière action, exactement comme la v1), avec options :
+   *  • `since`    : borne basse (delta refresh) ;
+   *  • `knownIds` : arrêt anticipé quand une page retombe sur des id déjà vus ;
+   *  • `signal`   : annulation utilisateur.
+   * @param {string} key @param {string} token @param {string} boardId
+   * @param {{signal?:AbortSignal, since?:string|null, knownIds?:Set<string>|null,
+   *           onProgress?:(pct:number,status:string,detail:string)=>void}} [opts]
+   * @returns {Promise<{actions:*[], stoppedAtKnown:boolean, latestIso:string|null}>}
+   */
+  async function fetchAllActions(key, token, boardId, opts) {
+    opts = opts || {};
+    const signal = opts.signal || null;
+    const onProgress = opts.onProgress || setProgress;
+    const memberMap = await loadMemberMap(key, token, boardId, signal);
+    onProgress(15, 'Chargement de l\'historique...', '');
+    /** @type {*[]} */ const actions = [];
+    const seen = new Set();
+    let before = null, page = 0, latestIso = opts.since || null, stoppedAtKnown = false;
+    for (;;) {
+      const params = { key, token, limit: PAGE_LIMIT, filter: 'all', fields: 'type,date,idMemberCreator,data' };
+      if (before) params.before = before;
+      if (opts.since) params.since = opts.since;
+      let batch;
+      try {
+        batch = await fetchJSON(buildUrl('/boards/' + encodeURIComponent(boardId) + '/actions', params), { signal });
+      } catch (e) {
+        // Message d'erreur v1 conservé : « Erreur API page N (statut) ».
+        if (e instanceof ApiError) throw new Error('Erreur API page ' + (page + 1) + ' (' + (e.status || '?') + ')');
+        throw e;
+      }
+      if (!Array.isArray(batch)) throw new ApiError('Réponse inattendue du serveur Trello.', 0);
+      if (!batch.length) break;
+      let hitKnown = false;
+      for (const a of batch) {
+        if (!a || typeof a !== 'object') continue;
+        const id = typeof a.id === 'string' ? a.id : '';
+        if (id && opts.knownIds && opts.knownIds.has(id)) { hitKnown = true; continue; }
+        if (id) { if (seen.has(id)) continue; seen.add(id); }
+        if (a.date && (!latestIso || String(a.date) > latestIso)) latestIso = String(a.date);
+        a._memberName = memberMap.get(a.idMemberCreator) || 'Inconnu';
+        actions.push(a);
+      }
+      page++;
+      onProgress(Math.min(85, 15 + page * 4), 'Chargement...',
+        actions.length.toLocaleString() + ' actions (page ' + page + ')');
+      if (hitKnown && opts.knownIds) { stoppedAtKnown = true; break; }
+      before = batch[batch.length - 1] && batch[batch.length - 1].id;
+      if (!before) break;
+      if (batch.length < PAGE_LIMIT) break;
+      if (page >= MAX_PAGES) { log.warn('Pagination stoppée à ' + MAX_PAGES + ' pages (garde-fou).'); break; }
+      await sleep(PAGE_DELAY_MS);
+    }
+    return { actions, stoppedAtKnown, latestIso };
+  }
 
-checkSaved();
+  /* ════════════════════════════ 6. DATA STORE ═════════════════════════════ */
+
+  /**
+   * Enregistrement interne normalisé (plat, dates pré-parseées).
+   * @typedef {{type:string,date:string,dateMs:number,id:string,memberName:string,cardName:string}} Rec
+   */
+
+  /** @param {string} type @returns {string} groupe sémantique (v1 verbatim) */
+  function classify(type) {
+    const g = TYPE2GROUP.get(type);
+    if (g) return g;
+    return 'Autres';
+  }
+
+  /**
+   * Raw action API → enregistrement normalisé. Renvoie null si la date est
+   * illisible (la v1 aurait produit des NaN propagés partout).
+   * @param {*} a @returns {Rec|null}
+   */
+  function normalizeAction(a) {
+    if (!a || typeof a !== 'object') return null;
+    const date = String(a.date || '');
+    const ms = Date.parse(date);
+    if (!Number.isFinite(ms)) return null;
+    const card = (a.data && a.data.card && a.data.card.name) ? String(a.data.card.name) : '';
+    return {
+      type: String(a.type || ''),
+      date,
+      dateMs: ms,
+      id: typeof a.id === 'string' ? a.id : '',
+      memberName: a._memberName || 'Inconnu',
+      cardName: card
+    };
+  }
+
+  /** Déduplique par id (id absent → conservé tel quel) + filtre les invalides. */
+  function normalizeActions(list) {
+    /** @type {Rec[]} */ const out = [];
+    const ids = new Set();
+    let skipped = 0;
+    for (const a of list || []) {
+      const r = normalizeAction(a);
+      if (!r) { skipped++; continue; }
+      if (r.id) { if (ids.has(r.id)) continue; ids.add(r.id); }
+      out.push(r);
+    }
+    if (skipped) log.warn(skipped + ' action(s) ignorée(s) : date invalide ou structure inattendue.');
+    return out;
+  }
+
+  /**
+   * Format « slim » de persistance (schéma v1 {t,d,m,c} + `i` optionnel).
+   * La dédup/le delta refresh s'appuient sur `i` ; les sauvegardes v1 sans
+   * `i` restent 100 % lisibles (chargées puis rafraîchies en mode complet).
+   * @param {Rec} r
+   */
+  function slimAction(r) {
+    const o = { t: r.type, d: r.date, m: r.memberName, c: r.cardName };
+    if (r.id) o.i = r.id;
+    return o;
+  }
+
+  /**
+   * Slim → raw API (compat v1 : `expandAction` exposait {type,date,_memberName,data.card.name}).
+   * @param {{t:string,d:string,m:string,c:string,i?:string}} s
+   */
+  function expandAction(s) {
+    return { type: s.t, date: s.d, _memberName: s.m, data: s.c ? { card: { name: s.c } } : {} };
+  }
+
+  /** Slim → raw, id conservé pour la dédup (extension interne). */
+  function expandActionKeepId(s) {
+    const r = expandAction(s);
+    if (s.i) r.id = s.i;
+    return r;
+  }
+
+  /** Validation stricte d'un payload de sauvegarde (protection v1 « données corrompues »). */
+  function validPayload(d) {
+    return !!d && typeof d === 'object' && !!d.boardData && typeof d.boardData === 'object'
+      && Array.isArray(d.actions);
+  }
+
+  /* ════════════════════════════ 7. STATE ══════════════════════════════════ */
+
+  /** @type {{[k:string]:*}}} */
+  const state = {
+    /** @type {Rec[]}  actions dans l'ordre de récupération (API : plus récent d'abord — comme v1) */
+    actions: [],
+    /** @type {{name?:string}|null} */ board: null,
+    /** @type {{key:string,token:string,boardId:string}} */ creds: {},
+    keepCreds: true,
+    /** Granularité du timeline (v1 : 'week' par défaut) */
+    currentGran: 'week',
+    /** Membres des tendances (v1 : charts._trendMembers) */
+    trendMembers: [],
+    /** Métrique de la heatmap : 'count' (v1) ou 'share' (nouveau) */
+    heatMetric: 'count',
+    /** @type {{[k:string]:*}} instances Chart vivantes */ charts: {},
+    /** @type {AbortController|null} */ cancel: null,
+    /** Filtres : Set de noms + bornes ms (null = tout, comportement v1) */
+    filter: { members: new Set(), fromMs: null, toMs: null },
+    /** Tri du tableau membres */
+    msort: { k: 'count', dir: -1 },
+    /** Nom complet des labels tronqués du barplot membres (tooltip) */
+    memberFullLabels: [],
+    /** Horodatage de la dernière sauvegarde réussie */
+    savedAtIso: null,
+    /** Dernières stats calculées (export JSON) */
+    lastStats: null,
+    /** Dernière liste filtrée rendue (re-rendus partiels) */
+    lastList: /** @type {Rec[]} */ ([])
+  };
+
+  /** Extraction d'ID de board depuis URL ou ID nu (regex v1 verbatim). */
+  function extractBoardId(input) {
+    const m = String(input).match(/trello\.com\/b\/([a-zA-Z0-9]+)/);
+    return m ? m[1] : String(input).trim();
+  }
+
+  /** Validation défensive de l'id avant de l'insérer dans une URL. */
+  function validBoardId(id) { return /^[0-9a-fA-F]{24}$/.test(id); }
+
+  /** Liste des actions visibles après filtres membres/période (identique à la liste complète si aucun filtre). */
+  function getVisible() {
+    const f = state.filter;
+    const noMembers = f.members.size === 0, noRange = !f.fromMs && !f.toMs;
+    if (noMembers && noRange) return state.actions;
+    return state.actions.filter(a =>
+      (!noMembers && f.members.has(a.memberName)) &&
+      (!f.fromMs || a.dateMs >= f.fromMs) &&
+      (!f.toMs || a.dateMs <= f.toMs)
+    );
+  }
+
+  /* ══════════════════════════ 8. STATS ENGINE ═════════════════════════════ */
+
+  /**
+   * Agrège TOUT en un seul passage sur la liste (v1 : ~6 boucles + tri complet).
+   * Les compteurs d'itération suivent l'ordre brut des actions — ties inclus —
+   * pour que le « jour le + actif » etc. soient déterministes comme en v1.
+   * @param {Rec[]} list
+   */
+  function computeStats(list) {
+    const st = {
+      total: list.length,
+      oldest: Infinity, newest: -Infinity,
+      /** @type {Map<string,number>} */ memberCounts: new Map(),
+      /** @type {Map<string,number>} */ dayCounts: new Map(),
+      /** @type {Map<string,number>} */ typeCounts: new Map(),
+      /** @type {Map<string,number>} */ weekCounts: new Map(),
+      /** @type {Map<string,number>} */ monthCounts: new Map(),
+      /** @type {Map<number,number>} */ dayHour: new Map(),   // clé getDay()*24+hour
+      hours: new Array(24).fill(0),
+      /** @type {Map<string,number>} */ cardCounts: new Map(),
+      /** @type {Map<string,{comments:number,creates:number,cards:Set<string>,days:Set<number>,lastMs:number}>} */
+      memberExtras: new Map(),
+      /** @type {Set<number>} */ dayOrdinals: new Set(),      // jours UTC actifs (global)
+      comments: 0, creates: 0,
+      weekend: 0, weekdays: 0, jour: 0, nuit: 0,
+      heatMax: 0
+    };
+    for (const a of list) {
+      const ms = a.dateMs;
+      if (ms < st.oldest) st.oldest = ms;
+      if (ms > st.newest) st.newest = ms;
+      const d = new Date(ms);
+      const name = a.memberName;
+
+      st.memberCounts.set(name, (st.memberCounts.get(name) || 0) + 1);
+
+      const dayKey = d.toISOString().slice(0, 10);
+      st.dayCounts.set(dayKey, (st.dayCounts.get(dayKey) || 0) + 1);
+
+      const g = classify(a.type);
+      st.typeCounts.set(g, (st.typeCounts.get(g) || 0) + 1);
+
+      const wk = periodKey(d, 'week'); st.weekCounts.set(wk, (st.weekCounts.get(wk) || 0) + 1);
+      const mk = periodKey(d, 'month'); st.monthCounts.set(mk, (st.monthCounts.get(mk) || 0) + 1);
+
+      const dow = d.getDay(), hr = d.getHours();
+      const dh = dow * 24 + hr;
+      const nv = (st.dayHour.get(dh) || 0) + 1;
+      st.dayHour.set(dh, nv);
+      if (nv > st.heatMax) st.heatMax = nv;
+
+      st.hours[hr]++;
+      if (hr >= 6 && hr < 18) st.jour++; else st.nuit++;
+      if (dow === 0 || dow === 6) st.weekend++; else st.weekdays++;
+
+      if (a.type === 'commentCard') st.comments++;
+      if (a.type === 'createCard') st.creates++;
+      if (a.cardName) st.cardCounts.set(a.cardName, (st.cardCounts.get(a.cardName) || 0) + 1);
+
+      let ex = st.memberExtras.get(name);
+      if (!ex) { ex = { comments: 0, creates: 0, cards: new Set(), days: new Set(), lastMs: 0 }; st.memberExtras.set(name, ex); }
+      if (a.type === 'commentCard') ex.comments++;
+      if (a.type === 'createCard') ex.creates++;
+      if (a.cardName) ex.cards.add(a.cardName);
+      const ord = Math.floor(ms / 864e5);
+      ex.days.add(ord);
+      st.dayOrdinals.add(ord);
+      if (ms > ex.lastMs) ex.lastMs = ms;
+    }
+    if (!list.length) { st.oldest = st.newest = Date.now(); }
+    st.spanMs = Math.max(1, st.newest - st.oldest);
+    st.spanDays = st.spanMs / 864e5;
+    st.peakHour = 0;
+    for (let h = 1; h < 24; h++) if (st.hours[h] > st.hours[st.peakHour]) st.peakHour = h;
+    st.longestStreak = longestStreak(st.dayOrdinals);
+    return st;
+  }
+
+  /** Plus longue série de jours consécutifs avec ≥1 action (à partir d'un Set d'ordinaux UTC). */
+  function longestStreak(ordSet) {
+    if (!ordSet.size) return 0;
+    const arr = Array.from(ordSet).sort((a, b) => a - b);
+    let best = 1, run = 1;
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] === arr[i - 1] + 1) { run++; if (run > best) best = run; }
+      else if (arr[i] !== arr[i - 1]) run = 1;
+    }
+    return best;
+  }
+
+  /** Agrégation par période — équivalent v1 `byPeriod` (objet → Map triée). */
+  function byPeriod(actions, gran) {
+    const c = new Map();
+    for (const a of actions) {
+      const d = new Date(a.date);
+      const k = (isNaN(d.getTime())) ? '??' : periodKey(d, gran);
+      c.set(k, (c.get(k) || 0) + 1);
+    }
+    const keys = Array.from(c.keys()).sort();
+    return { labels: keys, data: keys.map(k => c.get(k)) };
+  }
+
+  /** Équivalent v1 `byMemberPeriod` : nom → {clé de période: nombre}. */
+  function byMemberPeriod(actions, gran) {
+    /** @type {Record<string,Record<string,number>>} */
+    const m = {};
+    for (const a of actions) {
+      const name = a._memberName || a.memberName || 'Inconnu';
+      const d = new Date(a.date);
+      const k = (isNaN(d.getTime())) ? '??' : periodKey(d, gran);
+      if (!m[name]) m[name] = {};
+      m[name][k] = (m[name][k] || 0) + 1;
+    }
+    return m;
+  }
+
+  /** Liste ordonnée {labels,data} depuis un Map de compteurs (timeline etc.). */
+  function periodSeries(map) {
+    const keys = Array.from(map.keys()).sort();
+    return { labels: keys, data: keys.map(k => map.get(k)) };
+  }
+
+  /** Convertit un Map memberPeriod en datasets triés (chart types-par-période). */
+  function groupPeriodCounts(list, gran) {
+    /** @type {Map<string,Map<string,number>>} */
+    const byGroup = new Map();
+    for (const a of list) {
+      const g = classify(a.type);
+      const d = new Date(a.date);
+      if (isNaN(d.getTime())) continue;
+      const k = periodKey(d, gran);
+      let m = byGroup.get(g);
+      if (!m) { m = new Map(); byGroup.set(g, m); }
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return byGroup;
+  }
+
+  /* ═══════════════════════════ 9. CHART KIT ════════════════════════════════ */
+
+  const TICK = { color: '#888', family: 'monospace' };
+  const GRID = 'rgba(128,128,128,.08)';
+
+  /**
+   * (Re)construit un graphique : même cycle destroy+new que la v1 — les
+   * datasets changent de taille/labels à chaque rendu, et ce profil de coût
+   * reste négligeable (le coût réel était l'agrégation, voir §8).
+   * @param {string} key  @param {string} canvasId @param {*} config
+   */
+  function chart(key, canvasId, config) {
+    const el = $(canvasId);
+    if (!el) { log.warn('Canvas manquant : ' + canvasId); return null; }
+    const prev = state.charts[key];
+    if (prev) { try { prev.destroy(); } catch (e) { log.debug('destroy ignoré :', e); } }
+    try {
+      state.charts[key] = new Chart(el, config);
+    } catch (e) {
+      log.error('Échec de construction du graphique ' + canvasId + ' :', e);
+      state.charts[key] = null;
+    }
+    return state.charts[key];
+  }
+
+  /** Détruit tout (resetApp v1). */
+  function destroyCharts() {
+    Object.keys(state.charts).forEach(k => {
+      const c = state.charts[k];
+      if (c && c.destroy) { try { c.destroy(); } catch (_) { /* ignore */ } }
+    });
+    state.charts = {};
+  }
+
+  /** Charge Chart.js si le CDN principal a échoué (fallback CDN). */
+  async function ensureChartLib() {
+    if (typeof Chart !== 'undefined') return true;
+    for (const url of CHART_FALLBACK_CDNS) {
+      try {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = url; s.async = false;
+          s.onload = () => res(); s.onerror = () => rej(new Error('script ' + url + ' indisponible'));
+          document.head.appendChild(s);
+        });
+        if (typeof Chart !== 'undefined') { log.info('Chart.js chargé depuis le CDN de secours.'); return true; }
+      } catch (e) { log.warn('Fallback CDN impossible :', e); }
+    }
+    return typeof Chart !== 'undefined';
+  }
+
+  /* ═══════════════════════ 10. VIEWS / UI HELPERS ══════════════════════════ */
+
+  /** Erreur du formulaire de configuration (v1 verbatim). */
+  function showError(msg) {
+    const el = $('err-msg');
+    el.style.display = 'block';
+    el.textContent = msg;
+  }
+
+  /** Progression du chargement — signature et formules v1 exactes. */
+  function setProgress(pct, status, detail) {
+    $('prog-fill').style.width = clamp(pct, 0, 100) + '%';
+    if (status) $('load-status').textContent = status;
+    if (detail !== undefined) $('load-detail').textContent = detail;
+  }
+
+  /** Point + libellé d'état de sauvegarde (v1 verbatim). */
+  function setSaveStatus(st) {
+    const dot = $('save-dot');
+    const lbl = $('save-label');
+    if (st === 'saving') { dot.className = 'save-dot saving'; lbl.textContent = 'Sauvegarde...'; }
+    else if (st === 'saved') { dot.className = 'save-dot'; lbl.textContent = 'Sauvegardé'; }
+    else { dot.className = 'save-dot err'; lbl.textContent = st; }
+  }
+
+  /** Toast éphémère (extension). */
+  let toastTimer = null;
+  function toast(msg, kind) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = ''; }, 3400);
+  }
+
+  /* — Journal overlay — */
+  let overlayOpen = false;
+  function refreshLogDump() {
+    const el = $('log-dump');
+    if (el) el.textContent = log.dump() || '(vide)';
+  }
+  function openLog() { overlayOpen = true; $('log-overlay').classList.add('open'); refreshLogDump(); }
+  function closeLog() { overlayOpen = false; $('log-overlay').classList.remove('open'); }
+
+  /* ══════════════════════ 11. PERSISTANCE / BANNIÈRE ══════════════════════ */
+
+  /**
+   * Sauvegarde le dataset « slim » au schéma v3 (boardData/actions/creds/
+   * savedAt + `i` additif par action). Garde-fou de taille identique à v1
+   * (4,8 Mo → « Trop volumineux (x.xx MB) »).
+   * @returns {Promise<boolean>} true si écriture réussie
+   */
+  async function persistData() {
+    setSaveStatus('saving');
+    const slim = state.actions.map(slimAction);
+    const credsToSave = state.keepCreds
+      ? state.creds
+      : { key: '', token: '', boardId: state.creds.boardId || '' };
+    const savedAt = new Date().toISOString();
+    const payload = JSON.stringify({ boardData: state.board, actions: slim, creds: credsToSave, savedAt });
+    const mb = (payload.length / 1024 / 1024).toFixed(2);
+    if (payload.length > STORAGE_MAX_BYTES) {
+      setSaveStatus('Trop volumineux (' + mb + ' MB)');
+      log.warn('Sauvegarde annulée : payload de ' + mb + ' Mo > ' + (STORAGE_MAX_BYTES / 1024 / 1024).toFixed(2) + ' Mo.');
+      return false;
+    }
+    const ok = await Store.set(SK, payload);
+    setSaveStatus(ok ? 'saved' : 'Erreur sauvegarde');
+    if (ok) { state.savedAtIso = savedAt; log.info('Sauvegarde : ' + slim.length.toLocaleString() + ' actions, ' + mb + ' Mo.'); }
+    return !!ok;
+  }
+
+  /** Lit et valide le payload sauvegardé. @returns {Promise<*|'corrupt'|null>} */
+  async function readPayload() {
+    const result = await Store.get(SK);
+    if (!result || result.value == null) return null;
+    let data;
+    try { data = JSON.parse(result.value); } catch (e) { return 'corrupt'; }
+    if (!validPayload(data)) return 'corrupt';
+    return data;
+  }
+
+  /** Bandeau « session sauvegardée trouvée » (v1 verbatim, format inclus). */
+  async function checkSaved() {
+    const data = await readPayload();
+    if (!data || data === 'corrupt') return;
+    if (!data.actions.length) return;
+    const date = new Date(data.savedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    $('saved-banner-text').textContent =
+      data.boardData.name + ' — ' + data.actions.length.toLocaleString() + ' actions sauvegardées le ' + date;
+    $('saved-banner').style.display = 'flex';
+    if (data.creds) {
+      $('api-key').value = data.creds.key || '';
+      $('api-token').value = data.creds.token || '';
+      $('board-id').value = data.creds.boardId || '';
+      if (data.creds.key || data.creds.token) { $('keep-creds').checked = true; state.keepCreds = true; }
+    }
+  }
+
+  /** Recharge la session sauvegardée (v1) — accepte payload v1 (sans ids) et v3. */
+  async function loadSaved() {
+    const data = await readPayload();
+    if (!data) { showError('Aucune donnée trouvée.'); return; }
+    if (data === 'corrupt') { showError('Données corrompues.'); return; }
+    state.board = data.boardData;
+    state.creds = data.creds || {};
+    state.actions = normalizeActions(data.actions.map(expandActionKeepId));
+    const hasIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
+    log.info('Session restaurée : ' + state.actions.length.toLocaleString() + ' actions' + (hasIds ? '' : ' (format v1 — rafraîchissement delta indisponible)'));
+    // Styles d'affichage exacts de la v1 (le chargement n'est jamais masqué ici : il est déjà caché).
+    $('setup').style.display = 'none';
+    $('dashboard').style.display = 'block';
+    renderDashboard(state.board && state.board.name != null ? state.board.name : undefined);
+    setSaveStatus('saved');
+    toast('Session restaurée (' + state.actions.length.toLocaleString() + ' actions).', 'success');
+  }
+
+  /** Efface la sauvegarde et masque la bannière (v1). */
+  async function clearSaved() {
+    await Store.del(SK);
+    $('saved-banner').style.display = 'none';
+    state.savedAtIso = null;
+    toast('Sauvegarde locale effacée.');
+  }
+
+  /* ═════════════════════ 12. FLUX PRINCIPAUX (analyse) ════════════════════ */
+
+  function newCancel() {
+    const c = new AbortController();
+    state.cancel = c;
+    return c;
+  }
+  function endCancel() { state.cancel = null; }
+
+  /** Pointe l'analyse complète (bouton principal — flux v1 verbatim). */
+  async function startAnalysis() {
+    const key = $('api-key').value.trim();
+    const token = $('api-token').value.trim();
+    const boardInput = $('board-id').value.trim();
+    $('err-msg').style.display = 'none';
+    if (!key || !token || !boardInput) { showError('Veuillez remplir tous les champs.'); return; }
+    state.keepCreds = $('keep-creds').checked;
+    const boardId = extractBoardId(boardInput);
+    if (!validBoardId(boardId)) {
+      showError('Board ID invalide — attendez-vous à 24 caractères hexadécimaux (collez l\'URL complète du tableau).');
+      return;
+    }
+    if (!(await ensureChartLib())) { showError('Impossible de charger la bibliothèque graphique (Chart.js) depuis le CDN.'); return; }
+    state.creds = { key, token, boardId };
+    log.info('Démarrage de l\'analyse du board ' + boardId + '.');
+    $('setup').style.display = 'none';
+    $('loading').style.display = 'block';
+    $('btn-cancel').style.display = 'inline-block';
+    const cancel = newCancel();
+    try {
+      setProgress(5, 'Connexion à Trello...', '');
+      let boardData;
+      try {
+        boardData = await fetchJSON(buildUrl('/boards/' + encodeURIComponent(boardId), { key, token, fields: 'name' }), { signal: cancel.signal });
+      } catch (e) {
+        if (e instanceof ApiError && e.status && !(e instanceof CanceledError)) {
+          throw new Error('Erreur API (' + e.status + ') — vérifiez vos identifiants.');
+        }
+        throw e;
+      }
+      if (!boardData || typeof boardData !== 'object' || boardData.name == null && boardData.id == null) {
+        throw new Error('Réponse inattendue lors du chargement du tableau.');
+      }
+      state.board = boardData;
+      const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal });
+      state.actions = normalizeActions(res.actions);
+      log.info('Analyse terminée : ' + state.actions.length.toLocaleString() + ' actions sur ' + (res.stoppedAtKnown ? 'delta' : 'historique') + ' récupérées.');
+      setProgress(90, 'Sauvegarde...', '');
+      await persistData();
+      setProgress(100, 'Terminé !', state.actions.length.toLocaleString() + ' actions chargées');
+      endCancel();
+      $('loading').style.display = 'none';
+      $('btn-cancel').style.display = 'none';
+      $('dashboard').style.display = 'block';
+      renderDashboard(state.board.name);
+    } catch (e) {
+      endCancel();
+      $('loading').style.display = 'none';
+      $('btn-cancel').style.display = 'none';
+      $('setup').style.display = 'block';
+      if (e instanceof CanceledError) showError('Analyse annulée.');
+      else showError(redactUrl(String((e && e.message) || e)));
+      log.error('Échec de l\'analyse :', e);
+    }
+  }
+
+  /**
+   * Rafraîchissement depuis le dashboard.
+   * @param {boolean} incremental true = delta (since = dernière action connue,
+   *   arrêt à la première page d'actions déjà connues) ; false = rechargement
+   *   complet exactement comme v1 `refreshData`.
+   */
+  async function refreshData(incremental) {
+    const key = state.creds.key, token = state.creds.token, boardId = state.creds.boardId;
+    if (!key || !token || !boardId) { resetApp(); return; }
+    if (!(await ensureChartLib())) { toast('Chart.js indisponible — impossible de réafficher le dashboard.', 'error'); return; }
+    $('dashboard').style.display = 'none';
+    $('loading').style.display = 'block';
+    $('btn-cancel').style.display = 'inline-block';
+    const cancel = newCancel();
+    try {
+      setProgress(5, 'Mise à jour...', '');
+      const haveIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
+      let knownIds = null, since = null;
+      if (incremental) {
+        if (haveIds) {
+          knownIds = new Set(state.actions.map(a => a.id));
+          let maxMs = -Infinity;
+          for (const a of state.actions) if (a.dateMs > maxMs) maxMs = a.dateMs;
+          since = new Date(maxMs).toISOString();
+        } else {
+          log.info('Delta demandé mais sauvegarde au format v1 (sans ids) — repli sur un rechargement complet.');
+          toast('Format de sauvegarde ancien — rechargement complet effectué.');
+        }
+      }
+      const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal, knownIds, since });
+      const fresh = normalizeActions(res.actions);
+      if (knownIds && res.stoppedAtKnown) {
+        const oldIds = new Set(state.actions.map(a => a.id));
+        const additions = fresh.filter(a => !oldIds.has(a.id));
+        state.actions = additions.concat(state.actions);
+        toast(additions.length ? '+' + additions.length.toLocaleString() + ' nouvelle(s) action(s).' : 'Aucune nouvelle action depuis la dernière sauvegarde.', 'success');
+      } else {
+        state.actions = fresh;
+      }
+      log.info('Rafraîchissement (' + (incremental ? 'delta' : 'complet') + ') : ' + state.actions.length.toLocaleString() + ' actions au total.');
+      setProgress(90, 'Sauvegarde...', '');
+      await persistData();
+      setProgress(100, 'Terminé !', '');
+      endCancel();
+      $('loading').style.display = 'none';
+      $('btn-cancel').style.display = 'none';
+      $('dashboard').style.display = 'block';
+      renderDashboard(state.board && state.board.name != null ? state.board.name : undefined);
+    } catch (e) {
+      endCancel();
+      $('loading').style.display = 'none';
+      $('btn-cancel').style.display = 'none';
+      $('dashboard').style.display = 'block';
+      if (e instanceof CanceledError) { setSaveStatus('Actualisation annulée'); toast('Actualisation annulée.'); }
+      else {
+        setSaveStatus('Erreur : ' + redactUrl(String((e && e.message) || e)).slice(0, 30));
+        log.error('Échec du rafraîchissement :', e);
+      }
+      if (state.board) renderDashboard(state.board.name); // réaffiche l'ancien dashboard (v1 le laissait tel quel)
+    }
+  }
+
+  /** Retour à l'écran de configuration (v1 verbatim + nettoyage des filtres). */
+  function resetApp() {
+    state.actions = [];
+    state.board = null;
+    state.filter = { members: new Set(), fromMs: null, toMs: null };
+    state.trendMembers = [];
+    destroyCharts();
+    $('dashboard').style.display = 'none';
+    $('setup').style.display = 'block';
+    checkSaved();
+  }
+
+  /* ══════════════════════════ 13. RENDU DASHBOARD ══════════════════════════ */
+
+  /** Rendu complet du dashboard. Le point d'entrée conserve le contrat v1
+   * `renderDashboard(boardName)` ; les sous-rendus sont isolés pour que
+   * bascule de granularité / filtres ne reconstruisent que ce qui change.
+   * @param {string|undefined} name
+   */
+  function renderDashboard(name) {
+    const t0 = Date.now();
+    const list = getVisible();
+    state.lastList = list;
+    const st = computeStats(list);
+    state.lastStats = st;
+
+    renderHeader(st, name);
+    renderStats(st);
+    renderTimeline(list);
+    renderMembers(st);
+    renderTypes(st);
+    renderHeatmap(st);
+    // v1 : le rendu complet recalcule le top 5 des membres de tendances ;
+    // les toggles de granularité réutilisent ensuite cette sélection.
+    renderTrends(Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1])
+      .slice(0, TREND_MEMBER_COUNT).map(m => m[0]));
+    renderTopCards(st);
+    renderHourly(st);
+    renderExtStats(st);
+    renderTypeTimeline(list);
+    renderWeekend(st);
+    renderMemberTable(st);
+    updateFilterUI();
+    $('dash-footer').textContent =
+      list.length.toLocaleString() + ' action(s) affichée(s) · ' + st.dayCounts.size + ' jour(s) actif(s) · ' +
+      'série la + longue : ' + st.longestStreak + ' j · rendu en ' + (Date.now() - t0) + ' ms · v' + APP_VERSION;
+  }
+
+  /** En-tête : nom + plage de dates (formules v1 exactes, y compris repli `new Date()`). */
+  function renderHeader(st, name) {
+    $('d-name').textContent = name;
+    const oldest = st.total ? new Date(st.oldest) : new Date();
+    const newest = st.total ? new Date(st.newest) : new Date();
+    $('d-range').textContent = fmtDate(oldest) + ' → ' + fmtDate(newest);
+  }
+
+  /** Les 4 cartes de stats d'origine (mêmes valeurs, mêmes strings, mêmes ties). */
+  function renderStats(st) {
+    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const days = Math.max(1, st.spanMs / 864e5);
+    $('s-total').textContent = st.total.toLocaleString();
+    $('s-days').textContent = 'sur ' + Math.round(days) + ' jours';
+    $('s-members').textContent = String(ms.length);
+    $('s-top-member').textContent = ms[0] ? '↑ ' + firstWord(ms[0][0]) : '';
+    $('s-peak-day').textContent = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    $('s-peak-count').textContent = ds[0] ? ds[0][1] + ' actions' : '';
+    $('s-avg').textContent = String(Math.round(st.total / Math.max(1, days / 7)));
+  }
+
+  /** Timeline (ligne remplit la largeur) — config d'origine verbatim. */
+  function renderTimeline(list) {
+    const { labels, data } = byPeriod(list, state.currentGran);
+    chart('timeline', 'c-timeline', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data, borderColor: '#EF9F27', backgroundColor: 'rgba(239,159,39,.12)',
+          fill: true, tension: .35, pointRadius: data.length < 30 ? 3 : 0,
+          borderWidth: 2, pointBackgroundColor: '#EF9F27'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  /** Barres horizontales par membre + légende top 6 (v1 verbatim, +tooltip complet). */
+  function renderMembers(st) {
+    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const mColors = ms.map((_, i) => MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    state.memberFullLabels = ms.map(m => m[0] + ' — ' + m[1].toLocaleString() + ' action(s)');
+    $('c-members-wrap').style.height = Math.max(120, ms.length * 32 + 40) + 'px';
+    $('c-members-wrap').title = ms.map(m => m[0] + ' : ' + m[1]).join('\n');
+    chart('members', 'c-members', {
+      type: 'bar',
+      data: {
+        labels: ms.map(m => truncate(m[0], 18, 16)),
+        datasets: [{ data: ms.map(m => m[1]), backgroundColor: mColors, borderRadius: 3, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: items => state.memberFullLabels[items[0].dataIndex] || items[0].label } }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } },
+          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } }
+        }
+      }
+    });
+    $('leg-members').innerHTML = ms.slice(0, LEGEND_MAX).map((m, i) =>
+      '<span class="leg-item"><span class="leg-dot" style="background:' + mColors[i] + '"></span>' +
+      esc(firstWord(m[0])) + ' — ' + m[1] + '</span>').join('');
+  }
+
+  /** Donut des groupes de types + légende top 6 en % (v1 verbatim). */
+  function renderTypes(st) {
+    const tl = Array.from(st.typeCounts.keys()).sort((a, b) => st.typeCounts.get(b) - st.typeCounts.get(a));
+    chart('types', 'c-types', {
+      type: 'doughnut',
+      data: {
+        labels: tl,
+        datasets: [{
+          data: tl.map(l => st.typeCounts.get(l)),
+          backgroundColor: GROUP_COLORS, borderWidth: 0,
+          hoverBorderWidth: 2, hoverBorderColor: '#fff'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } }
+    });
+    const tot = st.total;
+    $('leg-types').innerHTML = tl.slice(0, LEGEND_MAX).map((l, i) =>
+      '<span class="leg-item"><span class="leg-dot" style="background:' + GROUP_COLORS[i % GROUP_COLORS.length] + '"></span>' +
+      esc(l) + ' ' + Math.round(st.typeCounts.get(l) / tot * 100) + '%</span>').join('');
+  }
+
+  /**
+   * Heatmap Jour × Heure. Métrique « Volume » = v1 exacte (alpha = √(v/mx),
+   * tooltip « Dim 0h: N action(s) »). Métrique « Répartition % » = ajout :
+   * intensité relative à la ligne d'heure (met en évidence les pics nocturnes).
+   */
+  function renderHeatmap(st) {
+    $('hm-hour-labels').innerHTML = '<div></div>' +
+      Array.from({ length: 24 }, (_, h) => '<div class="hm-hour-lbl">' + h + '</div>').join('');
+    const shareMode = state.heatMetric === 'share';
+    /** @type {number[]} */ const hourTotals = new Array(24).fill(0);
+    if (shareMode) {
+      for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) hourTotals[h] += st.dayHour.get(d * 24 + h) || 0;
+    }
+    let html = '';
+    for (let day = 1; day <= 7; day++) {              // Lun → Dim (v1 verbatim)
+      const d = day % 7;
+      html += '<div class="hm-label">' + DAYS[d] + '</div>';
+      for (let h = 0; h < 24; h++) {
+        const v = st.dayHour.get(d * 24 + h) || 0;
+        let bg, tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
+        if (shareMode) {
+          const r = hourTotals[h] ? v / hourTotals[h] : 0;
+          bg = v === 0 ? 'rgba(239,159,39,0)' : r >= .12 ? '#854F0B' : r >= .06 ? '#BA7517' : r >= .02 ? '#EF9F27' : 'rgba(239,159,39,.35)';
+          tip += hourTotals[h] ? ' · ' + Math.round(r * 100) + '% de ' + h + 'h' : '';
+        } else {
+          const alpha = st.heatMax > 0 ? Math.pow(v / st.heatMax, .5) : 0;
+          bg = 'rgba(239,159,39,' + alpha + ')';
+        }
+        html += '<div class="hm-cell" style="background:' + bg + '" data-tip="' + esc(tip) + '"></div>';
+      }
+    }
+    $('hm-grid').innerHTML = html;
+    $('hm-scale').innerHTML = shareMode
+      ? 'part de l\'heure : ' + ['rgba(239,159,39,.35)', '#EF9F27', '#BA7517', '#854F0B']
+        .map(c => '<span class="sw" style="background:' + c + '"></span>').join('') + ' 0% → ≥12%'
+      : 'volume : <span class="sw" style="background:rgba(239,159,39,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(239,159,39,1)"></span>' + st.heatMax + ' actions/case';
+  }
+
+  /**
+   * Tendances top-membres (v1 : membres passés en premier, mémorisés pour les
+   * toggles de granularité — même sémantique que charts._trendMembers).
+   */
+  function renderTrends(top) {
+    if (top) state.trendMembers = top;
+    const members = state.trendMembers || [];
+    const map = byMemberPeriod(state.lastList, state.currentGran);
+    const allKeys = new Set();
+    members.forEach(m => { if (map[m]) Object.keys(map[m]).forEach(k => allKeys.add(k)); });
+    const labels = Array.from(allKeys).sort();
+    $('leg-trends').innerHTML = members.map((m, i) =>
+      '<span class="leg-item"><span class="leg-dot" style="background:' + MEMBER_COLORS[i % MEMBER_COLORS.length] + '"></span>' +
+      esc(firstWord(m)) + '</span>').join('');
+    chart('trends', 'c-trends', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: members.map((m, i) => ({
+          label: m, data: labels.map(l => (map[m] || {})[l] || 0),
+          borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length], backgroundColor: 'transparent',
+          tension: .35, borderWidth: 2, pointRadius: 0
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  /** Top 10 cartes (v1 verbatim, échappement + légende complète en tooltip). */
+  function renderTopCards(st) {
+    const top = Array.from(st.cardCounts.entries())
+      .map(e => ({ name: e[0], count: e[1] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    const full = top.map(t => t.name + ' — ' + t.count);
+    $('c-topcards-wrap').style.height = Math.max(120, top.length * 32 + 40) + 'px';
+    chart('topcards', 'c-topcards', {
+      type: 'bar',
+      data: {
+        labels: top.map(t => truncate(t.name, 22, 20)),
+        datasets: [{ data: top.map(t => t.count), backgroundColor: '#3B8BD4', borderRadius: 3, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: items => full[items[0].dataIndex] || items[0].label } }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } },
+          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 9, family: 'monospace' } } }
+        }
+      }
+    });
+  }
+
+  /** Activité par heure (v1 verbatim — + garde anti-NaN quand mx = 0). */
+  function renderHourly(st) {
+    const h = st.hours;
+    const mx = Math.max(0, ...h);
+    chart('hours', 'c-hours', {
+      type: 'bar',
+      data: {
+        labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
+        datasets: [{ data: h, backgroundColor: h.map(v => 'rgba(239,159,39,' + (mx > 0 ? .25 + .75 * (v / mx) : .25) + ')'), borderRadius: 2, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#888', font: { size: 8, family: 'monospace' }, maxRotation: 0, autoSkip: false } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' } }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  /* — Blocs additifs — */
+
+  function renderExtStats(st) {
+    $('s-comments').textContent = st.comments.toLocaleString();
+    $('s-comments-sub').textContent = st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action';
+    $('s-dayavg').textContent = (st.total / Math.max(1, st.spanDays)).toFixed(1);
+    $('s-dayavg-sub').textContent = 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)';
+    $('s-peak-hour').textContent = st.total ? st.peakHour + 'h' : '—';
+    $('s-peak-hour-sub').textContent = st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '';
+    $('s-weekend').textContent = st.total ? Math.round(st.weekend / st.total * 100) + '%' : '—';
+    $('s-streak').textContent = 'série max : ' + st.longestStreak + ' j · jour/nuit ' + (st.total ? Math.round(st.jour / st.total * 100) : 0) + '/' + (st.total ? Math.round(st.nuit / st.total * 100) : 0);
+  }
+
+  function renderTypeTimeline(list) {
+    const byGroup = groupPeriodCounts(list, state.currentGran);
+    const groups = Object.keys(ACTION_GROUPS).filter(g => byGroup.has(g));
+    const allKeys = new Set();
+    groups.forEach(g => byGroup.get(g).forEach(k => allKeys.add(k)));
+    const labels = Array.from(allKeys).sort();
+    $('leg-typetl').innerHTML = groups.map(g =>
+      '<span class="leg-item"><span class="leg-dot" style="background:' + GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length] + '"></span>' +
+      esc(g) + '</span>').join('');
+    chart('typetl', 'c-typetl', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: groups.map(g => ({
+          label: g,
+          data: labels.map(l => byGroup.get(g).get(l) || 0),
+          borderColor: GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length],
+          backgroundColor: hexA(GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length], .4),
+          fill: true, tension: .25, borderWidth: 1, pointRadius: 0
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          x: { stacked: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { stacked: true, beginAtZero: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } }
+        }
+      }
+    });
+  }
+
+  function renderWeekend(st) {
+    chart('weekend', 'c-weekend', {
+      type: 'doughnut',
+      data: {
+        labels: ['Semaine', 'Week-end'],
+        datasets: [{ data: [st.weekdays, st.weekend], backgroundColor: ['#3B8BD4', '#EF9F27'], borderWidth: 0, hoverBorderWidth: 2, hoverBorderColor: '#fff' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10, family: 'monospace' }, boxWidth: 10 } } } }
+    });
+  }
+
+  /** Tableau détaillé par membre (tri par clic d'en-tête). */
+  function renderMemberTable(st) {
+    const rows = [];
+    for (const [name, count] of st.memberCounts.entries()) {
+      const ex = st.memberExtras.get(name) || { comments: 0, creates: 0, cards: new Set(), days: new Set(), lastMs: 0 };
+      rows.push({ name, count, comments: ex.comments, creates: ex.creates, cards: ex.cards.size, days: ex.days.size, last: ex.lastMs });
+    }
+    const k = state.msort.k, dir = state.msort.dir;
+    rows.sort((a, b) => {
+      const va = k === 'name' ? a.name : a[k], vb = k === 'name' ? b.name : b[k];
+      if (k === 'name') return dir * String(va).localeCompare(String(vb), LS);
+      return dir * (va - vb) || String(a.name).localeCompare(String(b.name), LS);
+    });
+    $$('#mtable th').forEach(th => {
+      const ar = th.querySelector('.ar');
+      if (ar) ar.textContent = th.dataset.k === k ? (dir === 1 ? '▲' : '▼') : '';
+    });
+    $('mt-body').innerHTML = rows.map((r, i) =>
+      '<tr><td><span class="leg-dot" style="display:inline-block;margin-right:6px;background:' +
+      MEMBER_COLORS[i % MEMBER_COLORS.length] + '"></span>' + esc(r.name) + '</td>' +
+      '<td class="num">' + r.count.toLocaleString() + '</td>' +
+      '<td class="num">' + r.comments.toLocaleString() + '</td>' +
+      '<td class="num">' + r.cards.toLocaleString() + '</td>' +
+      '<td class="num">' + r.days + '</td>' +
+      '<td class="num">' + (r.last ? fmtDate(r.last) : '—') + '</td></tr>'
+    ).join('') || '<tr><td colspan="6" style="text-align:center">Aucune donnée pour ce filtre.</td></tr>';
+  }
+
+  /* ══════════════════════════ 14. FILTRES ═════════════════════════════════ */
+
+  function updateFilterUI() {
+    const f = state.filter;
+    const names = Array.from(new Set(state.actions.map(a => a.memberName))).sort((a, b) => a.localeCompare(b, LS));
+    $('fl-datalist').innerHTML = names.map(n => '<option value="' + esc(n) + '"></option>').join('');
+    $('fl-chips').innerHTML = Array.from(f.members).map(n =>
+      '<span class="chip">' + esc(n) + '<button type="button" data-rm="' + esc(n) + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'
+    ).join('');
+    const active = f.members.size > 0 || f.fromMs || f.toMs;
+    $('filters').style.display = state.actions.length ? 'flex' : 'none';
+    $('fl-count').textContent = active
+      ? state.lastList.length.toLocaleString() + ' / ' + state.actions.length.toLocaleString() + ' actions · ' +
+        '⚠ filtres actifs : sauvegarde inchangée (données brutes complètes).'
+      : '';
+  }
+
+  function applyFilterRerender() {
+    const list = getVisible();
+    state.lastList = list;
+    const st = computeStats(list);
+    state.lastStats = st;
+    renderHeader(st, state.board && state.board.name);
+    renderStats(st); renderTimeline(list); renderMembers(st); renderTypes(st);
+    renderHeatmap(st); renderTrends(null); renderTopCards(st); renderHourly(st);
+    renderExtStats(st); renderTypeTimeline(list); renderWeekend(st); renderMemberTable(st);
+    updateFilterUI();
+  }
+
+  function addMemberFilter(raw) {
+    const name = String(raw).trim();
+    if (!name) return;
+    const known = Array.from(new Set(state.actions.map(a => a.memberName)));
+    const hit = known.find(n => n.toLowerCase() === name.toLowerCase()) || known.find(n => n.toLowerCase().includes(name.toLowerCase()));
+    if (!hit) { toast('Membre introuvable : « ' + name + ' »', 'error'); return; }
+    state.filter.members.add(hit);
+    $('fl-search').value = '';
+    applyFilterRerender();
+  }
+
+  function parseFilterDate(id, endOfDay) {
+    const v = $(id).value;
+    if (!v) return null;
+    const ms = Date.parse(v);
+    if (!Number.isFinite(ms)) { toast('Date invalide : ' + v, 'error'); return null; }
+    return endOfDay ? ms + 59999 : ms; // la précision du champ est la minute → fin de minute inclusive
+  }
+
+  function applyDateFilter() {
+    state.filter.fromMs = parseFilterDate('fl-from', false);
+    state.filter.toMs = parseFilterDate('fl-to', true);
+    applyFilterRerender();
+  }
+
+  function clearFilters() {
+    state.filter.members.clear();
+    state.filter.fromMs = state.filter.toMs = null;
+    $('fl-from').value = $('fl-to').value = $('fl-search').value = '';
+    applyFilterRerender();
+  }
+
+  /* ═══════════════════════════ 15. EXPORTS ════════════════════════════════ */
+
+  /** CSV RFC 4180 (pluri-ligne ok, quotes échappées). */
+  function csvCell(v) {
+    const s = String(v == null ? '' : v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  /** Déclenche un téléchargement Blob (ou data-URL) avec nettoyage différé. */
+  function download(content, mime, filename, isDataUrl) {
+    try {
+      const a = document.createElement('a');
+      let url;
+      if (isDataUrl) url = content;
+      else { const blob = new Blob([content], { type: mime }); url = URL.createObjectURL(blob); }
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      if (!isDataUrl) setTimeout(() => URL.revokeObjectURL(url), 4000);
+      log.info('Export écrit : ' + filename);
+    } catch (e) {
+      log.error('Échec de téléchargement :', e);
+      toast('Export impossible dans ce contexte.', 'error');
+    }
+  }
+
+  /** Construit le contenu CSV des actions visibles (séparé du téléchargement : testable, réutilisable). */
+  function buildActionsCsv(list) {
+    const out = ['id,date,type,membre,carte'];
+    for (const a of list) out.push([a.id, a.date, a.type, a.memberName, a.cardName].map(csvCell).join(','));
+    return '\uFEFF' + out.join('\r\n') + '\r\n';
+  }
+
+  /** Construit le paquet JSON d'analyse (stats + données brutes, sans identifiants). */
+  function buildAnalysisJson() {
+    const st = state.lastStats;
+    return JSON.stringify({
+      app: 'trello-board-activity-analyzer', version: APP_VERSION,
+      exportedAt: new Date().toISOString(),
+      board: state.board,
+      filters: { members: Array.from(state.filter.members), from: st ? new Date(st.oldest).toISOString() : null, to: st ? new Date(st.newest).toISOString() : null },
+      stats: st ? {
+        total: st.total, activeMembers: st.memberCounts.size, comments: st.comments,
+        cardCreations: st.creates, weekendShare: st.total ? +(st.weekend / st.total * 100).toFixed(1) : 0,
+        peakHour: st.total ? st.peakHour : null, longestStreakDays: st.longestStreak,
+        byGroup: Object.fromEntries(st.typeCounts),
+        timelineByWeek: periodSeries(st.weekCounts), timelineByMonth: periodSeries(st.monthCounts)
+      } : null,
+      actions: state.actions.map(a => ({ id: a.id, type: a.type, date: a.date, member: a.memberName, card: a.cardName }))
+    }, null, 2);
+  }
+
+  function exportCsv() {
+    const list = getVisible();
+    download(buildActionsCsv(list), 'text/csv;charset=utf-8',
+      fileSlug(state.board && state.board.name) + '-actions-' + todayStamp() + '.csv');
+    toast(list.length.toLocaleString() + ' actions exportées (CSV).', 'success');
+  }
+
+  function exportJson() {
+    download(buildAnalysisJson(), 'application/json',
+      fileSlug(state.board && state.board.name) + '-analyse-' + todayStamp() + '.json');
+    toast('Analyse complète exportée (JSON).', 'success');
+  }
+
+  function exportPng() {
+    const c = state.charts.timeline;
+    if (!c || !c.toBase64Image) { toast('Timeline indisponible pour l\'export PNG.', 'error'); return; }
+    let url;
+    try { url = c.toBase64Image('image/png', '#ffffff'); }
+    catch (e) { log.error('toBase64Image :', e); toast('Export PNG impossible : canvas non exportable.', 'error'); return; }
+    download(url, 'image/png', fileSlug(state.board && state.board.name) + '-timeline-' + todayStamp() + '.png', true);
+    toast('PNG de la timeline exporté.', 'success');
+  }
+
+  /* ═══════════════════════ 16. TOGGLES GRANULARITÉ/HEATMAP ════════════════ */
+
+  /**
+   * Bascule semaine/mois — comportement v1 (timeline + tendances). La v1
+   * retirait la classe active de TOUS les .tgl du document ; les nouveaux
+   * toggles utilisent donc #tl-toggles comme portée, à l'identique pour la
+   * timeline d'origine.
+   */
+  function setGran(gran, btn) {
+    state.currentGran = gran;
+    $$('#tl-toggles .tgl').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    else {
+      const auto = document.querySelector('#tl-toggles .tgl[data-gran="' + gran + '"]');
+      if (auto) auto.classList.add('active');
+    }
+    renderTimeline(state.lastList);
+    renderTrends(null);
+    renderTypeTimeline(state.lastList);
+  }
+
+  function setHeatMetric(m) {
+    state.heatMetric = m;
+    $$('#hm-toggles .tgl-hm').forEach(b => b.classList.toggle('active', b.dataset.hm === m));
+    renderHeatmap(state.lastStats || computeStats(getVisible()));
+  }
+
+  /* ══════════════════════════ 17. CÂBLAGE / INIT ══════════════════════════ */
+
+  let wired = false;
+  function init() {
+    if (wired) return;
+    wired = true;
+    log.info('Application initialisée (v' + APP_VERSION + ').');
+
+    /* — évents de sécurité globale (error boundary) — */
+    window.addEventListener('error', e => {
+      if (e && e.message) { log.error('Uncaught :', e.message); toast('Erreur inattendue — détail dans le journal.', 'error'); }
+    });
+    window.addEventListener('unhandledrejection', e => {
+      const r = e && e.reason;
+      log.error('Rejection non traitée :', (r && r.message) || r);
+      toast('Opération interrompue — détail dans le journal.', 'error');
+    });
+
+    /* — boutons — */
+    $('btn-analyze').addEventListener('click', () => startAnalysis());
+    $('btn-reload-saved').addEventListener('click', () => loadSaved());
+    $('btn-clear-saved').addEventListener('click', () => clearSaved());
+    $('btn-refresh').addEventListener('click', () => refreshData(false));
+    $('btn-refresh-inc').addEventListener('click', () => refreshData(true));
+    $('btn-reset').addEventListener('click', () => resetApp());
+    $('btn-cancel').addEventListener('click', () => {
+      if (state.cancel) { state.cancel.abort(); log.info('Annulation demandée par l\'utilisateur.'); }
+    });
+    $$('#setup input').forEach(inp => inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); startAnalysis(); }
+    }));
+
+    /* — export — */
+    const menu = $('export-menu');
+    $('btn-export').addEventListener('click', e => {
+      e.stopPropagation();
+      const open = menu.classList.toggle('open');
+      $('btn-export').setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); });
+    menu.addEventListener('click', e => e.stopPropagation());
+    $('exp-csv').addEventListener('click', () => { menu.classList.remove('open'); exportCsv(); });
+    $('exp-json').addEventListener('click', () => { menu.classList.remove('open'); exportJson(); });
+    $('exp-png').addEventListener('click', () => { menu.classList.remove('open'); exportPng(); });
+
+    /* — journal — */
+    $('btn-log').addEventListener('click', openLog);
+    $('btn-log-close').addEventListener('click', closeLog);
+    $('btn-log-clear').addEventListener('click', () => { log.clear(); });
+    $('btn-log-copy').addEventListener('click', async () => {
+      const text = log.dump();
+      try { await navigator.clipboard.writeText(text); toast('Journal copié.', 'success'); }
+      catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); toast('Journal copié.', 'success'); }
+        catch (_) { toast('Copie impossible — sélectionnez le texte manuellement.', 'error'); }
+        ta.remove();
+      }
+    });
+    $('log-overlay').addEventListener('click', e => { if (e.target === $('log-overlay')) closeLog(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLog(); menu.classList.remove('open'); } });
+
+    /* — toggles — */
+    $$('#tl-toggles .tgl').forEach(b => b.addEventListener('click', () => setGran(b.dataset.gran, b)));
+    $$('#hm-toggles .tgl-hm').forEach(b => b.addEventListener('click', () => setHeatMetric(b.dataset.hm)));
+
+    /* — filtres — */
+    $('fl-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMemberFilter(e.target.value); } });
+    $('fl-chips').addEventListener('click', e => {
+      const rm = e.target.closest ? e.target.closest('[data-rm]') : null;
+      if (rm) { state.filter.members.delete(rm.dataset.rm); applyFilterRerender(); }
+    });
+    $('fl-from').addEventListener('change', applyDateFilter);
+    $('fl-to').addEventListener('change', applyDateFilter);
+    $('fl-clear').addEventListener('click', clearFilters);
+
+    /* — tri du tableau membres — */
+    $$('#mtable th').forEach(th => th.addEventListener('click', () => {
+      const k = th.dataset.k;
+      if (state.msort.k === k) state.msort.dir = -state.msort.dir;
+      else state.msort = { k, dir: k === 'name' ? 1 : -1 };
+      renderMemberTable(state.lastStats || computeStats(getVisible()));
+    }));
+
+    /* — case « conserver les identifiants » — */
+    $('keep-creds').addEventListener('change', e => { state.keepCreds = e.target.checked; });
+
+    /* — état initial (v1 : checkSaved() en pied de script) — */
+    checkSaved();
+    if (window.__chartCdnFailed) ensureChartLib().then(ok => {
+      if (!ok) showError('Impossible de charger la bibliothèque graphique (Chart.js) — vérifiez votre connexion.');
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  /* ═════════════════════ 18. API PUBLIQUE (rétrocompat v1) ════════════════ */
+
+  /**
+   * Les fonctions globales de la v1 étaient branchées sur des onclick HTML.
+   * Le câblage est maintenant interne, mais ces entrées restent exposées
+   * (window.tba.* + alias globals non conflictuels) pour la console, les
+   * tests, et tout embeddeur qui appelait p. ex. window.startAnalysis().
+   */
+  const API = {
+    APP_VERSION, SK,
+    extractBoardId, classify, byPeriod, byMemberPeriod, slimAction, expandAction,
+    startAnalysis, refreshData, loadSaved, clearSaved, resetApp,
+    setGran, renderDashboard, setProgress, setSaveStatus,
+    persistData, checkSaved, showError,
+    computeStats, getVisible,
+    buildActionsCsv, buildAnalysisJson, validPayload, normalizeAction,
+    state
+  };
+  window.tba = API;
+  Object.keys(API).forEach(k => { if (!(k in window)) { try { window[k] = API[k]; } catch (_) { /* lecture seule */ } } });
+})();
 </script>
+</body>
+</html>
