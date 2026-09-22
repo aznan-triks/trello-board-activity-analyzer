@@ -1,0 +1,15 @@
+{
+  "name": "trello-board-activity-analyzer",
+  "version": "6.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "serve": "python3 -m http.server 8080 --bind 0.0.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "@axe-core/playwright": "4.10.2",
+    "chart.js": "4.4.1"
+  }
+}
