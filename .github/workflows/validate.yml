@@ -1,0 +1,37 @@
+name: Validation UI et fonctionnelle
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'URL du site publié à tester (vide = serveur local)'
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+jobs:
+  browser-tests:
+    runs-on: ubuntu-24.04
+    env:
+      BASE_URL: ${{ inputs.base_url || '' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-navigateur
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="tba-native">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Analyse complète de l'historique d'un tableau Trello — modifications, membres, tendances. 100 % local, aucune donnée envoyée ailleurs qu'à l'API Trello.">
-<title>Trello Board Activity Analyzer</title>
+<title>Trello Analyzer — Votre activité, en perspective</title>
 <style id="tba-style">
   /* ════════════════════════════════════════════════════════════════════════
      1. Styles d'origine (conservés verbatim — aucune règle ne change)
@@ -119,7 +119,7 @@
      ════════════════════════════════════════════════════════════════════════ */
   /* Palette locale : injectée par JS uniquement si l'hôte ne fournit pas les
      jetons CSS (ou si l'utilisateur force un thème) — zéro impact sinon. */
-  html.tba-native { --color-background-primary: #f2f4f8; --color-background-secondary: #ffffff; --color-background-success: #e9f7f1; --color-background-danger: #fdeeee; --color-text-primary: #172b4d; --color-text-secondary: #5e6c84; --color-text-tertiary: #7a869a; --color-text-success: #216e4e; --color-text-danger: #ae2e24; --color-border-tertiary: #dfe1e6; --color-border-success: #9fe3c8; --color-border-danger: #f5a8a3; --color-accent: #0c66e4; --color-accent-hover: #0747a6; --color-accent-solid: #0c66e4; --color-on-accent: #ffffff; --border-radius-md: 8px; --border-radius-lg: 14px; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color-scheme: light; }
+  html.tba-native { --color-background-primary: #f2f4f8; --color-background-secondary: #ffffff; --color-background-success: #e9f7f1; --color-background-danger: #fdeeee; --color-text-primary: #172b4d; --color-text-secondary: #5e6c84; --color-text-tertiary: #7a869a; --color-text-success: #216e4e; --color-text-danger: #ae2e24; --color-border-tertiary: #dfe1e6; --color-border-success: #9fe3c8; --color-border-danger: #f5a8a3; --color-accent: #0c66e4; --color-accent-hover: #0747a6; --color-accent-solid: #0c66e4; --color-on-accent: #ffffff; --border-radius-md: 8px; --border-radius-lg: 14px; --font-mono: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif; color-scheme: light; }
   html.tba-native body { background: var(--color-background-primary); color: var(--color-text-primary); margin: 0 auto; max-width: 980px; padding: 0 12px; }
   html.tba-native[data-tba-theme="dark"] { --color-background-primary: #0f1319; --color-background-secondary: #171c24; --color-background-success: #0f2e22; --color-background-danger: #3a1d1c; --color-text-primary: #e8edf4; --color-text-secondary: #a6b1c2; --color-text-tertiary: #748095; --color-text-success: #6ddba4; --color-text-danger: #f88b84; --color-border-tertiary: #2a313d; --color-border-success: #2f6b55; --color-border-danger: #7d3733; --color-accent: #579dff; --color-accent-hover: #0747a6; --color-accent-solid: #0c66e4; --color-on-accent: #ffffff; color-scheme: dark; }
   html.tba-native[data-tba-theme="dark"] body { background: var(--color-background-primary); color: var(--color-text-primary); }
@@ -149,15 +149,198 @@
   .report-page img.chart-snap { width: 100%; display: block; background: #fff; border-radius: 4px; }
   @media (prefers-reduced-motion: reduce) { #loading .spinner, .save-dot.saving { animation: none !important; } }
   @media print { .foot-tools, #kbd-overlay, #export-banner, .report-actions { display: none !important; } }
+
+  /* v6 — Une interface analytique lumineuse. Les styles restent embarqués
+     pour conserver les rapports HTML autonomes, sans police distante. */
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html.tba-native {
+    --color-background-primary: #f6f7fb; --color-background-secondary: #fff;
+    --color-text-primary: #22243d; --color-text-secondary: #575d77; --color-text-tertiary: #656b82;
+    --color-border-tertiary: #e3e5f0; --color-accent: #6650d8;
+    --color-accent-solid: #6650d8; --color-accent-hover: #5140b5;
+    --border-radius-md: 12px; --border-radius-lg: 24px;
+    --soft-purple: #eeeafa; --soft-mint: #e3f5ef; --soft-coral: #fff0e8; --soft-blue: #e9efff;
+    --lift-shadow: 0 12px 32px #3534670d;
+  }
+  html.tba-native[data-tba-theme="dark"] {
+    --color-background-primary: #151827; --color-background-secondary: #202438;
+    --color-text-primary: #f0effb; --color-text-secondary: #c1c3d9; --color-text-tertiary: #a6abc5;
+    --color-border-tertiary: #363b55; --color-accent: #b6a6ff;
+    --color-accent-solid: #6b50c7; --color-accent-hover: #6850cf;
+    --soft-purple: #342d53; --soft-mint: #213f3c; --soft-coral: #49352f; --soft-blue: #293653;
+    --lift-shadow: 0 12px 32px #0002;
+  }
+  html.tba-native body, html.tba-native[data-tba-theme="dark"] body {
+    max-width: 1280px; padding: 0 40px; font-family: var(--font-mono); line-height: 1.5;
+    background: radial-gradient(ellipse at 82% 8%, #8873ec0c, transparent 45%), var(--color-background-primary);
+  }
+  #tapp { padding: 0 0 28px; }
+  button, input, a { -webkit-tap-highlight-color: transparent; }
+  button { transition: background .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s; }
+  button:not(:disabled):active { transform: scale(.97); }
+  button:disabled { opacity: .6; cursor: wait; }
+  a { color: var(--color-accent); text-underline-offset: 4px; transition: color .2s; }
+  a:hover { color: var(--color-text-primary); }
+  :is(button,input,a,[tabindex]):focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
+  .skip-link { position: absolute; top: -100px; left: 20px; z-index: 150; padding: 12px; background: var(--color-background-secondary); border-radius: 10px; }
+  .skip-link:focus { top: 12px; }
+  .app-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 96px; border-bottom: 1px solid var(--color-border-tertiary); margin-bottom: 44px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark { width: 42px; height: 42px; background: var(--color-accent-solid); border-radius: 13px; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 5px 12px #6650d822; }
+  .brand-mark i { width: 5px; border-radius: 3px; background: white; height: 15px; }
+  .brand-mark i:nth-child(2) { height: 24px; } .brand-mark i:nth-child(3) { height: 19px; }
+  .brand-name { font-size: 18px; font-weight: 750; letter-spacing: -.5px; }
+  .brand-sub { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1.7px; color: var(--color-text-tertiary); }
+  .header-tools { display: flex; align-items: center; gap: 20px; }
+  .privacy-pill { font-size: 12px; color: var(--color-text-secondary); display: inline-flex; align-items: center; gap: 8px; }
+  .privacy-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #299b80; box-shadow: 0 0 0 4px #299b8012; }
+  .header-tools .dash-btn { background: var(--color-background-secondary); }
+  .setup-layout { display: grid; grid-template-columns: 1.08fr 1fr; gap: 64px; align-items: start; }
+  .hero { padding-top: 12px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 700; color: var(--color-accent); }
+  .eyebrow::before { content: ''; width: 18px; height: 2px; background: currentColor; }
+  .hero h1 { font-size: clamp(36px, 4.3vw, 55px); line-height: 1.12; letter-spacing: -2.2px; font-weight: 750; margin: 22px 0 20px; }
+  .hero h1 span { color: var(--color-accent); }
+  .hero-copy { max-width: 450px; font-size: 15px; line-height: 1.8; color: var(--color-text-secondary); margin: 0 0 24px; }
+  .demo-btn { display: inline-flex; align-items: center; gap: 12px; border: 0; padding: 0 0 8px; background: transparent; color: var(--color-accent); font-size: 14px; font-weight: 650; cursor: pointer; border-bottom: 1px solid var(--color-accent); }
+  .demo-btn:hover { gap: 20px; transition: gap .2s; }
+  .preview-card { margin-top: 30px; max-width: 475px; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: 18px; padding: 20px 22px 14px; box-shadow: var(--lift-shadow); transform: rotate(-1.5deg); transition: transform .35s, box-shadow .35s; }
+  .preview-card:hover { transform: rotate(0); box-shadow: 0 16px 32px #6650d81a; }
+  .preview-top { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); }
+  .preview-tag { font-size: 10px; padding: 4px 8px; border-radius: 6px; background: var(--soft-mint); color: var(--color-text-success); }
+  .preview-number { font-size: 28px; font-weight: 750; letter-spacing: -1px; margin-top: 8px; }
+  .preview-number small { font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--color-text-tertiary); }
+  .preview-chart { width: 100%; height: 86px; display: block; overflow: visible; }
+  .preview-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-tertiary); }
+  .setup-card { max-width: none; margin: 0; padding: 30px; border: 1px solid var(--color-border-tertiary); border-radius: 24px; }
+  html.tba-native .setup-card { box-shadow: var(--lift-shadow); }
+  .setup-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .connect-icon { flex: 0 0 42px; height: 42px; display: grid; place-items: center; background: var(--soft-purple); color: var(--color-accent); border-radius: 12px; }
+  .setup-card h2 { font-size: 21px; font-weight: 700; letter-spacing: -.5px; }
+  .setup-card p { font-size: 12px; line-height: 1.65; margin: 4px 0 0; }
+  .field-group { gap: 18px; margin-bottom: 20px; }
+  .field-group label { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 12px; color: var(--color-text-primary); }
+  .field-row { gap: 7px; }
+  .field-row input { width: 100%; min-width: 0; height: 46px; border: 1px solid var(--color-border-tertiary); border-radius: 10px; padding: 0 13px; background: var(--color-background-primary); color: var(--color-text-primary); transition: border .2s, box-shadow .2s, background .2s; }
+  .field-row input::placeholder { color: var(--color-text-tertiary); opacity: 1; }
+  .field-row input:hover { border-color: var(--color-accent); }
+  .field-row input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--soft-purple); background: var(--color-background-secondary); }
+  .field-row input[aria-invalid="true"] { border-color: var(--color-text-danger); }
+  .hint { font-size: 11px; }
+  .keep-creds { align-items: flex-start; line-height: 1.6; font-size: 11px; margin-bottom: 20px; gap: 8px; }
+  .keep-creds input { width: 15px; height: 15px; flex-shrink: 0; margin: 2px 0 0; }
+  .analyze-btn { min-height: 48px; font-size: 13px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 18px; box-shadow: 0 6px 14px #6650d824; }
+  .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px #6650d833; }
+  .setup-card .app-footer { margin: 15px 0 0; padding: 0; font-size: 10px; }
+  .error-msg { margin: 0 0 14px; border: 1px solid var(--color-border-danger); animation: enter .25s ease; }
+  .saved-notice { line-height: 1.5; }
+  .feature-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; padding-top: 36px; margin-top: 42px; border-top: 1px solid var(--color-border-tertiary); }
+  .feature { display: flex; gap: 14px; padding: 8px 0; }
+  .feature-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: var(--soft-purple); color: var(--color-accent); transition: transform .25s; }
+  .feature:nth-child(2) .feature-icon { background: var(--soft-mint); color: var(--color-text-success); }
+  .feature:nth-child(3) .feature-icon { background: var(--soft-coral); color: #bc582c; }
+  .feature:hover .feature-icon { transform: translateY(-4px) rotate(-5deg); }
+  .feature h3 { font-size: 13px; margin: 0 0 5px; font-weight: 650; }
+  .feature p { font-size: 11px; margin: 0; color: var(--color-text-secondary); line-height: 1.7; }
+  .site-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 36px; padding-top: 20px; color: var(--color-text-tertiary); font-size: 10px; }
+  .site-footer a { color: inherit; }
+  #dashboard, #loading { animation: enter .4s ease both; }
+  #loading { padding: 90px 20px; min-height: 460px; }
+  #loading .spinner { width: 48px; height: 48px; border-width: 3px; }
+  #loading p { font-size: 14px; }
+  #loading .prog-bar { height: 6px; border-radius: 8px; overflow: hidden; }
+  .dash-header { align-items: center; gap: 10px 18px; margin-bottom: 24px; }
+  .board-name { font-size: 27px; font-weight: 750; letter-spacing: -.8px; overflow-wrap: anywhere; }
+  .date-range { font-size: 12px; }
+  .dash-actions { width: 100%; margin: 4px 0 0; gap: 8px; }
+  .dash-actions .save-status { margin-right: auto; }
+  .dash-btn, .cancel-btn { min-height: 34px; border-width: 1px; padding: 7px 11px; font-size: 11px; background: var(--color-background-secondary); }
+  .dash-btn:hover, .cancel-btn:hover { border-color: var(--color-accent); color: var(--color-accent); transform: translateY(-2px); box-shadow: var(--lift-shadow); }
+  #btn-export { background: var(--color-accent-solid); border-color: var(--color-accent-solid); color: #fff; }
+  .filters { padding: 16px; gap: 10px; margin-bottom: 20px; border: 1px solid var(--color-border-tertiary); }
+  .filters input[type=search], .filters input[type=datetime-local] { min-height: 34px; border-radius: 8px; padding: 6px 10px; }
+  .filters label { font-size: 10px; }
+  .chip { padding: 5px 9px; animation: enter .2s ease both; }
+  .stat-row { gap: 16px; margin-bottom: 22px; }
+  .stat-card { position: relative; padding: 22px; border: 1px solid var(--color-border-tertiary); overflow: hidden; transition: transform .25s, box-shadow .25s; }
+  .stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #8872e5; }
+  .stat-card:nth-child(2)::before { background: #37b89d; } .stat-card:nth-child(3)::before { background: #ed986e; } .stat-card:nth-child(4)::before { background: #649ae8; }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: var(--lift-shadow); }
+  .stat-label { font-size: 10px; letter-spacing: .7px; margin-bottom: 12px; }
+  .stat-val { font-size: 30px; font-weight: 750; letter-spacing: -1px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .stat-sub { font-size: 11px; margin-top: 7px; overflow-wrap: anywhere; }
+  .stat-row.ext .stat-val { font-size: 24px; }
+  .chart-card { padding: 24px; margin-bottom: 18px; border: 1px solid var(--color-border-tertiary); border-radius: 16px; }
+  .chart-card h3 { font-size: 14px; text-transform: none; letter-spacing: -.2px; font-weight: 650; color: var(--color-text-primary); margin-bottom: 18px; }
+  .chart-row { gap: 18px; margin-bottom: 0; }
+  .chart-row > * { min-width: 0; }
+  .toggle-group { background: var(--color-background-primary); border-radius: 9px; padding: 4px; width: fit-content; margin-bottom: 18px; }
+  .tgl, .tgl-hm { padding: 6px 12px; font-size: 11px; border: 0; border-radius: 6px; }
+  .tgl:hover, .tgl-hm:hover { background: var(--soft-purple); color: var(--color-accent); }
+  .tgl.active, .tgl-hm.active { background: var(--color-accent-solid); color: #fff; box-shadow: 0 2px 6px #6650d833; }
+  .hm-cell { border-radius: 4px; transition: transform .15s, filter .15s; }
+  .hm-cell:hover { transform: scale(1.15); filter: brightness(1.1); z-index: 2; }
+  .hm-scale { margin-top: 12px; }
+  .mtable { font-size: 12px; } .mtable th, .mtable td { padding: 12px; }
+  .mtable th { font-size: 10px; } .mtable td { transition: background .2s; }
+  .menu-pop { padding: 8px; border-radius: 14px; box-shadow: 0 12px 40px #22243d26; max-width: calc(100vw - 40px); }
+  .menu-pop.open { animation: enter .18s ease both; }
+  .menu-pop button { font-size: 12px; padding: 9px 12px; border-radius: 7px; }
+  .menu-pop button:hover { background: var(--soft-purple); color: var(--color-accent); }
+  #kbd-overlay, #log-overlay { backdrop-filter: blur(6px); background: #161a3655; padding: 16px; }
+  #kbd-panel, #log-panel { animation: enter .22s ease both; box-shadow: 0 24px 80px #0003; }
+  #kbd-panel { padding: 24px; } #kbd-panel td { padding: 9px 6px; }
+  #toast { padding: 13px 20px; border-radius: 12px; box-shadow: var(--lift-shadow); font-size: 13px; }
+  .demo-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--soft-purple); border: 1px solid var(--color-border-tertiary); color: var(--color-accent); border-radius: 12px; font-size: 12px; margin-bottom: 22px; }
+  [hidden] { display: none !important; }
+  @keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 1000px) { .setup-layout { gap: 30px; } .hero h1 { font-size: 43px; } .setup-card { padding: 24px; } .feature-row { gap: 18px; } }
+  @media (max-width: 760px) {
+    html.tba-native body { padding: 0 22px; } .app-header { min-height: 80px; margin-bottom: 28px; }
+    .header-tools { gap: 8px; } .header-tools .privacy-pill { display: none; }
+    .setup-layout { grid-template-columns: 1fr; gap: 32px; } .hero { padding: 0; }
+    .hero h1 { font-size: 43px; } .hero-copy { max-width: 100%; }
+    .preview-card { display: none; } .feature-row { grid-template-columns: 1fr; gap: 12px; margin-top: 30px; padding-top: 22px; }
+    .chart-row { grid-template-columns: 1fr; } .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .stat-card { padding: 18px; } .chart-card { padding: 18px; } .site-footer { flex-wrap: wrap; }
+    .dash-actions .save-status { width: 100%; } .filters input { max-width: 100%; }
+    .dash-actions { position: relative; } .menu { position: static; } .menu-pop { left: 0; right: auto; top: calc(100% + 8px); max-height: 65vh; overflow-y: auto; }
+    .demo-notice { flex-wrap: wrap; } .brand-name { font-size: 16px; }
+  }
+  @media (max-width: 380px) { html.tba-native body { padding: 0 14px; } .brand-sub { letter-spacing: 1px; } .brand-mark { width: 34px; height: 36px; } .header-tools .dash-btn { padding: 7px; font-size: 10px; } .hero h1 { font-size: 37px; } .setup-card { padding: 20px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+  @media print { .app-header, .site-footer, .skip-link, .demo-notice { display: none !important; } html.tba-native body { max-width: none; padding: 0; background: white; } .stat-card, .chart-card { box-shadow: none !important; transform: none !important; } }
+
 </style>
 </head>
 <body>
 <noscript><p style="text-align:center;font-size:12px;">Cette application nécessite JavaScript pour interroger l'API Trello.</p></noscript>
 <div id="tapp">
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><span class="brand-name">Trello Analyzer<span style="color:var(--color-accent)">.</span></span><span class="brand-sub">Board activity insights</span></div></div>
+    <div class="header-tools"><span class="privacy-pill">Vos données restent chez vous</span><button class="dash-btn" id="btn-theme-top" title="Changer le thème d’affichage">☀ Thème : auto</button></div>
+  </header>
+  <main id="main-content" tabindex="-1">
+
   <div id="setup">
+    <div class="setup-layout">
+      <section class="hero" aria-labelledby="hero-title">
+        <span class="eyebrow">Moins de bruit, plus de clarté</span>
+        <h1 id="hero-title">Votre activité Trello.<br><span>Une nouvelle<br>perspective.</span></h1>
+        <p class="hero-copy">Transformez l’historique de votre tableau en insights visuels. Comprenez les contributions, repérez les tendances et révélez le rythme de votre équipe.</p>
+        <button class="demo-btn" id="btn-demo">Explorer la démonstration <span aria-hidden="true">↗</span></button>
+        <div class="preview-card" role="img" aria-label="Aperçu illustratif : graphique d’activité hebdomadaire, 1 284 actions. Données fictives.">
+          <div class="preview-top"><span>Le pouls de votre équipe</span><span class="preview-tag">Aperçu fictif</span></div>
+          <div class="preview-number">1 284 <small>actions, une vision d’ensemble</small></div>
+          <svg class="preview-chart" viewBox="0 0 430 90" fill="none" aria-hidden="true"><defs><linearGradient id="preview-fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8872e5" stop-opacity=".22"/><stop offset="1" stop-color="#8872e5" stop-opacity="0"/></linearGradient></defs><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3 V90 H0Z" fill="url(#preview-fill)"/><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3" stroke="#8872e5" stroke-width="3" stroke-linecap="round"/></svg>
+          <div class="preview-axis"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
+        </div>
+      </section>
+
     <div class="setup-card">
-      <h2>Trello Board Analyzer</h2>
-      <p>Analyse complète de l'historique d'un tableau — toutes les modifications, membres, tendances.</p>
+      <div class="setup-heading"><span class="connect-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 8v8M16 8v5" stroke-linecap="round"/></svg></span><div><h2>Connectez votre tableau</h2><p>Quelques informations. Toute votre activité.</p></div></div>
       <div id="saved-banner" style="display:none" class="saved-notice">
         <span id="saved-banner-text">—</span>
         <div style="display:flex;gap:6px;flex-shrink:0">
@@ -167,27 +350,33 @@
       </div>
       <div class="field-group">
         <div class="field-row">
-          <label for="api-key">API Key</label>
+          <label for="api-key">Clé API Trello</label>
           <input type="text" id="api-key" placeholder="votre clé API Trello" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
-          <span class="hint">→ <a href="https://trello.com/app-key" target="_blank" rel="noopener noreferrer" style="color:var(--color-accent, #0c66e4);">trello.com/app-key</a></span>
+          <span class="hint"><a href="https://trello.com/app-key" target="_blank" rel="noopener noreferrer" style="color:var(--color-accent, #0c66e4);">Obtenir ma clé API ↗</a></span>
         </div>
         <div class="field-row">
-          <label for="api-token">Token</label>
+          <label for="api-token">Jeton d’autorisation</label>
           <input type="password" id="api-token" placeholder="votre token d'autorisation" autocomplete="off" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
         </div>
         <div class="field-row">
-          <label for="board-id">Board ID ou URL</label>
+          <label for="board-id">Lien ou identifiant du tableau</label>
           <input type="text" id="board-id" placeholder="https://trello.com/b/xxxxxxxx/... ou ID" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font-mono);font-size:12px;">
         </div>
       </div>
       <label class="keep-creds" for="keep-creds">
-        <input type="checkbox" id="keep-creds" checked>
-        <span>Conserver les identifiants dans la sauvegarde locale (nécessaire pour « Mettre à jour »)</span>
+        <input type="checkbox" id="keep-creds">
+        <span>Mémoriser mes identifiants sur cet appareil pour actualiser l’analyse. À éviter sur un appareil partagé.</span>
       </label>
       <div class="error-msg" id="err-msg" role="alert"></div>
-      <button class="analyze-btn" id="btn-analyze">Analyser tout le tableau →</button>
-      <p class="app-footer">Exécution 100 % locale : seules vos clés sont envoyées, directement à l'API Trello (aucun intermédiaire).</p>
+      <button class="analyze-btn" id="btn-analyze">Analyser mon tableau <span aria-hidden="true">→</span></button>
+      <p class="app-footer">Analyse locale et connexion directe à Trello.<br>Aucun identifiant ne transite par nos serveurs.</p>
     </div>
+    </div>
+    <section class="feature-row" aria-label="Les points forts">
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, tendances et heatmap pour<br>comprendre ce qui fait avancer vos projets.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3>Privé, par conception</h3><p>Vos analyses restent dans votre navigateur.<br>Pas de compte supplémentaire à créer.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Des insights à partager</h3><p>Exportez en PDF, Excel ou HTML interactif.<br>Vos rapports vous suivent, même hors ligne.</p></div></article>
+    </section>
   </div>
 
   <div id="loading" role="status">
@@ -199,6 +388,7 @@
   </div>
 
   <div id="dashboard">
+    <div class="demo-notice" id="demo-notice" hidden><span><strong>Mode découverte</strong> · Données fictives, aucune connexion à Trello.</span><button class="dash-btn" id="btn-demo-exit">Connecter mon tableau →</button></div>
     <div class="dash-header">
       <span class="board-name" id="d-name">—</span>
       <span class="date-range" id="d-range">—</span>
@@ -336,6 +526,8 @@
       </span>
     </div>
   </div>
+  </main>
+  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v6.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
 </div>
 
 <div id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
@@ -381,10 +573,10 @@
 <!-- Bibliothèque de graphiques : URL d'origine conservée ; un plan de
      secours jsDelivr/unpkg est tenté automatiquement par l'application si
      ce CDN est injoignable (voir ensureChartLib). -->
-<script id="tba-chartjs-bundle" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
+<script id="tba-chartjs-bundle" src="./vendor/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRELLO BOARD ACTIVITY ANALYZER — v5.1.0
+   TRELLO BOARD ACTIVITY ANALYZER — v6.0.0
    Analyse d'historique de tableau Trello, 100 % côté client.
 
    Architecture (le fichier reste autonome : aucun build, aucun module)
@@ -445,7 +637,7 @@
   /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
 
   /** Identifiants/version applicative (exposée dans l'export JSON). */
-  const APP_VERSION = '5.1.0';
+  const APP_VERSION = '6.0.0';
 
   /** Endpoint de base de l'API REST Trello v1. */
   const TRELLO_API = 'https://api.trello.com/1';
@@ -516,6 +708,7 @@
 
   /** CDN de secours si cdnjs est injoignable. */
   const CHART_FALLBACK_CDNS = [
+    './vendor/chart.umd.js',
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
     'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js'
   ];
@@ -1040,7 +1233,8 @@
     actions: [],
     /** @type {{name?:string}|null} */ board: null,
     /** @type {{key:string,token:string,boardId:string}} */ creds: {},
-    keepCreds: true,
+    keepCreds: false,
+    demo: false,
     /** Granularité du timeline (v1 : 'week' par défaut) */
     currentGran: 'week',
     /** Membres des tendances (v1 : charts._trendMembers) */
@@ -1070,7 +1264,7 @@
   }
 
   /** Validation défensive de l'id avant de l'insérer dans une URL. */
-  function validBoardId(id) { return /^[0-9a-fA-F]{24}$/.test(id); }
+  function validBoardId(id) { return /^(?:[0-9a-fA-F]{24}|[a-zA-Z0-9]{8})$/.test(id); }
 
   /** Liste des actions visibles après filtres membres/période (identique à la liste complète si aucun filtre). */
   function getVisible() {
@@ -1224,7 +1418,7 @@
 
   /* ═══════════════════════════ 9. CHART KIT ════════════════════════════════ */
 
-  const TICK = { color: '#888', family: 'monospace' };
+  const TICK = { color: '#888', family: 'Segoe UI, Arial, sans-serif' };
   const GRID = 'rgba(128,128,128,.08)';
 
   /**
@@ -1236,6 +1430,16 @@
   function chart(key, canvasId, config) {
     const el = $(canvasId);
     if (!el) { log.warn('Canvas manquant : ' + canvasId); return null; }
+    const heading = el.closest('.chart-card')?.querySelector('h3');
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', heading ? heading.textContent : 'Graphique d’activité');
+    config.options = config.options || {};
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    config.options.animation = reduced ? false : { duration: 450, easing: 'easeOutQuart' };
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--color-text-secondary').trim() || '#575d77';
+    Object.values(config.options.scales || {}).forEach(scale => { if (scale.ticks) scale.ticks.color = ink; });
+    const labels = config.options.plugins?.legend?.labels;
+    if (labels) labels.color = ink;
     const prev = state.charts[key];
     if (prev) { try { prev.destroy(); } catch (e) { log.debug('destroy ignoré :', e); } }
     try {
@@ -1398,8 +1602,8 @@
     const el = $('log-dump');
     if (el) el.textContent = log.dump() || '(vide)';
   }
-  function openLog() { overlayOpen = true; $('log-overlay').classList.add('open'); refreshLogDump(); }
-  function closeLog() { overlayOpen = false; $('log-overlay').classList.remove('open'); }
+  function openLog() { overlayOpen = true; showDialog('log-overlay'); refreshLogDump(); }
+  function closeLog() { overlayOpen = false; hideDialog('log-overlay'); }
 
   /* ══════════════════════ 11. PERSISTANCE / BANNIÈRE ══════════════════════ */
 
@@ -1410,6 +1614,7 @@
    * @returns {Promise<boolean>} true si écriture réussie
    */
   async function persistData() {
+    if (state.demo) return false; // Ne jamais remplacer une vraie sauvegarde par la démo.
     setSaveStatus('saving');
     const slim = state.actions.map(slimAction);
     const credsToSave = state.keepCreds
@@ -1458,6 +1663,7 @@
 
   /** Recharge la session sauvegardée (v1) — accepte payload v1 (sans ids) et v3. */
   async function loadSaved() {
+    if (!(await ensureChartLib())) { showError('Graphiques indisponibles. Vérifiez votre connexion.'); return; }
     const data = await readPayload();
     if (!data) { showError('Aucune donnée trouvée.'); return; }
     if (data === 'corrupt') { showError('Données corrompues.'); return; }
@@ -1492,16 +1698,38 @@
   function endCancel() { state.cancel = null; }
 
   /** Pointe l'analyse complète (bouton principal — flux v1 verbatim). */
+  let analysisBusy = false;
   async function startAnalysis() {
+    if (analysisBusy) return;
+    analysisBusy = true;
+    $('btn-analyze').disabled = true;
+    $('btn-analyze').setAttribute('aria-busy', 'true');
+    try { await analyzeBoard(); }
+    finally {
+      analysisBusy = false;
+      $('btn-analyze').disabled = false;
+      $('btn-analyze').removeAttribute('aria-busy');
+    }
+  }
+
+  async function analyzeBoard() {
     const key = $('api-key').value.trim();
     const token = $('api-token').value.trim();
     const boardInput = $('board-id').value.trim();
     $('err-msg').style.display = 'none';
-    if (!key || !token || !boardInput) { showError('Veuillez remplir tous les champs.'); return; }
+    const fields = ['api-key', 'api-token', 'board-id'];
+    fields.forEach(id => $(id).setAttribute('aria-invalid', String(!$(id).value.trim())));
+    if (!key || !token || !boardInput) {
+      showError('Veuillez remplir tous les champs.');
+      fields.map($).find(el => !el.value.trim()).focus();
+      return;
+    }
     state.keepCreds = $('keep-creds').checked;
     const boardId = extractBoardId(boardInput);
     if (!validBoardId(boardId)) {
-      showError('Board ID invalide — attendez-vous à 24 caractères hexadécimaux (collez l\'URL complète du tableau).');
+      $('board-id').setAttribute('aria-invalid', 'true');
+      $('board-id').focus();
+      showError('Lien de tableau invalide — collez une URL Trello /b/…, un identifiant court de 8 caractères ou un ID de 24 caractères hexadécimaux.');
       return;
     }
     if (!(await ensureChartLib())) { showError('Impossible de charger la bibliothèque graphique (Chart.js) depuis le CDN.'); return; }
@@ -1555,6 +1783,7 @@
    *   complet exactement comme v1 `refreshData`.
    */
   async function refreshData(incremental) {
+    if (state.demo) { toast("Connectez un tableau pour récupérer son activité."); return; }
     const key = state.creds.key, token = state.creds.token, boardId = state.creds.boardId;
     if (!key || !token || !boardId) { resetApp(); return; }
     if (!(await ensureChartLib())) { toast('Chart.js indisponible — impossible de réafficher le dashboard.', 'error'); return; }
@@ -1610,8 +1839,52 @@
     }
   }
 
+  async function startDemo() {
+    const btn = $('btn-demo');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    try {
+      if (!(await ensureChartLib())) { showError('Graphiques indisponibles. Vérifiez votre connexion et réessayez.'); return; }
+      state.demo = true;
+      state.creds = {};
+      state.savedAtIso = null;
+      state.board = { name: 'Studio · Lancement produit (démo)' };
+      state.filter = { members: new Set(), fromMs: null, toMs: null };
+      const names = ['Camille Martin', 'Alex Dubois', 'Léa Bernard', 'Thomas Petit', 'Sarah Laurent'];
+      const cards = ['Nouvelle page d’accueil', 'Recherche utilisateur', 'Design system', 'Parcours d’inscription', 'Campagne de lancement', 'Application mobile', 'Tests d’accessibilité', 'Documentation'];
+      const types = ['createCard', 'updateCard', 'commentCard', 'updateCheckItemStateOnCard', 'updateCard', 'commentCard', 'addMemberToCard', 'addAttachmentToCard'];
+      const end = new Date(); end.setHours(18, 0, 0, 0);
+      let seed = 42;
+      const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+      state.actions = Array.from({ length: 1284 }, (_, i) => {
+        const date = new Date(end); date.setDate(end.getDate() - Math.floor(Math.pow(random(), 1.4) * 59));
+        if (date.getDay() === 0 && i % 4) date.setDate(date.getDate() - 2);
+        if (date.getDay() === 6 && i % 4) date.setDate(date.getDate() - 1);
+        date.setHours(8 + Math.floor(random() * 10), Math.floor(random() * 60));
+        return normalizeAction({ id: 'demo-' + i, date: date.toISOString(), type: types[(i * 13) % types.length],
+          _memberName: names[Math.floor(Math.pow(random(), 1.5) * names.length)], data: { card: { name: cards[(i * 3 + Math.floor(i / 7)) % cards.length] } } });
+      }).sort((a, b) => b.dateMs - a.dateMs);
+      $('setup').style.display = 'none';
+      $('dashboard').style.display = 'block';
+      $('demo-notice').hidden = false;
+      $('btn-refresh').hidden = $('btn-refresh-inc').hidden = true;
+      renderDashboard(state.board.name);
+      $('save-label').textContent = 'Démonstration · non sauvegardée';
+      toast('À vous d’explorer : filtres, graphiques et exports sont actifs.', 'success');
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      $('btn-demo-exit').focus({ preventScroll: true });
+    } finally { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+  }
+
   /** Retour à l'écran de configuration (v1 verbatim + nettoyage des filtres). */
   function resetApp() {
+    state.demo = false;
+    state.creds = {};
+    state.savedAtIso = null;
+    $('demo-notice').hidden = true;
+    $('btn-refresh').hidden = $('btn-refresh-inc').hidden = false;
+    $('fl-from').value = $('fl-to').value = $('fl-search').value = '';
+    $('err-msg').style.display = 'none';
     state.actions = [];
     state.board = null;
     state.filter = { members: new Set(), fromMs: null, toMs: null };
@@ -1688,17 +1961,17 @@
       data: {
         labels,
         datasets: [{
-          data, borderColor: '#0C66E4', backgroundColor: 'rgba(12,102,228,.14)',
+          data, borderColor: '#7158D9', backgroundColor: 'rgba(113,88,217,.14)',
           fill: true, tension: .35, pointRadius: data.length < 30 ? 3 : 0,
-          borderWidth: 2, pointBackgroundColor: '#0C66E4'
+          borderWidth: 2, pointBackgroundColor: '#7158D9'
         }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
         scales: {
-          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } }, beginAtZero: true }
+          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
         }
       }
     });
@@ -1724,8 +1997,8 @@
           tooltip: { callbacks: { title: items => state.memberFullLabels[items[0].dataIndex] || items[0].label } }
         },
         scales: {
-          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } },
-          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } }
+          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } },
+          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } }
         }
       }
     });
@@ -1777,20 +2050,20 @@
         let bg, tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
         if (shareMode) {
           const r = hourTotals[h] ? v / hourTotals[h] : 0;
-          bg = v === 0 ? 'rgba(12,102,228,0)' : r >= .12 ? '#0747A6' : r >= .06 ? '#0C66E4' : r >= .02 ? '#669DF1' : 'rgba(102,157,241,.4)';
+          bg = v === 0 ? 'rgba(113,88,217,0)' : r >= .12 ? '#5140B5' : r >= .06 ? '#7158D9' : r >= .02 ? '#B6A6FF' : 'rgba(182,166,255,.4)';
           tip += hourTotals[h] ? ' · ' + Math.round(r * 100) + '% de ' + h + 'h' : '';
         } else {
           const alpha = st.heatMax > 0 ? Math.pow(v / st.heatMax, .5) : 0;
-          bg = 'rgba(12,102,228,' + alpha + ')';
+          bg = 'rgba(113,88,217,' + alpha + ')';
         }
         html += '<div class="hm-cell" style="background:' + bg + '" data-tip="' + esc(tip) + '"></div>';
       }
     }
     $('hm-grid').innerHTML = html;
     $('hm-scale').innerHTML = shareMode
-      ? 'part de l\'heure : ' + ['rgba(102,157,241,.4)', '#669DF1', '#0C66E4', '#0747A6']
+      ? 'part de l\'heure : ' + ['rgba(182,166,255,.4)', '#B6A6FF', '#7158D9', '#5140B5']
         .map(c => '<span class="sw" style="background:' + c + '"></span>').join('') + ' 0% → ≥12%'
-      : 'volume : <span class="sw" style="background:rgba(12,102,228,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(12,102,228,1)"></span>' + st.heatMax + ' actions/case';
+      : 'volume : <span class="sw" style="background:rgba(113,88,217,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(113,88,217,1)"></span>' + st.heatMax + ' actions/case';
   }
 
   /**
@@ -1821,8 +2094,8 @@
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } }, beginAtZero: true }
+          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
         }
       }
     });
@@ -1849,8 +2122,8 @@
           tooltip: { callbacks: { title: items => full[items[0].dataIndex] || items[0].label } }
         },
         scales: {
-          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } },
-          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 9, family: 'monospace' } } }
+          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } },
+          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } } }
         }
       }
     });
@@ -1864,14 +2137,14 @@
       type: 'bar',
       data: {
         labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
-        datasets: [{ data: h, backgroundColor: h.map(v => 'rgba(12,102,228,' + (mx > 0 ? .25 + .75 * (v / mx) : .25) + ')'), borderRadius: 2, borderSkipped: false }]
+        datasets: [{ data: h, backgroundColor: h.map(v => 'rgba(113,88,217,' + (mx > 0 ? .25 + .75 * (v / mx) : .25) + ')'), borderRadius: 2, borderSkipped: false }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { color: '#888', font: { size: 8, family: 'monospace' }, maxRotation: 0, autoSkip: false } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' } }, beginAtZero: true }
+          x: { grid: { display: false }, ticks: { color: '#888', font: { size: 8, family: 'Segoe UI, Arial, sans-serif' }, maxRotation: 0, autoSkip: false } },
+          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
         }
       }
     });
@@ -1894,7 +2167,7 @@
     const byGroup = groupPeriodCounts(list, state.currentGran);
     const groups = Object.keys(ACTION_GROUPS).filter(g => byGroup.has(g));
     const allKeys = new Set();
-    groups.forEach(g => byGroup.get(g).forEach(k => allKeys.add(k)));
+    groups.forEach(g => byGroup.get(g).forEach((count, key) => allKeys.add(key)));
     const labels = Array.from(allKeys).sort();
     $('leg-typetl').innerHTML = groups.map(g =>
       '<span class="leg-item"><span class="leg-dot" style="background:' + GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length] + '"></span>' +
@@ -1915,8 +2188,8 @@
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
         scales: {
-          x: { stacked: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'monospace' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { stacked: true, beginAtZero: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'monospace' } } }
+          x: { stacked: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
+          y: { stacked: true, beginAtZero: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } }
         }
       }
     });
@@ -1929,7 +2202,7 @@
         labels: ['Semaine', 'Week-end'],
         datasets: [{ data: [st.weekdays, st.weekend], backgroundColor: ['#3B8BD4', '#6E5DC6'], borderWidth: 0, hoverBorderWidth: 2, hoverBorderColor: '#fff' }]
       },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10, family: 'monospace' }, boxWidth: 10 } } } }
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' }, boxWidth: 10 } } } }
     });
   }
 
@@ -2406,7 +2679,7 @@
     imgMap = imgMap || {};
     const PW = PDF_PAGE.w, PH = PDF_PAGE.h, M = PDF_PAGE.m, CW = PW - 2 * M;
     const COL = {
-      accent: '0.047 0.400 0.894',   /* #0C66E4 */
+      accent: '0.443 0.345 0.851',   /* #7158D9 */
       title: '0.090 0.169 0.302',   /* #172B4D */
       text: '0.259 0.322 0.431',   /* #42526E */
       soft: '0.369 0.424 0.518',   /* #5E6C84 */
@@ -2948,12 +3221,12 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
 
       /* en-tête */
-      ctx.fillStyle = '#0C66E4'; ctx.fillRect(0, 0, W, 6);
-      ctx.fillStyle = '#2b2a27'; ctx.font = '600 25px monospace';
+      ctx.fillStyle = '#7158D9'; ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = '#2b2a27'; ctx.font = '600 25px Arial';
       ctx.fillText(truncate(model.boardName, 64, 60), M, 44);
-      ctx.fillStyle = '#5c594f'; ctx.font = '13px monospace';
+      ctx.fillStyle = '#5c594f'; ctx.font = '13px Arial';
       ctx.fillText('Analyse d’activité Trello — ' + model.range.oldestLabel + ' → ' + model.range.newestLabel, M, 68);
-      ctx.fillStyle = '#8b867a'; ctx.font = '11px monospace';
+      ctx.fillStyle = '#8b867a'; ctx.font = '11px Arial';
       ctx.fillText(model.totals.actions.toLocaleString() + ' action(s) affichée(s)' +
         (model.filters.active ? ' · filtres : ' + truncate(model.filters.label, 70, 65) : '') +
         ' · généré le ' + model.generatedLabel + ' · v' + model.version, M, 88);
@@ -2965,11 +3238,11 @@
         const x = M + (i % 4) * (kW + 10);
         const yy = y + Math.floor(i / 4) * (kH + 8);
         ctx.fillStyle = '#f4f1ea'; ctx.fillRect(x, yy, kW, kH);
-        ctx.fillStyle = '#8b867a'; ctx.font = '10px monospace';
+        ctx.fillStyle = '#8b867a'; ctx.font = '10px Arial';
         ctx.fillText(k.label.toUpperCase(), x + 10, yy + 18);
-        ctx.fillStyle = '#2b2a27'; ctx.font = '600 21px monospace';
+        ctx.fillStyle = '#2b2a27'; ctx.font = '600 21px Arial';
         ctx.fillText(k.value, x + 10, yy + 42);
-        ctx.fillStyle = '#5c594f'; ctx.font = '10px monospace';
+        ctx.fillStyle = '#5c594f'; ctx.font = '10px Arial';
         ctx.fillText(truncate(k.sub, 28, 26), x + 10, yy + 60);
       });
       y += kpiH;
@@ -2981,7 +3254,7 @@
         if (!c || !c.canvas) return;
         const x = M + col * (W / 2 - M + 8);
         const boxW = (W - 2 * M - 16) / 2;
-        ctx.fillStyle = '#5c594f'; ctx.font = '600 13px monospace';
+        ctx.fillStyle = '#5c594f'; ctx.font = '600 13px Arial';
         ctx.fillText(CHART_EXPORT_TITLES[key] || key, x, y + 16);
         drawFit(ctx, c.canvas, x, y + 26, boxW, cellH - 40);
         col = 1 - col;
@@ -2990,10 +3263,10 @@
       if (col === 1) y += cellH;
 
       /* heatmap */
-      ctx.fillStyle = '#5c594f'; ctx.font = '600 13px monospace';
+      ctx.fillStyle = '#5c594f'; ctx.font = '600 13px Arial';
       ctx.fillText('Heatmap — Heure × Jour de la semaine', M, y + 16);
       const hm = model.heat, labelW = 30, cellW = (W - 2 * M - labelW) / 24, chH = 24;
-      ctx.font = '10px monospace';
+      ctx.font = '10px Arial';
       for (let h = 0; h < 24; h += 2) {
         ctx.fillStyle = '#8b867a';
         ctx.fillText(String(h), M + labelW + h * cellW + 2, y + 36);
@@ -3005,12 +3278,12 @@
         for (let h = 0; h < 24; h++) {
           const v = hm.cells[d][h];
           const alpha = hm.max > 0 ? Math.sqrt(v / hm.max) : 0;
-          ctx.fillStyle = 'rgba(12,102,228,' + alpha + ')';
+          ctx.fillStyle = 'rgba(113,88,217,' + alpha + ')';
           ctx.fillRect(M + labelW + h * cellW + 1, y + 42 + (day - 1) * (chH + 2), cellW - 2, chH);
         }
       }
       y += heatH;
-      ctx.fillStyle = '#8b867a'; ctx.font = '10px monospace';
+      ctx.fillStyle = '#8b867a'; ctx.font = '10px Arial';
       ctx.fillText('Trello Board Activity Analyzer v' + model.version + ' — export local, aucune donnée transmise.', M, y + 18);
       return cv.toDataURL('image/png');
     } catch (e) {
@@ -3096,7 +3369,7 @@
         const v = hm.cells[d][h];
         const alpha = hm.max > 0 ? Math.pow(v / hm.max, .5) : 0;
         const tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
-        html += '<div class="hm-cell" style="background:rgba(12,102,228,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
+        html += '<div class="hm-cell" style="background:rgba(113,88,217,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
       }
     }
     return html + '</div></div>';
@@ -3394,6 +3667,7 @@
       const auto = document.querySelector('#tl-toggles .tgl[data-gran="' + gran + '"]');
       if (auto) auto.classList.add('active');
     }
+    $$('#tl-toggles .tgl').forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('active'))));
     renderTimeline(state.lastList);
     renderTrends(null);
     renderTypeTimeline(state.lastList);
@@ -3402,13 +3676,36 @@
   function setHeatMetric(m) {
     state.heatMetric = m;
     $$('#hm-toggles .tgl-hm').forEach(b => b.classList.toggle('active', b.dataset.hm === m));
+    $$('#hm-toggles .tgl-hm').forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('active'))));
     renderHeatmap(state.lastStats || computeStats(getVisible()));
   }
 
   /* ══════════════════ 16b. RACCOURCIS CLAVIER / FENÊTRE AIDE ═════════════ */
 
-  function openKbd() { const el = $('kbd-overlay'); if (el) el.classList.add('open'); }
-  function closeKbd() { const el = $('kbd-overlay'); if (el) el.classList.remove('open'); }
+  let dialogReturnFocus = null;
+  function showDialog(id) {
+    if (document.querySelector('[role="dialog"].open')) return;
+    dialogReturnFocus = document.activeElement;
+    const el = $(id); el.classList.add('open');
+    $('tapp').inert = true;
+    el.querySelector('button')?.focus();
+  }
+  function hideDialog(id) {
+    const el = $(id);
+    if (!el.classList.contains('open')) return;
+    el.classList.remove('open'); $('tapp').inert = false;
+    dialogReturnFocus?.focus(); dialogReturnFocus = null;
+  }
+  function openKbd() { showDialog('kbd-overlay'); }
+  function closeKbd() { hideDialog('kbd-overlay'); }
+  document.addEventListener('keydown', e => {
+    const dialog = document.querySelector('[role="dialog"].open');
+    if (!dialog || e.key !== 'Tab') return;
+    const focusable = Array.from(dialog.querySelectorAll('button, a, input, [tabindex="0"]'));
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
 
   /** Vrai si l'utilisateur tape dans un champ (les raccourcis sont alors ignorés). */
   function isTypingTarget(t) {
@@ -3433,7 +3730,7 @@
       if (isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const dash = $('dashboard');
-      if (!dash || dash.style.display === 'none') return;
+      if (!dash || getComputedStyle(dash).display === 'none' || document.querySelector('[role="dialog"].open')) return;
       switch (e.key) {
         case 'e': case 'E': toggleExportMenu(); e.preventDefault(); break;
         case 'p': case 'P': exportPdf(); e.preventDefault(); break;
@@ -3481,11 +3778,14 @@
       mode = (next === 'light' || next === 'dark') ? next : 'auto';
       ensureNativePalette();
       try { document.documentElement.setAttribute('data-tba-theme', isDark() ? 'dark' : 'light'); } catch (_) { /* ignore */ }
-      const btn = $('btn-theme');
+      ['btn-theme', 'btn-theme-top'].forEach(id => {
+      const btn = $(id);
       if (btn) {
         const label = mode === 'auto' ? 'auto' : (mode === 'light' ? 'clair' : 'sombre');
         btn.textContent = (isDark() ? '☾' : '☀') + ' Thème : ' + label;
       }
+      });
+      if (state.board && $('dashboard').style.display === 'block') renderDashboard(state.board.name);
       Store.set(THEME_SK, mode).catch(() => {});
     }
 
@@ -3624,6 +3924,12 @@
     /* — boutons — (non exposés en mode rapport hors-ligne) */
     if (!EMBEDDED) {
       $('btn-analyze').addEventListener('click', () => startAnalysis());
+      $('btn-demo').addEventListener('click', startDemo);
+      $('btn-demo-exit').addEventListener('click', resetApp);
+      $$('.field-row input').forEach(el => {
+        el.setAttribute('aria-describedby', 'err-msg');
+        el.addEventListener('input', () => el.removeAttribute('aria-invalid'));
+      });
       $('btn-reload-saved').addEventListener('click', () => loadSaved());
       $('btn-clear-saved').addEventListener('click', () => clearSaved());
       $('btn-refresh').addEventListener('click', () => refreshData(false));
@@ -3649,9 +3955,9 @@
     });
     document.addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); });
     menu.addEventListener('click', e => e.stopPropagation());
-    $('exp-csv').addEventListener('click', () => { menu.classList.remove('open'); exportCsv(); });
-    $('exp-json').addEventListener('click', () => { menu.classList.remove('open'); exportJson(); });
-    $('exp-png').addEventListener('click', () => { menu.classList.remove('open'); exportPng(); });
+    $('exp-csv').addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); exportCsv(); });
+    $('exp-json').addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); exportJson(); });
+    $('exp-png').addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); exportPng(); });
     /* — exports v5 (rapports et formats complémentaires) — */
     [['exp-html', exportHtml], ['exp-pdf', exportPdf], ['exp-md', exportMarkdown],
      ['exp-xlsx', exportXlsx], ['exp-sheet', exportSheet], ['exp-zip', exportZip]
@@ -3684,9 +3990,11 @@
     $('btn-kbd-close').addEventListener('click', closeKbd);
     $('kbd-overlay').addEventListener('click', e => { if (e.target === $('kbd-overlay')) closeKbd(); });
     $('btn-theme').addEventListener('click', () => Theme.cycle());
+    $('btn-theme-top').addEventListener('click', () => Theme.cycle());
     Theme.init();
     wireShortcuts();
 
+    $$('.tgl, .tgl-hm').forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('active'))));
     /* — toggles — */
     $$('#tl-toggles .tgl').forEach(b => b.addEventListener('click', () => setGran(b.dataset.gran, b)));
     $$('#hm-toggles .tgl-hm').forEach(b => b.addEventListener('click', () => setHeatMetric(b.dataset.hm)));
@@ -3702,12 +4010,15 @@
     $('fl-clear').addEventListener('click', clearFilters);
 
     /* — tri du tableau membres — */
-    $$('#mtable th').forEach(th => th.addEventListener('click', () => {
+    $$('#mtable th').forEach(th => {
+      th.tabIndex = 0;
+      th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); th.click(); } });
+      th.addEventListener('click', () => {
       const k = th.dataset.k;
       if (state.msort.k === k) state.msort.dir = -state.msort.dir;
       else state.msort = { k, dir: k === 'name' ? 1 : -1 };
       renderMemberTable(state.lastStats || computeStats(getVisible()));
-    }));
+    }); });
 
     /* — case « conserver les identifiants » (déjà câblée en mode application) — */
 

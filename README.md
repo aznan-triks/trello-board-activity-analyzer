@@ -1,8 +1,18 @@
 # Trello Board Activity Analyzer
 
 Analyse complète de l'historique d'un tableau Trello (API REST v1) — 100 % côté
-client, dans un seul fichier `index.html` autonome (aucun build, aucun serveur).
+client, sans build ni serveur applicatif. Le code applicatif reste dans
+`index.html` ; Chart.js 4.4.1 est livré dans `vendor/` (licence MIT incluse).
+Les rapports HTML exportés restent des fichiers uniques autonomes.
 
+> **v6.0.0** — nouvelle interface sans esthétique terminal : typographie sans
+> empattement, accents violet/menthe/corail, cartes aérées, accueil guidé,
+> thèmes clair/sombre et micro-interactions respectant les préférences de mouvement.
+> Démonstration de 1 284 actions fictives sans identifiants ni sauvegarde,
+> navigation clavier améliorée, validation des URL courtes Trello corrigée,
+> graphique des types par période corrigé. Identifiants mémorisés uniquement
+> sur consentement explicite. Tests navigateur et accessibilité automatisés.
+>
 > **v5.1.0** — refonte visuelle : palette claire/sombre fraîche (bleu
 > Atlassian + neutres froids), surfaces avec ombres légères, coins arrondis
 > modernisés, série principale des graphiques et heatmap assorties au bleu,
@@ -22,17 +32,26 @@ client, dans un seul fichier `index.html` autonome (aucun build, aucun serveur).
 
 ## Utilisation
 
-1. Ouvrez `index.html` (ou servez-le : `python3 -m http.server`).
+1. Visitez [l’application sur GitHub Pages](https://aznan-triks.github.io/trello-board-activity-analyzer/)
+   ou servez le dépôt : `python3 -m http.server 8080`.
+   Le bouton **Explorer la démonstration** permet de tout essayer sans compte.
 2. Renseignez **API Key** ([trello.com/app-key](https://trello.com/app-key)),
    **Token** et **Board ID ou URL** complète (`https://trello.com/b/xxxx/...`).
-3. « Analyser tout le tableau » télécharge tout l'historique (pagination
+3. « Analyser mon tableau » télécharge tout l'historique (pagination
    `before` de 1 000 actions), le persiste au format « slim » et affiche le
    dashboard. Une session sauvegardée est proposée au rechargement de la page.
 
-L'application fonctionne aussi directement en `file://` : palette de couleurs
-autonome injectée si l'hôte ne fournit pas de jetons CSS, et la librairie
-graphique (Chart.js) est mise en cache local après le premier chargement pour
-les reprises hors-ligne.
+Le dépôt peut aussi s’ouvrir en `file://` en conservant `vendor/` à côté
+ d’`index.html`. Un serveur statique est recommandé : certains navigateurs
+bloquent la récupération du bundle pour les exports interactifs en `file://`
+(un export statique reste proposé en repli). Sur HTTP(S), Chart.js est chargé
+localement et mis en cache ; les CDN ne servent que de secours si le bundle
+local est manquant. Aucune police ni ressource graphique distante n’est requise.
+
+Les identifiants ne sont **pas mémorisés par défaut**. La case dédiée permet
+de les conserver sur un appareil de confiance. Les données du tableau restent
+sauvegardées localement indépendamment de ce choix. La démonstration ne remplace
+jamais une sauvegarde existante et ses exports portent « démo » dans le nom du tableau.
 
 ---
 
@@ -91,7 +110,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 | Chargement | Écran spinner + barre de progression avec les mêmes paliers (5 → 15 → +8/page plafonné à 85 → 90 → 100) et les mêmes libellés |
 | Sauvegarde | Clé `trello-v3`, payload `{boardData, actions, creds, savedAt}`, schéma slim `{t,d,m,c}`, garde-fou 4,8 Mo (`Trop volumineux (x.xx MB)`), pastille d'état (Sauvegarde…/Sauvegardé/erreur) |
 | Stats | Total actions + « sur N jours », membres actifs + top, jour le + actif + compte, moyenne/semaine — formules et cas particuliers (ties, `+ ' actions'`) à l'identique |
-| Graphiques | Timeline semaine/mois (bucket dimanche local → clé ISO), barres membres (troncature 18/16, hauteur `max(120, n·32+40)`), donut types groupés (`ACTION_GROUPS`), heatmap Lun→Dim × 0-23h (alpha `√(v/mx)`, tooltips `Dim 0h: N action(s)`), tendances top-5 membres, top-10 cartes (22/20), activité horaire (`.25+.75·v/mx`) — Chart.js 4.4.1, palettes, polices monospace, axes : tout conservé |
+| Graphiques | Timeline semaine/mois (bucket dimanche local → clé ISO), barres membres (troncature 18/16, hauteur `max(120, n·32+40)`), donut types groupés (`ACTION_GROUPS`), heatmap Lun→Dim × 0-23h (alpha `√(v/mx)`, tooltips `Dim 0h: N action(s)`), tendances top-5 membres, top-10 cartes (22/20), activité horaire (`.25+.75·v/mx`) — Chart.js 4.4.1, moteur conservé, typographie sans empattement et couleurs adaptées au thème en v6 |
 | Flux | `refreshData` complet, `resetApp` (destruction des charts, re-`checkSaved`), granularité qui mémorise les membres de tendances (`renderTrends(null)`) |
 | Exports v4 | `buildActionsCsv` / `buildAnalysisJson` : sorties **octet à octet inchangées** (contrat des tests E2E) |
 
@@ -151,7 +170,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
   touchées, jours actifs, dernière activité), heatmap en mode « Répartition % ».
 - **Sécurité** : échappement HTML systématique des noms API (légendes, tooltips
   heatmap, chips, tableau), validation de l'ID de board avant d'urller l'URL,
-  token en champ `password`, case « Conserver les identifiants » (décochée = non
+  token en champ `password`, case « Mémoriser mes identifiants » (décochée par défaut = non
   persistés), journal technique avec masquage automatique des secrets,
   `rel="noopener"` sur les liens externes. **Exports** : JSON embarqué protégé
   (`<` → `\u003c`), jamais d'identifiants, HTML inline sans fermeture de script
@@ -213,3 +232,48 @@ relance la même application avec `window.__TBA_EMBEDDED__`.
   (texte français + images DCTDecode), le XLSX avec `openpyxl` (3 feuilles),
   le ZIP par lecture de l'EOCD, et le rapport HTML exporté est **rouvert et
   utilisé** dans un second jsdom (filtres, tri, granularité, re-exports).
+
+
+## Développement, tests et livraison (v6)
+
+```sh
+npm ci
+npx playwright install --with-deps chromium
+npm test
+```
+
+Le serveur statique démarre automatiquement pour les tests. Aucun `npm install`
+n’est nécessaire pour utiliser ou publier l’application. Pour inspecter le
+rapport de tests : `npx playwright show-report`.
+
+La suite Playwright couvre : affichage à 360/390/768/1440 px, débordements du
+menu mobile, parcours de démonstration, filtres et état vide, granularité,
+cohérence des séries, tri au clavier, thèmes persistés, focus des modales,
+réduction des animations, audits axe WCAG A/AA en clair et sombre,
+stockage bloqué, consentement de stockage des identifiants, échappement HTML,
+absence de secrets dans les exports, impression et neuf formats d’export.
+Le rapport HTML est réouvert avec le réseau bloqué. Les parcours API sont
+**simulés** (succès, delta, reprise, erreur 401, annulation), sans secret réel.
+Le self-test historique des constructeurs est aussi exécuté dans Chromium.
+Ces audits automatisés ne remplacent pas un audit manuel exhaustif avec des
+technologies d’assistance, ni un essai avec un vrai tableau Trello autorisé.
+
+### GitHub Pages
+
+Le dépôt utilise la publication Pages existante depuis **`main` / racine**.
+Le fichier `.nojekyll` permet de servir les fichiers statiques sans Jekyll.
+Conserver `index.html` et `vendor/` ensemble ; toutes les ressources utilisent
+des chemins relatifs compatibles avec le sous-chemin du dépôt.
+
+1. Ouvrir une pull request depuis la branche de travail.
+2. Attendre le workflow **Validation UI et fonctionnelle**, puis fusionner.
+3. Vérifier que **pages build and deployment** a publié le commit de fusion.
+4. Vérifier le site publié, puis relancer les mêmes tests contre la production :
+
+```sh
+BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm test
+```
+
+Les captures et traces restent dans les artefacts CI (7 jours), pas dans Git.
+En cas de régression, révoquer le changement par une pull request de revert,
+puis attendre la nouvelle publication Pages.
