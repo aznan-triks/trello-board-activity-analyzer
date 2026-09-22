@@ -35,3 +35,31 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+  production-tests:
+    name: Vérification du site publié
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: browser-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      BASE_URL: https://aznan-triks.github.io/trello-board-activity-analyzer/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Vérifier les fichiers servis par Pages (HTTP et SHA-256)
+        run: node scripts/verify-deployment.mjs
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Exécuter les 17 scénarios contre le site public
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-production
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

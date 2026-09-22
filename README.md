@@ -277,3 +277,10 @@ BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm test
 Les captures et traces restent dans les artefacts CI (7 jours), pas dans Git.
 En cas de régression, révoquer le changement par une pull request de revert,
 puis attendre la nouvelle publication Pages.
+
+Après chaque push sur `main`, le job **Vérification du site publié** attend
+la propagation Pages, vérifie les réponses HTTP et les SHA-256 d’`index.html`
+et de `vendor/chart.umd.js`, puis exécute automatiquement la même suite contre
+l’URL publique. Ce contrôle ne nécessite ni secret ni déclenchement manuel.
+Les captures et traces de production sont conservées dans l’artefact
+`validation-production` du workflow.
