@@ -260,27 +260,54 @@ technologies d’assistance, ni un essai avec un vrai tableau Trello autorisé.
 
 ### GitHub Pages
 
-Le dépôt utilise la publication Pages existante depuis **`main` / racine**.
-Le fichier `.nojekyll` permet de servir les fichiers statiques sans Jekyll.
+Le site public est publié depuis **`main` / racine** (`https://aznan-triks.github.io/trello-board-activity-analyzer/`),
+en mode « Deploy from a branch » — donc **aucun traitement Jekyll** grâce à
+`.nojekyll`, qui publie l'arborescence telle quelle. C'est pour cela que seules
+les modifications arrivées sur `main` sont visibles en ligne : une branche de
+travail (par exemple `arena/…`) n'est jamais publiée, elle doit être fusionnée
+par pull request.
+
 Conserver `index.html` et `vendor/` ensemble ; toutes les ressources utilisent
 des chemins relatifs compatibles avec le sous-chemin du dépôt.
 
-1. Ouvrir une pull request depuis la branche de travail.
-2. Attendre le workflow **Validation UI et fonctionnelle**, puis fusionner.
-3. Vérifier que **pages build and deployment** a publié le commit de fusion.
-4. Vérifier le site publié, puis relancer les mêmes tests contre la production :
+1. Ouvrir une pull request depuis la branche de travail (`arena/…`) vers `main`.
+2. Attendre le workflow **Validation UI et fonctionnelle** (17 scénarios
+   navigateur + audits WCAG), puis fusionner — le merge doit aller **sur `main`**.
+3. Attendre la publication **pages build and deployment** du commit de fusion.
+4. Le job **Vérification du site publié** (déclenché par le push sur `main`)
+   contrôle automatiquement, sans secret ni intervention :
+   - chaque fichier du dépôt demandé à Pages : **HTTP 200** et **SHA-256
+     identique** au fichier local (arborescence complète, pas seulement
+     `index.html`) ;
+   - le **périmètre applicatif obligatoire** (`index.html`, `.nojekyll`,
+     `vendor/**`) : un fichier manquant, tronqué ou divergent échoue le job ;
+   - la **racine du site** (`/`) : même HTML que `index.html`, version de
+     `package.json` et titre attendus ;
+   - l'**état de publication Pages** pour le commit courant via l'API GitHub ;
+   - puis rejoue les 17 scénarios contre l'URL publique.
+   Le récapitulatif (empreinte SHA-256 de l'arborescence publiée, tableau
+   fichier par fichier) est écrit dans le **résumé du job** ; les captures et
+   traces restent dans les artefacts CI (7 jours), pas dans Git.
+
+En cas de contenu divergent (propagation Pages parfois lente), le job réessaie
+20 fois à 15 s d'intervalle avant d'échouer avec un diagnostic précis
+(fichier, taille et empreinte publiées vs attendues).
+
+Vérification manuelle, avant ou après fusion :
 
 ```sh
+npm run serve                                      # terminal 1 : http://127.0.0.1:8080
+BASE_URL=http://127.0.0.1:8080/ npm run verify:pages  # terminal 2
+BASE_URL=http://127.0.0.1:8080/ npm test              # les 17 scénarios
+
+# ou directement contre le site publié :
+BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm run verify:pages
 BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm test
 ```
 
-Les captures et traces restent dans les artefacts CI (7 jours), pas dans Git.
-En cas de régression, révoquer le changement par une pull request de revert,
-puis attendre la nouvelle publication Pages.
+`VERIFY_ATTEMPTS` et `VERIFY_DELAY_MS` ajustent la patience du contrôle
+(utile pour tester le script rapidement en local).
 
-Après chaque push sur `main`, le job **Vérification du site publié** attend
-la propagation Pages, vérifie les réponses HTTP et les SHA-256 d’`index.html`
-et de `vendor/chart.umd.js`, puis exécute automatiquement la même suite contre
-l’URL publique. Ce contrôle ne nécessite ni secret ni déclenchement manuel.
-Les captures et traces de production sont conservées dans l’artefact
-`validation-production` du workflow.
+En cas de régression, révoquer le changement par une pull request de revert
+vers `main`, puis attendre la nouvelle publication Pages et sa vérification
+automatique.

@@ -12,6 +12,7 @@ on:
         type: string
 permissions:
   contents: read
+  pages: read
 jobs:
   browser-tests:
     runs-on: ubuntu-24.04
@@ -49,7 +50,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Vérifier les fichiers servis par Pages (HTTP et SHA-256)
+      - name: Vérifier la publication Pages (arborescence, HTTP, SHA-256)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
         run: node scripts/verify-deployment.mjs
       - run: npm ci
       - run: npx playwright install --with-deps chromium

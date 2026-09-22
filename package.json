@@ -5,7 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "serve": "python3 -m http.server 8080 --bind 0.0.0.0"
+    "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "verify:pages": "node scripts/verify-deployment.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.55.1",
