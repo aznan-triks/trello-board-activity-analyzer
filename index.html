@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Analyse complète de l'historique d'un tableau Trello — modifications, membres, tendances. 100 % local, aucune donnée envoyée ailleurs qu'à l'API Trello.">
 <title>Trello Board Activity Analyzer</title>
-<style>
+<style id="tba-style">
   /* ════════════════════════════════════════════════════════════════════════
      1. Styles d'origine (conservés verbatim — aucune règle ne change)
      ════════════════════════════════════════════════════════════════════════ */
@@ -113,6 +113,40 @@
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   @media (max-width: 520px) { .filters { flex-direction: column; align-items: stretch; } .filter-count { margin-left: 0; } }
   @media print { #setup, #loading, .dash-actions, #filters, .app-footer, #toast, #log-overlay { display: none !important; } .chart-card { break-inside: avoid; border: 0.5px solid var(--color-border-tertiary); } #dashboard { display: block !important; } }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     3. Extensions v5 — palette autonome, thème, exports, raccourcis (additif)
+     ════════════════════════════════════════════════════════════════════════ */
+  /* Palette locale : injectée par JS uniquement si l'hôte ne fournit pas les
+     jetons CSS (ou si l'utilisateur force un thème) — zéro impact sinon. */
+  html.tba-native { --color-background-primary: #f6f3ec; --color-background-secondary: #fffdf8; --color-background-success: #eef6e6; --color-background-danger: #fbeceb; --color-text-primary: #2b2a27; --color-text-secondary: #5c594f; --color-text-tertiary: #8b867a; --color-text-success: #4a7314; --color-text-danger: #b03432; --color-border-tertiary: #d9d3c5; --color-border-success: #a8c98a; --color-border-danger: #e0a5a3; --border-radius-md: 6px; --border-radius-lg: 10px; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color-scheme: light; }
+  html.tba-native body { background: var(--color-background-primary); color: var(--color-text-primary); margin: 0 auto; max-width: 980px; padding: 0 12px; }
+  html.tba-native[data-tba-theme="dark"] { --color-background-primary: #1d1c19; --color-background-secondary: #272521; --color-background-success: #24301a; --color-background-danger: #38201e; --color-text-primary: #ece8dd; --color-text-secondary: #b3ae9f; --color-text-tertiary: #7f7a6c; --color-text-success: #9dc56a; --color-text-danger: #e58c89; --color-border-tertiary: #3d3a33; --color-border-success: #4d6632; --color-border-danger: #6e3a37; color-scheme: dark; }
+  html.tba-native[data-tba-theme="dark"] body { background: var(--color-background-primary); color: var(--color-text-primary); }
+  .foot-bar { display: flex; align-items: baseline; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 1rem 0 0; }
+  .foot-bar .app-footer { margin: 0; }
+  .foot-tools { display: flex; gap: 6px; align-items: baseline; }
+  .foot-tools .dash-btn { font-size: 10px; padding: 2px 8px; }
+  #kbd-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 110; }
+  #kbd-overlay.open { display: flex; }
+  #kbd-panel { width: min(460px, 92vw); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px 16px; font-size: 12px; color: var(--color-text-primary); max-height: 80vh; overflow: auto; }
+  #kbd-panel .lp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  #kbd-panel table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  #kbd-panel td { padding: 4px 6px; color: var(--color-text-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); }
+  #kbd-panel td:first-child { color: var(--color-text-primary); white-space: nowrap; width: 74px; }
+  #kbd-panel kbd { font-family: var(--font-mono, monospace); font-size: 10px; border: 0.5px solid var(--color-border-tertiary); border-bottom-width: 1.5px; border-radius: 4px; padding: 1px 5px; background: var(--color-background-secondary); }
+  .no-export { display: none !important; }
+  #export-menu { min-width: 272px; }
+  #export-banner { display: none; }
+  html.tba-export #export-banner { display: block; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); padding: 8px 14px; font-size: 11px; color: var(--color-text-secondary); text-align: center; }
+  html.tba-export #tapp { padding-top: .75rem; }
+  .report-page { max-width: 920px; margin: 0 auto; padding: 1rem .5rem 2rem; font-family: var(--font-mono, monospace); }
+  .report-page h1 { font-size: 20px; font-weight: 500; margin: 0 0 2px; color: var(--color-text-primary); }
+  .report-page .meta { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 1rem; line-height: 1.6; }
+  .report-page .report-actions { margin-bottom: 1rem; display: flex; gap: 6px; }
+  .report-page img.chart-snap { width: 100%; display: block; background: #fff; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) { #loading .spinner, .save-dot.saving { animation: none !important; } }
+  @media print { .foot-tools, #kbd-overlay, #export-banner, .report-actions { display: none !important; } }
 </style>
 </head>
 <body>
@@ -173,10 +207,18 @@
         <span class="menu">
           <button class="dash-btn" id="btn-export" aria-haspopup="true" aria-expanded="false">⤓ Export ▾</button>
           <span class="menu-pop" id="export-menu" role="menu">
-            <span class="muted">Télécharger</span>
+            <span class="muted">Rapports</span>
+            <button id="exp-html" role="menuitem" title="Page HTML autonome : interactive et utilisable hors-ligne (filtres, tris, graphiques, re-exports)">Rapport HTML interactif (hors-ligne)</button>
+            <button id="exp-pdf" role="menuitem" title="Document A4 multi-pages : indicateurs, graphiques, heatmap vectorielle, détail membres">Rapport PDF (A4)</button>
+            <button id="exp-md" role="menuitem" title="Synthèse et tableaux au format Markdown (wiki, dépôt)">Rapport Markdown</button>
+            <button id="exp-zip" role="menuitem" title="HTML + PDF + JSON + CSV + Excel + Markdown + toutes les PNG">Archive ZIP complète</button>
+            <span class="muted">Données</span>
             <button id="exp-csv" role="menuitem">Actions — CSV (Excel)</button>
+            <button id="exp-xlsx" role="menuitem" title="Classeur 3 feuilles : Synthèse, Membres, Actions">Classeur Excel (.xlsx)</button>
             <button id="exp-json" role="menuitem">Analyse complète — JSON</button>
+            <span class="muted">Images</span>
             <button id="exp-png" role="menuitem">Timeline — PNG</button>
+            <button id="exp-sheet" role="menuitem" title="Indicateurs + 8 graphiques + heatmap en une seule image">Planche — tous les graphiques (PNG)</button>
           </span>
         </span>
         <button class="dash-btn" id="btn-log" title="Journal technique (identifiants masqués)">☰ Journal</button>
@@ -284,7 +326,37 @@
         </table>
       </div>
     </div>
-    <p class="app-footer" id="dash-footer">—</p>
+    <div class="foot-bar">
+      <p class="app-footer" id="dash-footer">—</p>
+      <span class="foot-tools">
+        <button class="dash-btn" id="btn-theme" title="Thème d'affichage (auto / clair / sombre)">☀ Thème : auto</button>
+        <button class="dash-btn" id="btn-kbd" title="Raccourcis clavier (?)">⌨ Raccourcis</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
+  <div id="kbd-panel">
+    <div class="lp-head">
+      <strong>Raccourcis clavier</strong>
+      <span style="font-size:10px;color:var(--color-text-tertiary)">— dashboard actif, hors champs de saisie</span>
+      <span class="grow">
+        <button class="dash-btn" id="btn-kbd-close">Fermer</button>
+      </span>
+    </div>
+    <table>
+      <tbody>
+        <tr><td><kbd>E</kbd></td><td>Ouvrir le menu « Export »</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Exporter le rapport PDF</td></tr>
+        <tr><td><kbd>H</kbd></td><td>Exporter le rapport HTML hors-ligne</td></tr>
+        <tr><td><kbd>G</kbd></td><td>Basculer granularité semaine / mois</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Changer de thème (auto / clair / sombre)</td></tr>
+        <tr><td><kbd>/</kbd></td><td>Filtrer un membre (champ de recherche)</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Afficher / masquer cette aide</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Fermer les fenêtres et menus</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -307,10 +379,10 @@
 <!-- Bibliothèque de graphiques : URL d'origine conservée ; un plan de
      secours jsDelivr/unpkg est tenté automatiquement par l'application si
      ce CDN est injoignable (voir ensureChartLib). -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
+<script id="tba-chartjs-bundle" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRELLO BOARD ACTIVITY ANALYZER — v4.0.0
+   TRELLO BOARD ACTIVITY ANALYZER — v5.0.0
    Analyse d'historique de tableau Trello, 100 % côté client.
 
    Architecture (le fichier reste autonome : aucun build, aucun module)
@@ -327,14 +399,51 @@
    9. CHART KIT       factory Chart.js (détruit/reconstruit comme v1)
    10. VIEWS          setup, loading, dashboard (rendus isolés)
    11. APP            wiring événements, contrôles, export, journal, API
+   15b-15h EXPORTS    modèle de rapport, Markdown, mini-PDF, mini-ZIP/XLSX,
+                      planche PNG, rapport HTML hors-ligne autonome
+   19. CONFORT        thème clair/sombre, raccourcis clavier, self-test
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 (function () {
 
+  /* ═══════════════ 0. AUTO-CAPTURE (exports hors-ligne) ═══════════════════ */
+
+  /**
+   * Le script se capture lui-même (source + markup + CSS) au démarrage pour
+   * générer des rapports HTML hors-ligne 100 % autonomes : l'export est le
+   * programme complet en « mode rapport » (window.__TBA_EMBEDDED__), d'où
+   * l'interactivité (filtres, tris, granularité, re-exports) sans serveur et
+   * sans identifiants. Capture jamais bloquante (vide si indisponible).
+   */
+  const SELF_SRC = (function () {
+    try { const s = document.currentScript; return s && s.textContent ? s.textContent : ''; }
+    catch (_) { return ''; }
+  })();
+  const SELF_STYLE = (function () {
+    try { const el = document.getElementById('tba-style'); return el ? el.textContent : ''; }
+    catch (_) { return ''; }
+  })();
+  const SELF_MARKUP = (function () {
+    try {
+      const parts = [];
+      const tapp = document.getElementById('tapp');
+      if (tapp) parts.push(tapp.outerHTML);
+      ['toast', 'log-overlay', 'kbd-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) parts.push(el.outerHTML);
+      });
+      return parts.join('\n');
+    } catch (_) { return ''; }
+  })();
+
+  /** Payload de rapport embarqué (mode visionneuse) — présent uniquement dans un export HTML. */
+  const EMBEDDED = (window.__TBA_EMBEDDED__ && typeof window.__TBA_EMBEDDED__ === 'object')
+    ? window.__TBA_EMBEDDED__ : null;
+
   /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
 
   /** Identifiants/version applicative (exposée dans l'export JSON). */
-  const APP_VERSION = '4.0.0';
+  const APP_VERSION = '5.0.0';
 
   /** Endpoint de base de l'API REST Trello v1. */
   const TRELLO_API = 'https://api.trello.com/1';
@@ -407,6 +516,26 @@
   const CHART_FALLBACK_CDNS = [
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
     'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js'
+  ];
+
+  /** Clé du cache local du bundle Chart.js (reprise hors-ligne + exports HTML autonomes). */
+  const CHART_CACHE_SK = SK + ':chartjs:4.4.1';
+  /** Clé de la préférence de thème (auto | light | dark). */
+  const THEME_SK = SK + ':theme';
+  /** Qualité JPEG des graphiques embarqués dans le PDF (DCTDecode). */
+  const EXPORT_JPEG_QUALITY = 0.93;
+  /** Format A4 en points PDF (portrait). */
+  const PDF_PAGE = { w: 595.28, h: 841.89, m: 42 };
+  /** Seuil d'alerte pour les exports volumineux (actions visibles). */
+  const EXPORT_WARN_ACTIONS = 50000;
+  /**
+   * Graphiques exportables : clé interne → nom de fichier ASCII (ZIP/PNG).
+   * L'ordre détermine la planche PNG et l'ordre des sections du PDF.
+   */
+  const CHART_EXPORT_KEYS = [
+    ['timeline', 'timeline'], ['members', 'membres'], ['types', 'types'],
+    ['weekend', 'semaine-weekend'], ['topcards', 'top-cartes'], ['hours', 'heures'],
+    ['trends', 'tendances'], ['typetl', 'types-periode']
   ];
 
   /* ═════════════════════════════ 2. UTILS ═════════════════════════════════ */
@@ -1125,7 +1254,7 @@
     state.charts = {};
   }
 
-  /** Charge Chart.js si le CDN principal a échoué (fallback CDN). */
+  /** Charge Chart.js si le CDN principal a échoué (fallback CDN puis cache local). */
   async function ensureChartLib() {
     if (typeof Chart !== 'undefined') return true;
     for (const url of CHART_FALLBACK_CDNS) {
@@ -1136,10 +1265,94 @@
           s.onload = () => res(); s.onerror = () => rej(new Error('script ' + url + ' indisponible'));
           document.head.appendChild(s);
         });
-        if (typeof Chart !== 'undefined') { log.info('Chart.js chargé depuis le CDN de secours.'); return true; }
+        if (typeof Chart !== 'undefined') { chartJsUrlUsed = url; log.info('Chart.js chargé depuis le CDN de secours.'); return true; }
       } catch (e) { log.warn('Fallback CDN impossible :', e); }
     }
+    // Reprise hors-ligne : cache local du bundle (mis en cache après le 1er chargement).
+    try {
+      const cached = getChartJsSourceFromCacheSync() ||
+        (await Store.get(CHART_CACHE_SK).then(r => (r && r.value && r.value.length > 10000) ? r.value : null).catch(() => null));
+      if (cached && injectChartJsText(cached)) {
+        log.info('Chart.js restauré depuis le cache local (hors-ligne).');
+        return typeof Chart !== 'undefined';
+      }
+    } catch (e) { log.warn('Cache Chart.js inutilisable :', e); }
     return typeof Chart !== 'undefined';
+  }
+
+  /** Dernière URL CDN ayant effectivement fourni Chart.js (mémoire de session). */
+  let chartJsUrlUsed = null;
+  /** Source Chart.js en mémoire (pour l'embarquement dans les rapports HTML). */
+  let chartJsSrcMemo = null;
+
+  /** Injecte le texte du bundle Chart.js dans la page (script idéntifiable). */
+  function injectChartJsText(txt) {
+    try {
+      if (typeof Chart !== 'undefined') return true;
+      const s = document.createElement('script');
+      s.id = 'tba-chartjs-bundle-injected';
+      s.textContent = String(txt).replace(/<\/script/gi, '<\\/script');
+      document.head.appendChild(s);
+      return typeof Chart !== 'undefined';
+    } catch (e) { log.warn('Injection Chart.js impossible :', e); return false; }
+  }
+
+  /** Lit le cache local synchrone (localStorage) sans passer par l'adaptateur asynchrone. */
+  function getChartJsSourceFromCacheSync() {
+    try {
+      if (window.localStorage && localStorage.getItem) {
+        const v = localStorage.getItem(CHART_CACHE_SK);
+        if (v && v.length > 10000) return v;
+      }
+    } catch (_) { /* stockage indisponible */ }
+    return null;
+  }
+
+  /**
+   * Source complète de Chart.js pour l'embarquement dans un export HTML
+   * autonome. Ordre : bundle inliné (déjà un export) → mémoire → cache local →
+   * fetch des CDN. Stocke le résultat pour les sessions hors-ligne suivantes.
+   * @returns {Promise<string|null>}
+   */
+  async function getChartJsSource() {
+    // 1) déjà inliné dans la page (export HTML qui ré-exporte, hors-ligne)
+    const inline = document.getElementById('tba-chartjs-bundle-injected') || document.getElementById('tba-chartjs-bundle');
+    if (inline && inline.textContent && inline.textContent.length > 10000) return inline.textContent;
+    if (chartJsSrcMemo) return chartJsSrcMemo;
+    // 2) cache local
+    const cached = getChartJsSourceFromCacheSync() || await (async () => {
+      try { const r = await Store.get(CHART_CACHE_SK); return r && r.value && r.value.length > 10000 ? r.value : null; }
+      catch (_) { return null; }
+    })();
+    if (cached) { chartJsSrcMemo = cached; return cached; }
+    // 3) réseau (même liste de CDN que le chargement normal)
+    const urls = [];
+    const tag = document.querySelector('script#tba-chartjs-bundle');
+    if (chartJsUrlUsed) urls.push(chartJsUrlUsed);
+    if (tag && tag.src) urls.push(tag.src);
+    CHART_FALLBACK_CDNS.forEach(u => { if (urls.indexOf(u) < 0) urls.push(u); });
+    for (const u of urls) {
+      try {
+        const res = await fetch(u, { method: 'GET' });
+        if (!res.ok) continue;
+        const txt = await res.text();
+        if (txt && txt.length > 10000) {
+          chartJsSrcMemo = txt;
+          try { await Store.set(CHART_CACHE_SK, txt); log.info('Bundle Chart.js mis en cache local (' + Math.round(txt.length / 1024) + ' Ko) — reprise hors-ligne prête.'); }
+          catch (e) { log.warn('Cache Chart.js non écrit :', e); }
+          return txt;
+        }
+      } catch (e) { log.debug('Source Chart.js indisponible via ' + u + ' :', e); }
+    }
+    return null;
+  }
+
+  /** Pré-charge la source Chart.js en tâche de fond (une fois, pour l'hors-ligne). */
+  function warmChartJsCache() {
+    if (EMBEDDED || chartJsSrcMemo) return;
+    const run = () => { getChartJsSource().catch(() => {}); };
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(run, { timeout: 8000 });
+    else setTimeout(run, 2500);
   }
 
   /* ═══════════════════════ 10. VIEWS / UI HELPERS ══════════════════════════ */
@@ -1832,6 +2045,22 @@
     }
   }
 
+  /** Téléchargement de binaires (PDF, ZIP, XLSX) à partir d'octets. */
+  function downloadBytes(bytes, mime, filename) {
+    try {
+      const blob = new Blob([bytes], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      log.info('Export écrit : ' + filename + ' (' + Math.ceil(bytes.length / 1024) + ' Ko)');
+    } catch (e) {
+      log.error('Échec de téléchargement :', e);
+      toast('Export impossible dans ce contexte.', 'error');
+    }
+  }
+
   /** Construit le contenu CSV des actions visibles (séparé du téléchargement : testable, réutilisable). */
   function buildActionsCsv(list) {
     const out = ['id,date,type,membre,carte'];
@@ -1881,6 +2110,1272 @@
     toast('PNG de la timeline exporté.', 'success');
   }
 
+  /* ═══════════════════ 15b. MODÈLE DE RAPPORT (partagé) ═══════════════════ */
+
+  /** Matrice heatmap brute [jourSemaine][heure] + max (source unique PDF/planche/HTML statique). */
+  function heatMatrix(st) {
+    const cells = [];
+    for (let d = 0; d < 7; d++) {
+      const row = [];
+      for (let h = 0; h < 24; h++) row.push(st.dayHour.get(d * 24 + h) || 0);
+      cells.push(row);
+    }
+    return { cells, max: st.heatMax || 0 };
+  }
+
+  /**
+   * Modèle de rapport — tout ce dont Markdown / PDF / XLSX / planche PNG /
+   * HTML statique ont besoin, en réutilisant les formules et libellés exacts
+   * du dashboard (vue courante : les filtres actifs s'appliquent).
+   * `list` est transitoire (jamais sérialisé). Aucun identifiant API inclus.
+   */
+  function buildReportModel() {
+    const list = getVisible();
+    const st = computeStats(list);
+    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const days = Math.max(1, st.spanMs / 864e5);
+    const tl = Array.from(st.typeCounts.keys()).sort((a, b) => st.typeCounts.get(b) - st.typeCounts.get(a));
+
+    const members = [];
+    for (const [name, count] of st.memberCounts.entries()) {
+      const ex = st.memberExtras.get(name) || { comments: 0, creates: 0, cards: new Set(), days: new Set(), lastMs: 0 };
+      members.push({
+        name, count, comments: ex.comments, creates: ex.creates,
+        cards: ex.cards.size, days: ex.days.size, lastMs: ex.lastMs,
+        lastLabel: ex.lastMs ? fmtDate(ex.lastMs) : '—'
+      });
+    }
+    members.sort((a, b) => b.count - a.count || String(a.name).localeCompare(String(b.name), LS));
+
+    const topCards = Array.from(st.cardCounts.entries())
+      .map(e => ({ name: e[0], count: e[1] }))
+      .sort((a, b) => b.count - a.count).slice(0, 10);
+
+    const f = state.filter;
+    const filterActive = f.members.size > 0 || f.fromMs || f.toMs;
+
+    const model = {
+      app: 'trello-board-activity-analyzer',
+      version: APP_VERSION,
+      boardName: state.board && state.board.name != null ? String(state.board.name) : 'Tableau',
+      boardId: (state.creds && state.creds.boardId) || (state.board && state.board.id) || '',
+      exportedAt: new Date().toISOString(),
+      generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      gran: state.currentGran,
+      range: {
+        oldestMs: st.total ? st.oldest : Date.now(),
+        newestMs: st.total ? st.newest : Date.now(),
+        oldestLabel: fmtDate(st.total ? st.oldest : Date.now()),
+        newestLabel: fmtDate(st.total ? st.newest : Date.now())
+      },
+      filters: {
+        active: !!filterActive,
+        members: Array.from(f.members),
+        fromMs: f.fromMs, toMs: f.toMs,
+        label: filterActive
+          ? [
+              f.members.size ? 'membres : ' + Array.from(f.members).join(', ') : '',
+              f.fromMs ? 'du ' + fmtDate(f.fromMs) : '',
+              f.toMs ? 'au ' + fmtDate(f.toMs) : ''
+            ].filter(Boolean).join(' · ')
+          : 'aucun'
+      },
+      totals: {
+        actions: st.total,
+        actionCountAll: state.actions.length,
+        spanDaysRounded: Math.round(days),
+        spanDaysExact: st.total ? st.spanDays : 0,
+        dayAvg: st.total / Math.max(1, st.spanDays),
+        weekAvg: Math.round(st.total / Math.max(1, days / 7)),
+        members: ms.length,
+        topMember: ms[0] ? ms[0][0] : null,
+        topMemberShort: ms[0] ? firstWord(ms[0][0]) : null,
+        topMemberCount: ms[0] ? ms[0][1] : 0,
+        activeDays: st.dayCounts.size,
+        peakDayKey: ds[0] ? ds[0][0] : null,
+        peakDayLabel: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—',
+        peakDayCount: ds[0] ? ds[0][1] : 0,
+        peakHour: st.peakHour, peakHourCount: st.total ? st.hours[st.peakHour] : 0,
+        comments: st.comments,
+        commentShare: st.total ? Math.round(st.comments / st.total * 100) : 0,
+        creates: st.creates,
+        weekendShare: st.total ? Math.round(st.weekend / st.total * 100) : 0,
+        weekdays: st.weekdays, weekend: st.weekend,
+        jourShare: st.total ? Math.round(st.jour / st.total * 100) : 0,
+        nuitShare: st.total ? Math.round(st.nuit / st.total * 100) : 0,
+        longestStreak: st.longestStreak
+      },
+      /* Mêmes libellés/valeurs que les cartes du dashboard (parité v1). */
+      kpis: [
+        { label: 'Total actions', value: st.total.toLocaleString(), sub: 'sur ' + Math.round(days) + ' jours' },
+        { label: 'Membres actifs', value: String(ms.length), sub: ms[0] ? '↑ ' + firstWord(ms[0][0]) : '' },
+        { label: 'Jour le + actif', value: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
+        { label: 'Moy. / semaine', value: String(Math.round(st.total / Math.max(1, days / 7))), sub: 'actions/semaine' },
+        { label: 'Commentaires', value: st.comments.toLocaleString(), sub: st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action' },
+        { label: 'Moyenne / jour', value: (st.total / Math.max(1, st.spanDays)).toFixed(1), sub: 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)' },
+        { label: 'Heure de pointe', value: st.total ? st.peakHour + 'h' : '—', sub: st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '' },
+        {
+          label: 'Part week-end',
+          value: st.total ? Math.round(st.weekend / st.total * 100) + '%' : '—',
+          sub: 'série max : ' + st.longestStreak + ' j · jour/nuit ' +
+            (st.total ? Math.round(st.jour / st.total * 100) : 0) + '/' +
+            (st.total ? Math.round(st.nuit / st.total * 100) : 0)
+        }
+      ],
+      types: tl.map(l => ({
+        group: l, count: st.typeCounts.get(l),
+        share: st.total ? Math.round(st.typeCounts.get(l) / st.total * 100) : 0
+      })),
+      members, topCards,
+      hours: st.hours.slice(),
+      heat: heatMatrix(st),
+      timeline: { week: byPeriod(list, 'week'), month: byPeriod(list, 'month') },
+      list
+    };
+    return model;
+  }
+
+  /* ═══════════════════════ 15c. RAPPORT MARKDOWN ══════════════════════════ */
+
+  /** Échappement de cellule de tableau Markdown (barres verticales). */
+  function mdCell(v) {
+    return String(v == null ? '' : v).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+  }
+
+  /**
+   * Rapport Markdown complet : synthèse (KPI), membres, cartes, types.
+   * @param {*} model @returns {string}
+   */
+  function buildMarkdownReport(model) {
+    const t = model.totals;
+    const md = [];
+    md.push('# ' + mdCell(model.boardName) + ' — Analyse d’activité Trello');
+    md.push('');
+    md.push('> Généré le ' + model.generatedLabel + ' · Trello Board Activity Analyzer v' + model.version);
+    md.push('> Période : ' + model.range.oldestLabel + ' → ' + model.range.newestLabel + ' · ' + t.actions.toLocaleString() + ' action(s) affichée(s)' + (model.filters.active ? ' sur ' + t.actionCountAll.toLocaleString() + ' (filtres actifs)' : ''));
+    md.push('> Filtres : ' + mdCell(model.filters.label));
+    md.push('');
+    md.push('## Synthèse');
+    md.push('');
+    md.push('| Indicateur | Valeur |');
+    md.push('|---|---|');
+    model.kpis.forEach(k => md.push('| ' + mdCell(k.label) + ' | ' + mdCell(k.value) + (k.sub ? ' — ' + mdCell(k.sub) : '') + ' |'));
+    md.push('');
+    md.push('## Membres');
+    md.push('');
+    md.push('| Membre | Actions | Commentaires | Créations | Cartes touchées | Jours actifs | Dernière activité |');
+    md.push('|---|---:|---:|---:|---:|---:|---|');
+    model.members.forEach(m => md.push(
+      '| ' + mdCell(m.name) + ' | ' + m.count.toLocaleString() + ' | ' + m.comments.toLocaleString() +
+      ' | ' + m.creates.toLocaleString() + ' | ' + m.cards.toLocaleString() + ' | ' + m.days +
+      ' | ' + mdCell(m.lastLabel) + ' |'
+    ));
+    if (!model.members.length) md.push('| — | 0 | 0 | 0 | 0 | 0 | — |');
+    md.push('');
+    md.push('## Cartes les plus actives');
+    md.push('');
+    md.push('| Carte | Actions |');
+    md.push('|---|---:|');
+    model.topCards.forEach(c => md.push('| ' + mdCell(c.name) + ' | ' + c.count.toLocaleString() + ' |'));
+    if (!model.topCards.length) md.push('| — | 0 |');
+    md.push('');
+    md.push('## Types d’actions');
+    md.push('');
+    md.push('| Groupe | Volume | Part |');
+    md.push('|---|---:|---:|');
+    model.types.forEach(ty => md.push('| ' + mdCell(ty.group) + ' | ' + ty.count.toLocaleString() + ' | ' + ty.share + '% |'));
+    if (!model.types.length) md.push('| — | 0 | 0% |');
+    md.push('');
+    md.push('---');
+    md.push('');
+    md.push('_Rapport généré localement par Trello Board Activity Analyzer v' + model.version + ' — aucune donnée transmise hors de votre navigateur._');
+    return md.join('\n') + '\n';
+  }
+
+  /* ══════════════════ 15d. MINI GÉNÉRATEUR PDF (A4, sans dépendance) ══════ */
+
+  /*
+   * PDF 1.4 écrit à la main : texte WinAnsi (accents français OK) en Helvetica
+   * / Helvetica-Bold / Courier, graphiques en images JPEG (DCTDecode), heatmap
+   * vectorielle, pagination A4. Aucune compression externe nécessaire : le
+   * flux JPEG du canvas est embarqué tel quel.
+   */
+
+  /** Table de substitution typographie → WinAnsi (flèches, tirets, ellipsis…). */
+  const PDF_SUBST = {
+    '\u2014': '\u0097', '\u2013': '\u0096', '\u2026': '\u0085', '\u2022': '\u0095',
+    '\u2192': '-', '\u2190': '-', '\u2191': '^', '\u2193': 'v', '\u21a5': '^', '\u21a7': 'v',
+    '\u21bb': '~', '\u21ba': '~', '\u2715': 'x', '\u2716': 'x', '\u25b2': '^', '\u25bc': 'v',
+    '\u26a0': '!', '\u2630': '=', '\u21e4': '-', '\u21e5': '-', '\u21a4': '-', '\u21a6': '-',
+    '\u2912': '^', '\u2913': 'v', '\u00a0': ' ', '\u2018': '\u0091', '\u2019': '\u0092',
+    '\u201c': '\u0093', '\u201d': '\u0094'
+  };
+
+  /** Restreint une chaîne à du WinAnsi lisible (caractères > U+00FF → '?'). */
+  function pdfSanitize(s) {
+    const src = String(s == null ? '' : s);
+    let out = '';
+    for (let i = 0; i < src.length; i++) {
+      let ch = src[i];
+      const code = ch.charCodeAt(0);
+      if (code >= 0x2500 && code <= 0x257f) ch = '-';
+      else if (PDF_SUBST[ch]) ch = PDF_SUBST[ch];
+      out += (ch.charCodeAt(0) <= 0xff) ? ch : '?';
+    }
+    return out;
+  }
+
+  /** Chaîne PDF (parenthèses/backslashes échappés, WinAnsi). */
+  function pdfEsc(s) {
+    return pdfSanitize(s).replace(/([\\()])/g, '\\$1');
+  }
+
+  /** Hex UTF-16BE avec BOM — pour les métadonnées Info (noms Unicode intacts). */
+  function pdfHexUtf16(s) {
+    const t = String(s == null ? '' : s);
+    let hex = 'FEFF';
+    for (let i = 0; i < t.length; i++) hex += t.charCodeAt(i).toString(16).toUpperCase().padStart(4, '0');
+    return '<' + hex + '>';
+  }
+
+  /** Octets Latin-1 (texte de contenu PDF). */
+  function latin1Bytes(str) {
+    const s = String(str == null ? '' : str);
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 0xff;
+    return out;
+  }
+
+  /** Largeur approchée d'un glyphe (classes Helvetica). */
+  function charW(ch) {
+    if (ch === ' ') return .28;
+    if ('iljt.,:;\'"|!()[]{}\\`'.indexOf(ch) >= 0) return .30;
+    if ('frI'.indexOf(ch) >= 0) return .36;
+    if ('mwMW@%'.indexOf(ch) >= 0) return .85;
+    if (ch >= 'A' && ch <= 'Z') return .68;
+    if (ch >= '0' && ch <= '9') return .556;
+    return .52;
+  }
+
+  /** Largeur approchée d'un texte. `font` : F1 | F2 | F3. */
+  function textWidth(s, size, font) {
+    const t = String(s == null ? '' : s);
+    if (font === 'F3') return t.length * size * .6;
+    let w = 0;
+    for (let i = 0; i < t.length; i++) w += charW(t[i]);
+    return w * size * (font === 'F2' ? 1.06 : 1);
+  }
+
+  /** Retour à la ligne simple (coupe à la largeur max). */
+  function wrapText(s, maxW, size, font) {
+    const words = String(s == null ? '' : s).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const cand = cur ? cur + ' ' + w : w;
+      if (textWidth(cand, size, font) <= maxW || !cur) cur = cand;
+      else { lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [''];
+  }
+
+  /** Nombre PDF court (max 2 décimales). */
+  const fmtN = n => (Math.round(Number(n) * 100) / 100).toString();
+
+  /** Concatène des morceaux (Uint8Array | string Latin-1) en un Uint8Array. */
+  function concatBytes(parts) {
+    let total = 0;
+    for (const p of parts) total += p.length;
+    const out = new Uint8Array(total);
+    let off = 0;
+    for (const p of parts) { out.set(p, off); off += p.length; }
+    return out;
+  }
+
+  /**
+   * Rapport PDF A4 multi-pages.
+   * @param {*} model   buildReportModel()
+   * @param {Object<key,{jpeg:Uint8Array,w:number,h:number}>} imgMap captures JPEG des graphiques
+   * @returns {Uint8Array}
+   */
+  function buildPdfReport(model, imgMap) {
+    imgMap = imgMap || {};
+    const PW = PDF_PAGE.w, PH = PDF_PAGE.h, M = PDF_PAGE.m, CW = PW - 2 * M;
+    const COL = {
+      accent: '0.729 0.459 0.090',   /* #BA7517 */
+      title: '0.14 0.13 0.12',
+      text: '0.25 0.24 0.21',
+      soft: '0.45 0.43 0.39',
+      faint: '0.56 0.54 0.49',
+      bg: '0.955 0.945 0.92',
+      row: '0.975 0.97 0.955',
+      line: '0.84 0.82 0.77'
+    };
+    /** @type {{ops:string[]}[]} */ const pages = [];
+    /** @type {{ops:string[], y:number} | null} */ let page = null;
+    let y = 0;
+    const foot = [];
+
+    function newPage() { page = { ops: [] }; pages.push(page); y = PH - M; }
+    function room(h) { if (y - h < M + 34) newPage(); }
+    function rect(x, yy, w, h, c) { page.ops.push(c + ' rg ' + fmtN(x) + ' ' + fmtN(yy) + ' ' + fmtN(w) + ' ' + fmtN(h) + ' re f'); }
+    function lineH(x, yy, w) { page.ops.push(COL.line + ' RG 0.7 w ' + fmtN(x) + ' ' + fmtN(yy) + ' m ' + fmtN(x + w) + ' ' + fmtN(yy) + ' l S'); }
+    function text(s, x, size, font, color) {
+      page.ops.push('BT ' + color + ' rg /' + font + ' ' + fmtN(size) + ' Tf 1 0 0 1 ' + fmtN(x) + ' ' + fmtN(y) + ' Tm (' + pdfEsc(s) + ') Tj ET');
+    }
+    function textAt(s, x, yy, size, font, color) {
+      page.ops.push('BT ' + color + ' rg /' + font + ' ' + fmtN(size) + ' Tf 1 0 0 1 ' + fmtN(x) + ' ' + fmtN(yy) + ' Tm (' + pdfEsc(s) + ') Tj ET');
+    }
+    function advance(h) { y -= h; }
+    function sectionTitle(s) {
+      room(24); advance(6);
+      text(s, M, 11, 'F2', COL.title); advance(13);
+      lineH(M, y, CW); advance(10);
+    }
+
+    /* — enregistrement des images JPEG (XObject) — */
+    const xobjects = {};
+    const imageEntries = [];
+    let imgCount = 0;
+    CHART_EXPORT_KEYS.forEach(([key]) => {
+      const img = imgMap[key];
+      if (!img || !img.jpeg || !img.w || !img.h) return;
+      imgCount++;
+      const xname = 'Im' + imgCount;
+      xobjects[key] = xname;
+      imageEntries.push({ xname, jpeg: img.jpeg, w: img.w, h: img.h });
+    });
+
+    function drawImage(key, x, topY, boxW, boxH) {
+      const img = imgMap[key], xn = xobjects[key];
+      if (!img || !xn) return;
+      const scale = Math.min(boxW / img.w, boxH / img.h);
+      const w = img.w * scale, h = img.h * scale;
+      page.ops.push('q ' + fmtN(w) + ' 0 0 ' + fmtN(h) + ' ' + fmtN(x) + ' ' + fmtN(topY - h) + ' cm /' + xn + ' Do Q');
+    }
+
+    function imageBlock(title, key, maxH) {
+      sectionTitle(title);
+      const img = imgMap[key];
+      if (!img || !xobjects[key]) { text('(graphique non disponible)', M, 9, 'F1', COL.faint); advance(14); return; }
+      const h = Math.min(maxH, img.h * (CW / img.w));
+      room(h + 12);
+      drawImage(key, M, y, CW, h);
+      advance(h + 10);
+    }
+
+    function imageRow(items, rowH) {
+      const n = items.length, gap = 10, w = (CW - (n - 1) * gap) / n;
+      room(rowH + 34);
+      advance(6);
+      items.forEach((it, i) => textAt(it.title, M + i * (w + gap), y, 9, 'F2', COL.title));
+      advance(13);
+      lineH(M, y, CW); advance(8);
+      items.forEach((it, i) => drawImage(it.key, M + i * (w + gap), y, w, rowH));
+      advance(rowH + 10);
+    }
+
+    /* ═ page 1 : titre + KPI ═ */
+    newPage();
+    rect(0, PH - 8, PW, 8, COL.accent);
+    advance(16);
+    text(model.boardName, M, 18, 'F2', COL.title); advance(24);
+    text('Analyse d’activité Trello', M, 11, 'F1', COL.soft); advance(15);
+    text('Période : ' + model.range.oldestLabel + ' -> ' + model.range.newestLabel + '   ·   ' +
+      model.totals.actions.toLocaleString() + ' action(s) affichée(s)' +
+      (model.filters.active ? ' sur ' + model.totals.actionCountAll.toLocaleString() : ''), M, 9, 'F1', COL.faint);
+    advance(12);
+    text('Généré le ' + model.generatedLabel + '   ·   Trello Board Activity Analyzer v' + model.version +
+      '   ·   Filtres : ' + model.filters.label, M, 8, 'F1', COL.faint);
+    advance(14);
+    lineH(M, y, CW); advance(14);
+
+    const kH = 48, kGap = 6, kW = (CW - 3 * kGap) / 4;
+    for (let row = 0; row < 2; row++) {
+      room(kH + kGap);
+      for (let col = 0; col < 4; col++) {
+        const k = model.kpis[row * 4 + col];
+        if (!k) continue;
+        const x = M + col * (kW + kGap);
+        rect(x, y - kH, kW, kH, COL.bg);
+        textAt(k.label.toUpperCase(), x + 8, y - 13, 6.5, 'F1', COL.faint);
+        textAt(k.value, x + 8, y - 30, 13, 'F2', COL.title);
+        textAt((wrapText(k.sub, kW - 14, 6.5, 'F1')[0] || ''), x + 8, y - 41, 6.5, 'F1', COL.soft);
+      }
+      advance(kH + kGap);
+    }
+    advance(4);
+
+    /* ═ graphiques ═ */
+    imageBlock('Activité dans le temps', 'timeline', 175);
+    imageRow([
+      { title: 'Types d’actions', key: 'types' },
+      { title: 'Semaine vs Week-end', key: 'weekend' }
+    ], 155);
+    imageBlock('Actions par membre', 'members', 230);
+    imageBlock('Cartes les + actives', 'topcards', 230);
+    imageBlock('Activité par heure', 'hours', 165);
+    imageBlock('Tendances membres dans le temps', 'trends', 190);
+    imageBlock('Types d’actions par période', 'typetl', 190);
+
+    /* ═ heatmap vectorielle ═ */
+    sectionTitle('Heatmap — Heure × Jour de la semaine');
+    {
+      const labelW = 24, cellH = 13, gap = 1.5;
+      const cellW = (CW - labelW) / 24;
+      room(7 * (cellH + gap) + 34);
+      for (let h = 0; h < 24; h += 2) textAt(String(h), M + labelW + h * cellW + 1, y - 7, 5.5, 'F3', COL.faint);
+      advance(12);
+      const hm = model.heat;
+      for (let day = 1; day <= 7; day++) {
+        const d = day % 7;
+        textAt(DAYS[d], M + 2, y - 9, 7, 'F1', COL.soft);
+        for (let h = 0; h < 24; h++) {
+          const v = hm.cells[d][h];
+          const alpha = hm.max > 0 ? Math.sqrt(v / hm.max) : 0;
+          const r = 1 - (1 - 0.937) * alpha, g = 1 - (1 - 0.624) * alpha, b = 1 - (1 - 0.153) * alpha;
+          rect(M + labelW + h * cellW + gap / 2, y - cellH, cellW - gap, cellH, fmtN(r) + ' ' + fmtN(g) + ' ' + fmtN(b));
+        }
+        advance(cellH + gap);
+      }
+      advance(4);
+      text('Volume : 0 -> ' + hm.max + ' actions/case (opacité √)', M, 7, 'F1', COL.faint);
+      advance(14);
+    }
+
+    /* ═ détail par membre ═ */
+    sectionTitle('Détail par membre');
+    {
+      const cols = [
+        { t: 'Membre', w: 170, n: false },
+        { t: 'Actions', w: 62, n: true },
+        { t: 'Comment.', w: 62, n: true },
+        { t: 'Cartes', w: 55, n: true },
+        { t: 'Jours', w: 52, n: true },
+        { t: 'Dern. activité', w: CW - 170 - 62 - 62 - 55 - 52, n: true }
+      ];
+      function headerRow() {
+        room(20);
+        rect(M, y - 11, CW, 14, COL.bg);
+        let x = M + 4;
+        cols.forEach(c => {
+          textAt(c.t, c.n ? x + c.w - 4 - textWidth(c.t, 6.5, 'F1') : x, y - 5, 6.5, 'F2', COL.faint);
+          x += c.w;
+        });
+        advance(16);
+      }
+      headerRow();
+      if (!model.members.length) { text('Aucune donnée pour ce filtre.', M + 4, 8, 'F1', COL.faint); advance(14); }
+      model.members.forEach((m, i) => {
+        if (y < M + 44) { newPage(); headerRow(); }
+        if (i % 2 === 1) rect(M, y - 9, CW, 13, COL.row);
+        const cells = [
+          truncate(m.name, 32, 30),
+          m.count.toLocaleString(), m.comments.toLocaleString(),
+          m.cards.toLocaleString(), m.days.toLocaleString(), m.lastLabel
+        ];
+        let x = M + 4;
+        cells.forEach((s, ci) => {
+          const c = cols[ci];
+          const font = ci === 0 ? 'F1' : 'F3';
+          const xx = c.n ? x + c.w - 4 - textWidth(s, 7, font) : x;
+          textAt(s, xx, y - 5, 7, font, COL.text);
+          x += c.w;
+        });
+        advance(13);
+      });
+      advance(8);
+      lineH(M, y, CW); advance(10);
+      text('Top cartes : ' + (model.topCards.length
+        ? model.topCards.slice(0, 5).map(c => truncate(c.name, 28, 26) + ' (' + c.count + ')').join(' · ')
+        : '—'), M, 7.5, 'F1', COL.soft);
+    }
+
+    /* ═ assemblage objets PDF ═ */
+    const objects = [];
+    const add = (dict, stream) => { objects.push(stream ? { dict, stream } : { dict }); return objects.length; };
+
+    const catalogN = add('PLACEHOLDER');                 // 1
+    const pagesN = add('PLACEHOLDER');                   // 2
+    const f1N = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    const f2N = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const f3N = add('<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>');
+    const infoN = add('<< /Title ' + pdfHexUtf16(model.boardName + ' — Analyse d’activité Trello') +
+      ' /Creator ' + pdfHexUtf16('Trello Board Activity Analyzer v' + model.version) +
+      ' /Producer ' + pdfHexUtf16('trello-board-activity-analyzer (mini-pdf intégré)') +
+      ' /CreationDate (D:' + pdfSanitize(model.exportedAt.replace(/[-:TZ]/g, '').slice(0, 14)) + ') >>');
+
+    const imgNums = {};
+    imageEntries.forEach(e => {
+      imgNums[e.xname] = add('<< /Type /XObject /Subtype /Image /Width ' + e.w + ' /Height ' + e.h +
+        ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + e.jpeg.length + ' >>', e.jpeg);
+    });
+
+    /* pieds de page (une fois le nombre de pages connu) */
+    pages.forEach((p, i) => {
+      p.ops.push('0.56 0.54 0.49 rg');
+      p.ops.push('BT /F1 7 Tf 1 0 0 1 ' + fmtN(M) + ' ' + fmtN(M - 16) + ' Tm (' + pdfEsc(truncate(model.boardName, 60, 55)) + ') Tj ET');
+      const label = 'Page ' + (i + 1) + ' / ' + pages.length;
+      p.ops.push('BT /F1 7 Tf 1 0 0 1 ' + fmtN(PW - M - textWidth(label, 7, 'F1')) + ' ' + fmtN(M - 16) + ' Tm (' + pdfEsc(label) + ') Tj ET');
+      p.ops.push('0.84 0.82 0.77 RG 0.5 w ' + fmtN(M) + ' ' + fmtN(M - 8) + ' m ' + fmtN(PW - M) + ' ' + fmtN(M - 8) + ' l S');
+    });
+
+    const pageNums = pages.map(p => {
+      const stream = latin1Bytes(p.ops.join('\n'));
+      const contentN = add('<< /Length ' + stream.length + ' >>', stream);
+      const xobjPart = imageEntries.length
+        ? ' /XObject << ' + imageEntries.map(e => '/' + e.xname + ' ' + imgNums[e.xname] + ' 0 R').join(' ') + ' >>'
+        : '';
+      const pageN = add('<< /Type /Page /Parent ' + pagesN + ' 0 R /MediaBox [0 0 ' + PW + ' ' + PH + ']' +
+        ' /Resources << /Font << /F1 ' + f1N + ' 0 R /F2 ' + f2N + ' 0 R /F3 ' + f3N + ' 0 R >>' + xobjPart + ' >>' +
+        ' /Contents ' + contentN + ' 0 R >>');
+      return pageN;
+    });
+
+    objects[catalogN - 1] = { dict: '<< /Type /Catalog /Pages ' + pagesN + ' 0 R >>' };
+    objects[pagesN - 1] = { dict: '<< /Type /Pages /Kids [' + pageNums.map(n => n + ' 0 R').join(' ') + '] /Count ' + pages.length + ' >>' };
+
+    /* xref + trailer */
+    const chunks = [];
+    let length = 0;
+    const pushStr = s => { const b = latin1Bytes(s); chunks.push(b); length += b.length; };
+    pushStr('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+    const offsets = [];
+    objects.forEach((o, i) => {
+      offsets.push(length);
+      pushStr((i + 1) + ' 0 obj\n' + o.dict);
+      if (o.stream) { pushStr('\nstream\n'); chunks.push(o.stream); length += o.stream.length; pushStr('\nendstream'); }
+      pushStr('\nendobj\n');
+    });
+    const xrefPos = length;
+    pushStr('xref\n0 ' + (objects.length + 1) + '\n0000000000 65535 f \n');
+    offsets.forEach(off => pushStr(String(off).padStart(10, '0') + ' 00000 n \n'));
+    pushStr('trailer\n<< /Size ' + (objects.length + 1) + ' /Root ' + catalogN + ' 0 R /Info ' + infoN + ' 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF\n');
+    return concatBytes(chunks);
+  }
+
+  /* ══════════════════ 15e. MINI ZIP + CLASSEUR XLSX ══════════════════════ */
+
+  /** CRC-32 (ZIP) — table précalculée. */
+  const CRC_TABLE = (function () {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(u8) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  /** UTF-8 → octets. */
+  function utf8Bytes(s) {
+    return new TextEncoder().encode(String(s == null ? '' : s));
+  }
+
+  /** Archive ZIP valide (méthode STORE : les PNG/PDF sont déjà compressés). */
+  function zipStore(entries) {
+    const now = new Date();
+    const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff;
+    const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff;
+    const parts = [];
+    let offset = 0;
+    const central = [];
+    entries.forEach(e => {
+      const nameBytes = utf8Bytes(e.name);
+      const data = e.data;
+      const crc = crc32(data);
+      const lh = new Uint8Array(30 + nameBytes.length);
+      const dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);        /* version */
+      dv.setUint16(6, 0x0800, true);    /* noms UTF-8 */
+      dv.setUint16(8, 0, true);         /* STORE */
+      dv.setUint16(10, dosTime, true);
+      dv.setUint16(12, dosDate, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true);
+      dv.setUint16(28, 0, true);
+      lh.set(nameBytes, 30);
+      central.push({ nameBytes, crc, size: data.length, offset, dosTime, dosDate });
+      parts.push(lh, data);
+      offset += lh.length + data.length;
+    });
+    const cdStart = offset;
+    central.forEach(c => {
+      const ch = new Uint8Array(46 + c.nameBytes.length);
+      const dv = new DataView(ch.buffer);
+      dv.setUint32(0, 0x02014b50, true);
+      dv.setUint16(4, 20, true); dv.setUint16(6, 20, true);
+      dv.setUint16(8, 0x0800, true); dv.setUint16(10, 0, true);
+      dv.setUint16(12, c.dosTime, true); dv.setUint16(14, c.dosDate, true);
+      dv.setUint32(16, c.crc, true);
+      dv.setUint32(20, c.size, true); dv.setUint32(24, c.size, true);
+      dv.setUint16(28, c.nameBytes.length, true);
+      /* extras/comments 0 + disque 0 + attrs 0 */
+      dv.setUint32(42, c.offset, true);
+      ch.set(c.nameBytes, 46);
+      parts.push(ch);
+      offset += ch.length;
+    });
+    const eocd = new Uint8Array(22);
+    const dv = new DataView(eocd.buffer);
+    dv.setUint32(0, 0x06054b50, true);
+    dv.setUint16(8, central.length, true);
+    dv.setUint16(10, central.length, true);
+    dv.setUint32(12, offset - cdStart, true);
+    dv.setUint32(16, cdStart, true);
+    parts.push(eocd);
+    return concatBytes(parts);
+  }
+
+  /** Offset de l'EOCD d'une archive (validateur / self-test). -1 si absent. */
+  function findEocd(u8) {
+    for (let i = u8.length - 22; i >= 0; i--) {
+      if (u8[i] === 0x50 && u8[i + 1] === 0x4B && u8[i + 2] === 0x05 && u8[i + 3] === 0x06) return i;
+    }
+    return -1;
+  }
+
+  /** Échappement XML. */
+  function xmlEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  }
+
+  /** Nom de colonne Excel (0 → A, 26 → AA). */
+  function colName(i) {
+    let s = '';
+    i++;
+    while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); }
+    return s;
+  }
+
+  /** Feuille XLSX minimale : lignes [{v, t:'s'|'n'}], en-têtes figés, largeurs. */
+  function xlsxSheet(rows, widths) {
+    const cols = '<cols>' + widths.map((w, i) =>
+      '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>';
+    const data = rows.map((row, ri) => {
+      const cells = row.map((c, ci) => {
+        const ref = colName(ci) + (ri + 1);
+        if (c && c.t === 'n' && Number.isFinite(c.v)) return '<c r="' + ref + '"><v>' + c.v + '</v></c>';
+        const v = c && c.v != null ? c.v : '';
+        return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>';
+      }).join('');
+      return '<row r="' + (ri + 1) + '">' + cells + '</row>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      cols + '<sheetData>' + data + '</sheetData></worksheet>';
+  }
+
+  /**
+   * Classeur Excel 3 feuilles (Synthèse / Membres / Actions) — OOXML pur,
+   * empaqueté avec le mini-ZIP ci-dessus. S'ouvre dans Excel, Numbers, LibreOffice.
+   * @param {*} model @returns {Uint8Array}
+   */
+  function buildXlsxWorkbook(model) {
+    const s = v => ({ t: 's', v });
+    const n = v => ({ t: 'n', v });
+    const t = model.totals;
+
+    const synthRows = [[s('Indicateur'), s('Valeur')]];
+    model.kpis.forEach(k => synthRows.push([s(k.label + (k.sub ? ' — ' + k.sub : '')), s(k.value)]));
+    synthRows.push([s('Tableau'), s(model.boardName)]);
+    synthRows.push([s('Période'), s(model.range.oldestLabel + ' → ' + model.range.newestLabel)]);
+    synthRows.push([s('Filtres'), s(model.filters.label)]);
+    synthRows.push([s('Généré le'), s(model.generatedLabel)]);
+    synthRows.push([s('Application'), s('trello-board-activity-analyzer v' + model.version)]);
+
+    const memRows = [[s('Membre'), s('Actions'), s('Commentaires'), s('Créations'), s('Cartes touchées'), s('Jours actifs'), s('Dernière activité')]];
+    model.members.forEach(m => memRows.push([
+      s(m.name), n(m.count), n(m.comments), n(m.creates), n(m.cards), n(m.days),
+      s(m.lastMs ? new Date(m.lastMs).toISOString() : '')
+    ]));
+
+    const actRows = [[s('id'), s('date'), s('type'), s('groupe'), s('membre'), s('carte')]];
+    for (const a of model.list) {
+      actRows.push([s(a.id), s(a.date), s(a.type), s(classify(a.type)), s(a.memberName), s(a.cardName)]);
+    }
+
+    const sheets = [
+      { name: 'Synthèse', xml: xlsxSheet(synthRows, [56, 40]) },
+      { name: 'Membres', xml: xlsxSheet(memRows, [28, 10, 13, 11, 15, 12, 24]) },
+      { name: 'Actions', xml: xlsxSheet(actRows, [18, 24, 24, 18, 26, 40]) }
+    ];
+
+    const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      sheets.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') +
+      '</Types>';
+
+    const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>';
+
+    const workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets>' + sheets.map((sh, i) =>
+        '<sheet name="' + xmlEsc(sh.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') +
+      '</sheets></workbook>';
+
+    const wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      sheets.map((_, i) =>
+        '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+      '</Relationships>';
+
+    return zipStore([
+      { name: '[Content_Types].xml', data: utf8Bytes(contentTypes) },
+      { name: '_rels/.rels', data: utf8Bytes(rootRels) },
+      { name: 'xl/workbook.xml', data: utf8Bytes(workbook) },
+      { name: 'xl/_rels/workbook.xml.rels', data: utf8Bytes(wbRels) }
+    ].concat(sheets.map((sh, i) => ({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: utf8Bytes(sh.xml) }))));
+  }
+
+  /* ══════════════════ 15f. CAPTURES D'IMAGES + PLANCHE PNG ═══════════════ */
+
+  /** Titres FR des graphiques (ordre = CHART_EXPORT_KEYS). */
+  const CHART_EXPORT_TITLES = {
+    timeline: 'Activité dans le temps',
+    members: 'Actions par membre',
+    types: 'Types d’actions',
+    weekend: 'Semaine vs Week-end',
+    topcards: 'Cartes les + actives',
+    hours: 'Activité par heure',
+    trends: 'Tendances membres dans le temps',
+    typetl: 'Types d’actions par période'
+  };
+
+  /** data-URL → octets. */
+  function dataUrlToBytes(url) {
+    const b64 = String(url).split(',')[1] || '';
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  /** Canvas → JPEG sur fond blanc (JPEG = flot DCTDecode direct dans le PDF). */
+  function snapshotCanvasJpeg(canvas, quality) {
+    try {
+      const w = canvas.width, h = canvas.height;
+      if (!w || !h) return null;
+      const tmp = document.createElement('canvas');
+      tmp.width = w; tmp.height = h;
+      const ctx = tmp.getContext('2d');
+      if (!ctx) return null;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(canvas, 0, 0);
+      const url = tmp.toDataURL('image/jpeg', quality);
+      if (!url || url.indexOf('data:image') !== 0) return null;
+      return { jpeg: dataUrlToBytes(url), w, h };
+    } catch (_) { return null; }
+  }
+
+  /** Canvas → octets PNG sur fond blanc. */
+  function snapshotCanvasPng(canvas) {
+    try {
+      const w = canvas.width, h = canvas.height;
+      if (!w || !h) return null;
+      const tmp = document.createElement('canvas');
+      tmp.width = w; tmp.height = h;
+      const ctx = tmp.getContext('2d');
+      if (!ctx) return null;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(canvas, 0, 0);
+      const url = tmp.toDataURL('image/png');
+      return url && url.indexOf('data:') === 0 && url.length > 32 ? dataUrlToBytes(url) : null;
+    } catch (_) { return null; }
+  }
+
+  /** Capture tous les graphiques vivants : JPEG (PDF) + PNG (ZIP). */
+  function collectChartImages() {
+    /** @type {Object} */ const jpegMap = {};
+    /** @type {Object} */ const pngMap = {};
+    CHART_EXPORT_KEYS.forEach(([key]) => {
+      const c = state.charts[key];
+      if (!c || !c.canvas) return;
+      const j = snapshotCanvasJpeg(c.canvas, EXPORT_JPEG_QUALITY);
+      if (j) jpegMap[key] = j;
+      const p = snapshotCanvasPng(c.canvas);
+      if (p) pngMap[key] = p;
+    });
+    return { jpegMap, pngMap };
+  }
+
+  /** Dessine un canvas source dans une boîte (contain) sur un contexte 2D. */
+  function drawFit(ctx, src, x, y, w, h) {
+    const scale = Math.min(w / src.width, h / src.height);
+    const dw = src.width * scale, dh = src.height * scale;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, w, h);
+    ctx.drawImage(src, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+
+  /**
+   * « Planche » PNG unique : en-tête, 8 KPI, les 8 graphiques et la heatmap.
+   * @param {*} model @returns {string|null} data-URL PNG
+   */
+  function buildContactSheetPng(model) {
+    try {
+      const S = 1.5;
+      const W = 1400, M = 36;
+      const headH = 118, kpiH = 2 * 74 + 8, cellH = 252, heatH = 236, footH = 42;
+      const chartCount = CHART_EXPORT_KEYS.filter(([k]) => state.charts[k] && state.charts[k].canvas).length;
+      const rowsCharts = Math.max(1, Math.ceil(chartCount / 2));
+      const H = headH + kpiH + rowsCharts * cellH + heatH + footH;
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(W * S); cv.height = Math.round(H * S);
+      const ctx = cv.getContext('2d');
+      if (!ctx) return null;
+      ctx.scale(S, S);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+
+      /* en-tête */
+      ctx.fillStyle = '#BA7517'; ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = '#2b2a27'; ctx.font = '600 25px monospace';
+      ctx.fillText(truncate(model.boardName, 64, 60), M, 44);
+      ctx.fillStyle = '#5c594f'; ctx.font = '13px monospace';
+      ctx.fillText('Analyse d’activité Trello — ' + model.range.oldestLabel + ' → ' + model.range.newestLabel, M, 68);
+      ctx.fillStyle = '#8b867a'; ctx.font = '11px monospace';
+      ctx.fillText(model.totals.actions.toLocaleString() + ' action(s) affichée(s)' +
+        (model.filters.active ? ' · filtres : ' + truncate(model.filters.label, 70, 65) : '') +
+        ' · généré le ' + model.generatedLabel + ' · v' + model.version, M, 88);
+      let y = headH;
+
+      /* KPI 4 × 2 */
+      const kW = (W - 2 * M - 3 * 10) / 4, kH = 70;
+      model.kpis.forEach((k, i) => {
+        const x = M + (i % 4) * (kW + 10);
+        const yy = y + Math.floor(i / 4) * (kH + 8);
+        ctx.fillStyle = '#f4f1ea'; ctx.fillRect(x, yy, kW, kH);
+        ctx.fillStyle = '#8b867a'; ctx.font = '10px monospace';
+        ctx.fillText(k.label.toUpperCase(), x + 10, yy + 18);
+        ctx.fillStyle = '#2b2a27'; ctx.font = '600 21px monospace';
+        ctx.fillText(k.value, x + 10, yy + 42);
+        ctx.fillStyle = '#5c594f'; ctx.font = '10px monospace';
+        ctx.fillText(truncate(k.sub, 28, 26), x + 10, yy + 60);
+      });
+      y += kpiH;
+
+      /* graphiques 2 colonnes */
+      let col = 0;
+      CHART_EXPORT_KEYS.forEach(([key]) => {
+        const c = state.charts[key];
+        if (!c || !c.canvas) return;
+        const x = M + col * (W / 2 - M + 8);
+        const boxW = (W - 2 * M - 16) / 2;
+        ctx.fillStyle = '#5c594f'; ctx.font = '600 13px monospace';
+        ctx.fillText(CHART_EXPORT_TITLES[key] || key, x, y + 16);
+        drawFit(ctx, c.canvas, x, y + 26, boxW, cellH - 40);
+        col = 1 - col;
+        if (col === 0) y += cellH;
+      });
+      if (col === 1) y += cellH;
+
+      /* heatmap */
+      ctx.fillStyle = '#5c594f'; ctx.font = '600 13px monospace';
+      ctx.fillText('Heatmap — Heure × Jour de la semaine', M, y + 16);
+      const hm = model.heat, labelW = 30, cellW = (W - 2 * M - labelW) / 24, chH = 24;
+      ctx.font = '10px monospace';
+      for (let h = 0; h < 24; h += 2) {
+        ctx.fillStyle = '#8b867a';
+        ctx.fillText(String(h), M + labelW + h * cellW + 2, y + 36);
+      }
+      for (let day = 1; day <= 7; day++) {
+        const d = day % 7;
+        ctx.fillStyle = '#8b867a';
+        ctx.fillText(DAYS[d], M + 2, y + 52 + (day - 1) * (chH + 2) + 16);
+        for (let h = 0; h < 24; h++) {
+          const v = hm.cells[d][h];
+          const alpha = hm.max > 0 ? Math.sqrt(v / hm.max) : 0;
+          ctx.fillStyle = 'rgba(239,159,39,' + alpha + ')';
+          ctx.fillRect(M + labelW + h * cellW + 1, y + 42 + (day - 1) * (chH + 2), cellW - 2, chH);
+        }
+      }
+      y += heatH;
+      ctx.fillStyle = '#8b867a'; ctx.font = '10px monospace';
+      ctx.fillText('Trello Board Activity Analyzer v' + model.version + ' — export local, aucune donnée transmise.', M, y + 18);
+      return cv.toDataURL('image/png');
+    } catch (e) {
+      log.error('Planche PNG impossible :', e);
+      return null;
+    }
+  }
+
+  /* ═══════════ 15g. RAPPORT HTML HORS-LIGNE AUTONOME ═════════════════════ */
+
+  /** JSON sûr pour inlining dans une balise script (anti-cassure / anti-XSS). */
+  function embedJson(obj) {
+    return JSON.stringify(obj)
+      .replace(/</g, '\\u003c')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+  }
+
+  /**
+   * Payload embarqué dans l'export HTML — TOUTES les actions (format slim v3),
+   * l'état des filtres et des toggles. Jamais d'identifiants API.
+   */
+  function embeddedPayload() {
+    const f = state.filter;
+    return {
+      kind: 'trello-activity-export-v1',
+      app: 'trello-board-activity-analyzer',
+      version: APP_VERSION,
+      board: state.board ? { name: state.board.name, id: state.board.id || (state.creds && state.creds.boardId) || '' } : null,
+      exportedAt: new Date().toISOString(),
+      gran: state.currentGran,
+      heatMetric: state.heatMetric,
+      filter: {
+        members: Array.from(f.members),
+        fromMs: f.fromMs, toMs: f.toMs
+      },
+      actions: state.actions.map(slimAction)
+    };
+  }
+
+  /** Sécurise un bloc JS destiné à l'inlining HTML (jamais de fermeture de script). */
+  const inlineJs = s => String(s == null ? '' : s).replace(/<\/script/gi, '<\\/script');
+
+  /**
+   * Rapport HTML interactif hors-ligne : page autonome embarquant les styles,
+   * la librairie graphique, l'application (mode rapport) et les données.
+   * @param {string} chartSrc source de chart.umd.js
+   * @returns {string}
+   */
+  function buildHtmlExport(chartSrc) {
+    const name = model0BoardName();
+    const banner = 'Export hors-ligne — généré le ' + new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+      ' · Trello Board Activity Analyzer v' + APP_VERSION +
+      ' · données figées : filtres, tris, granularité et re-exports restent interactifs.';
+    return '<!DOCTYPE html>\n<html lang="fr">\n<head>\n' +
+      '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+      '<meta name="color-scheme" content="light dark">\n' +
+      '<meta name="description" content="Rapport d’activité Trello — export hors-ligne interactif (autonome).">\n' +
+      '<title>' + esc(name) + ' — Rapport d’activité Trello</title>\n' +
+      '<style id="tba-style">\n' + SELF_STYLE + '\n</style>\n</head>\n<body>\n' +
+      '<div id="export-banner">' + esc(banner) + '</div>\n' +
+      SELF_MARKUP + '\n' +
+      '<script>window.__TBA_EMBEDDED__ = ' + embedJson(embeddedPayload()) + ';<\/script>\n' +
+      '<script id="tba-chartjs-bundle">' + inlineJs(chartSrc) + '<\/script>\n' +
+      '<script>\n' + inlineJs(SELF_SRC) + '\n<\/script>\n' +
+      '</body>\n</html>\n';
+  }
+
+  /** Nom du tableau pour les titres d'export (sans état mutable). */
+  function model0BoardName() {
+    return state.board && state.board.name != null ? String(state.board.name) : 'Tableau';
+  }
+
+  /** Heatmap HTML statique (volume, tooltips) — copie fidèle du rendu live. */
+  function heatHtml(hm) {
+    let html = '<div class="hm-hour-labels"><div></div>' +
+      Array.from({ length: 24 }, (_, h) => '<div class="hm-hour-lbl">' + h + '</div>').join('') +
+      '</div><div style="overflow-x:auto"><div class="heatmap-grid">';
+    for (let day = 1; day <= 7; day++) {
+      const d = day % 7;
+      html += '<div class="hm-label">' + DAYS[d] + '</div>';
+      for (let h = 0; h < 24; h++) {
+        const v = hm.cells[d][h];
+        const alpha = hm.max > 0 ? Math.pow(v / hm.max, .5) : 0;
+        const tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
+        html += '<div class="hm-cell" style="background:rgba(239,159,39,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
+      }
+    }
+    return html + '</div></div>';
+  }
+
+  /**
+   * Rapport HTML statique (repli si Chart.js ne peut pas être embarqué) :
+   * indicateurs, images des graphiques, heatmap et tableau (tri colonne).
+   * @param {*} model @param {Object} imgMap captures PNG (data-URL acceptées)
+   * @returns {string}
+   */
+  function buildHtmlStatic(model, imgPngMap) {
+    const t = model.totals;
+    const parts = [];
+    parts.push('<!DOCTYPE html>\n<html lang="fr" class="tba-native">\n<head>\n<meta charset="UTF-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="color-scheme" content="light dark">\n' +
+      '<title>' + esc(model.boardName) + ' — Rapport d’activité Trello</title>\n' +
+      '<style id="tba-style">\n' + SELF_STYLE + '\n</style>\n</head>\n<body>\n<div class="report-page">');
+    parts.push('<h1>' + esc(model.boardName) + '</h1>');
+    parts.push('<div class="meta">Analyse d’activité Trello · ' + esc(model.range.oldestLabel) + ' → ' + esc(model.range.newestLabel) +
+      ' · ' + t.actions.toLocaleString() + ' action(s) affichée(s)' + (model.filters.active ? ' sur ' + t.actionCountAll.toLocaleString() : '') + '<br>' +
+      'Généré le ' + esc(model.generatedLabel) + ' · Trello Board Activity Analyzer v' + esc(model.version) +
+      ' · Filtres : ' + esc(model.filters.label) + '<br>' +
+      '<em>Rapport statique (les graphiques sont des images) — voir aussi le rapport HTML interactif pour l’exploration hors-ligne.</em></div>');
+    parts.push('<div class="report-actions"><button class="dash-btn" onclick="window.print()">Imprimer / PDF</button></div>');
+    parts.push('<div class="stat-row">' + model.kpis.slice(0, 4).map(k =>
+      '<div class="stat-card"><div class="stat-label">' + esc(k.label) + '</div><div class="stat-val">' + esc(k.value) + '</div><div class="stat-sub">' + esc(k.sub) + '</div></div>').join('') + '</div>');
+    parts.push('<div class="stat-row">' + model.kpis.slice(4, 8).map(k =>
+      '<div class="stat-card"><div class="stat-label">' + esc(k.label) + '</div><div class="stat-val">' + esc(k.value) + '</div><div class="stat-sub">' + esc(k.sub) + '</div></div>').join('') + '</div>');
+    CHART_EXPORT_KEYS.forEach(([key]) => {
+      const data = imgPngMap && imgPngMap[key];
+      if (!data) return;
+      const url = typeof data === 'string' ? data : 'data:image/png;base64,' + b64Encode(data);
+      parts.push('<div class="chart-card"><h3>' + esc(CHART_EXPORT_TITLES[key] || key) + '</h3>' +
+        '<img class="chart-snap" alt="' + esc(CHART_EXPORT_TITLES[key] || key) + '" src="' + url + '"></div>');
+    });
+    parts.push('<div class="chart-card"><h3>Heatmap — Heure × Jour de la semaine</h3>' + heatHtml(model.heat) + '</div>');
+    parts.push('<div class="chart-card"><h3>Détail par membre</h3><div class="tbl-wrap"><table class="mtable" id="mtable">' +
+      '<thead><tr>' +
+      '<th data-k="name" data-t="s">Membre <span class="ar"></span></th>' +
+      '<th data-k="count" data-t="n" class="num">Actions <span class="ar">▼</span></th>' +
+      '<th data-k="comments" data-t="n" class="num">Comment. <span class="ar"></span></th>' +
+      '<th data-k="cards" data-t="n" class="num">Cartes <span class="ar"></span></th>' +
+      '<th data-k="days" data-t="n" class="num">Jours actifs <span class="ar"></span></th>' +
+      '<th data-k="last" data-t="s" class="num">Dern. activité <span class="ar"></span></th>' +
+      '</tr></thead><tbody id="mt-body">' +
+      (model.members.length ? model.members.map(m =>
+        '<tr data-name="' + esc(m.name) + '" data-count="' + m.count + '" data-comments="' + m.comments +
+        '" data-cards="' + m.cards + '" data-days="' + m.days + '" data-last="' + m.lastMs + '">' +
+        '<td>' + esc(m.name) + '</td><td class="num">' + m.count.toLocaleString() + '</td>' +
+        '<td class="num">' + m.comments.toLocaleString() + '</td><td class="num">' + m.cards.toLocaleString() + '</td>' +
+        '<td class="num">' + m.days + '</td><td class="num">' + esc(m.lastLabel) + '</td></tr>').join('')
+        : '<tr><td colspan="6" style="text-align:center">Aucune donnée pour ce filtre.</td></tr>') +
+      '</tbody></table></div></div>');
+    parts.push('<p class="app-footer">Rapport statique généré localement — aucune donnée transmise hors de votre navigateur.</p>');
+    parts.push('</div>\n<script>\n' + inlineJs([
+      '(function(){var tbl=document.getElementById("mtable");if(!tbl)return;',
+      'var dir={};tbl.querySelectorAll("th").forEach(function(th){th.addEventListener("click",function(){',
+      'var k=th.dataset.k,t=th.dataset.t;dir[k]=dir[k]===1?-1:1;',
+      'var tb=tbl.querySelector("tbody");var rows=Array.prototype.slice.call(tb.querySelectorAll("tr[data-name]"));',
+      'rows.sort(function(a,b){var va=a.dataset[k],vb=b.dataset[k];',
+      'if(t==="n")return dir[k]*(parseFloat(va)-parseFloat(vb));',
+      'return dir[k]*String(va).localeCompare(String(vb),"fr-FR");});',
+      'rows.forEach(function(r){tb.appendChild(r);});',
+      'tbl.querySelectorAll(".ar").forEach(function(s){s.textContent="";});',
+      'th.querySelector(".ar").textContent=dir[k]===1?"▲":"▼";});});',
+      'try{if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){document.documentElement.setAttribute("data-tba-theme","dark");}}catch(e){}',
+      '})();'
+    ].join('\n')) + '\n<\/script>\n</body>\n</html>\n');
+    return parts.join('\n');
+  }
+
+  /** Octets → Base64 (sans data-URL). */
+  function b64Encode(u8) {
+    let s = '';
+    for (let i = 0; i < u8.length; i += 0x8000) {
+      s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    }
+    return btoa(s);
+  }
+
+  /* ══════════════════ 15h. ACTIONS D'EXPORT (menu + raccourcis) ══════════ */
+
+  /** Garde anti double-clic sur les exports lourds. */
+  let exportBusy = false;
+  async function withExport(fn) {
+    if (exportBusy) { toast('Export déjà en cours…'); return; }
+    exportBusy = true;
+    try { await fn(); }
+    catch (e) {
+      log.error('Échec de l’export :', e);
+      toast('Export impossible : ' + String((e && e.message) || e).slice(0, 90), 'error');
+    } finally { exportBusy = false; }
+  }
+
+  /** Nom de fichier d'export : {slug}-{kind}-{date}.{ext}. */
+  function exportName(kind, ext) {
+    return fileSlug(model0BoardName()) + '-' + kind + '-' + todayStamp() + '.' + ext;
+  }
+
+  function exportHtml() {
+    return withExport(async () => {
+      if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
+      toast('Préparation du rapport HTML…');
+      const chartSrc = await getChartJsSource();
+      if (chartSrc && typeof Chart !== 'undefined' && SELF_SRC && SELF_MARKUP) {
+        download(buildHtmlExport(chartSrc), 'text/html;charset=utf-8', exportName('rapport', 'html'));
+        toast('Rapport HTML interactif exporté (autonome, hors-ligne).', 'success');
+      } else if (typeof Chart !== 'undefined') {
+        const pngData = {};
+        CHART_EXPORT_KEYS.forEach(([key]) => {
+          const c = state.charts[key];
+          if (c && c.canvas) {
+            try { pngData[key] = c.toBase64Image ? c.toBase64Image('image/png', '#ffffff') : c.canvas.toDataURL('image/png'); }
+            catch (_) { /* omis */ }
+          }
+        });
+        download(buildHtmlStatic(buildReportModel(), pngData), 'text/html;charset=utf-8', exportName('rapport-statique', 'html'));
+        toast('Rapport HTML exporté (mode statique : librairie graphique non embarquable).', 'success');
+      } else {
+        toast('Graphiques indisponibles — export HTML impossible.', 'error');
+      }
+    });
+  }
+
+  function exportPdf() {
+    return withExport(async () => {
+      if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
+      toast('Préparation du rapport PDF…');
+      await sleep(30); // laisse le toast s'afficher avant le travail synchrone
+      const model = buildReportModel();
+      const { jpegMap } = collectChartImages();
+      const pdf = buildPdfReport(model, jpegMap);
+      downloadBytes(pdf, 'application/pdf', exportName('rapport', 'pdf'));
+      toast('Rapport PDF exporté (' + Math.ceil(pdf.length / 1024) + ' Ko).', 'success');
+    });
+  }
+
+  function exportMarkdown() {
+    return withExport(async () => {
+      const model = buildReportModel();
+      download(buildMarkdownReport(model), 'text/markdown;charset=utf-8', exportName('synthese', 'md'));
+      toast('Rapport Markdown exporté.', 'success');
+    });
+  }
+
+  function exportXlsx() {
+    return withExport(async () => {
+      const model = buildReportModel();
+      const buf = buildXlsxWorkbook(model);
+      downloadBytes(buf, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', exportName('classeur', 'xlsx'));
+      toast('Classeur Excel exporté (Synthèse / Membres / Actions).', 'success');
+    });
+  }
+
+  function exportSheet() {
+    return withExport(async () => {
+      if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
+      const url = buildContactSheetPng(buildReportModel());
+      if (!url) { toast('Planche PNG indisponible.', 'error'); return; }
+      download(url, 'image/png', exportName('planche', 'png'), true);
+      toast('Planche PNG exportée (tous les graphiques).', 'success');
+    });
+  }
+
+  function exportZip() {
+    return withExport(async () => {
+      if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
+      toast('Préparation de l’archive ZIP…');
+      await sleep(30);
+      const model = buildReportModel();
+      const { pngMap, jpegMap } = collectChartImages();
+      const entries = [];
+      /* rapport HTML : interactif si possible, statique sinon */
+      const chartSrc = await getChartJsSource();
+      if (chartSrc && typeof Chart !== 'undefined' && SELF_SRC && SELF_MARKUP) {
+        entries.push({ name: 'rapport.html', data: utf8Bytes(buildHtmlExport(chartSrc)) });
+      } else {
+        const pngData = {};
+        CHART_EXPORT_KEYS.forEach(([key]) => {
+          const c = state.charts[key];
+          if (c && c.toBase64Image) {
+            try { pngData[key] = c.toBase64Image('image/png', '#ffffff'); } catch (_) { /* omis */ }
+          }
+        });
+        entries.push({ name: 'rapport.html', data: utf8Bytes(buildHtmlStatic(model, pngData)) });
+      }
+      entries.push({ name: 'rapport.pdf', data: buildPdfReport(model, jpegMap) });
+      entries.push({ name: 'analyse.json', data: utf8Bytes(buildAnalysisJson()) });
+      entries.push({ name: 'actions.csv', data: utf8Bytes(buildActionsCsv(getVisible())) });
+      entries.push({ name: 'synthese.md', data: utf8Bytes(buildMarkdownReport(model)) });
+      entries.push({ name: 'membres.xlsx', data: buildXlsxWorkbook(model) });
+      CHART_EXPORT_KEYS.forEach(([key, fname]) => {
+        const png = pngMap[key];
+        if (png) entries.push({ name: 'graphiques/' + fname + '.png', data: png });
+      });
+      const sheet = buildContactSheetPng(model);
+      if (sheet) entries.push({ name: 'graphiques/planche.png', data: dataUrlToBytes(sheet) });
+      entries.push({
+        name: 'readme.txt', data: utf8Bytes(
+          'Archive d’analyse Trello — ' + model.boardName + '\r\n' +
+          'Générée le ' + model.generatedLabel + ' par Trello Board Activity Analyzer v' + model.version + '\r\n' +
+          'Période : ' + model.range.oldestLabel + ' → ' + model.range.newestLabel + ' · ' + model.totals.actions + ' action(s) affichée(s)\r\n' +
+          'Filtres : ' + model.filters.label + '\r\n\r\n' +
+          'Contenu :\r\n' +
+          '  rapport.html    rapport interactif autonome (ouvrir dans un navigateur, hors-ligne)\r\n' +
+          '  rapport.pdf     rapport A4 (indicateurs, graphiques, heatmap, membres)\r\n' +
+          '  analyse.json    analyse complète (machine)\r\n' +
+          '  actions.csv     actions exportées (CSV UTF-8, Excel)\r\n' +
+          '  synthese.md     synthèse et tableaux (Markdown)\r\n' +
+          '  membres.xlsx    classeur 3 feuilles (Synthèse / Membres / Actions)\r\n' +
+          '  graphiques/     chaque graphique en PNG + planche.png (vue d’ensemble)\r\n'
+        )
+      });
+      const zip = zipStore(entries);
+      downloadBytes(zip, 'application/zip', exportName('archive', 'zip'));
+      toast('Archive ZIP exportée (' + entries.length + ' fichiers, ' + Math.ceil(zip.length / 1024) + ' Ko).', 'success');
+    });
+  }
+
+  /* ═══════════ 15i. MODE RAPPORT (visionneuse d'un export HTML) ═══════════ */
+
+  /** ms → valeur champ datetime-local (précision minute). */
+  function msToLocalInput(ms, endOfMinute) {
+    const d = new Date(endOfMinute ? ms - 59999 : ms);
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  /**
+   * Démarre la visionneuse embarquée d'un export HTML : le dashboard complet
+   * (filtres, tris, granularité, heatmap, re-exports) sur les données figées.
+   * Aucune requête réseau, aucun identifiant, aucune écriture de session.
+   */
+  function bootEmbedded() {
+    try {
+      document.documentElement.classList.add('tba-export');
+      Theme.ensureNativePalette();
+      const p = EMBEDDED;
+      const bannerEl = $('export-banner');
+      if (bannerEl) {
+        bannerEl.textContent = 'Export hors-ligne — généré le ' +
+          (p.exportedAt ? new Date(p.exportedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?') +
+          ' · v' + (p.version || APP_VERSION) + ' · données figées : filtres, tris, graphiques et re-exports restent interactifs.';
+      }
+      state.board = p.board || { name: 'Tableau' };
+      state.actions = normalizeActions((p.actions || []).map(expandActionKeepId));
+      state.currentGran = p.gran === 'month' ? 'month' : 'week';
+      state.heatMetric = p.heatMetric === 'share' ? 'share' : 'count';
+      if (p.filter && typeof p.filter === 'object') {
+        (Array.isArray(p.filter.members) ? p.filter.members : []).forEach(m => state.filter.members.add(String(m)));
+        if (Number.isFinite(p.filter.fromMs)) {
+          state.filter.fromMs = p.filter.fromMs;
+          const el = $('fl-from'); if (el) el.value = msToLocalInput(p.filter.fromMs, false);
+        }
+        if (Number.isFinite(p.filter.toMs)) {
+          state.filter.toMs = p.filter.toMs;
+          const el = $('fl-to'); if (el) el.value = msToLocalInput(p.filter.toMs, true);
+        }
+      }
+      /* masquer les actions réseau / session */
+      ['btn-refresh', 'btn-refresh-inc', 'btn-reset'].forEach(id => {
+        const el = $(id); if (el) el.classList.add('no-export');
+      });
+      const dot = $('save-dot'); if (dot) dot.classList.add('no-export');
+      const lbl = $('save-label'); if (lbl) lbl.textContent = 'Export hors-ligne';
+      $('setup').style.display = 'none';
+      $('loading').style.display = 'none';
+      $('dashboard').style.display = 'block';
+      /* toggles alignés sur l'état exporté */
+      $$('#tl-toggles .tgl').forEach(b => b.classList.toggle('active', b.dataset.gran === state.currentGran));
+      $$('#hm-toggles .tgl-hm').forEach(b => b.classList.toggle('active', b.dataset.hm === state.heatMetric));
+      renderDashboard(state.board && state.board.name != null ? state.board.name : undefined);
+      log.info('Rapport hors-ligne chargé : ' + state.actions.length.toLocaleString() + ' action(s) (v' + (p.version || '?') + ').');
+    } catch (e) {
+      log.error('Chargement du rapport embarqué :', e);
+      toast('Rapport illisible.', 'error');
+    }
+  }
+
   /* ═══════════════════════ 16. TOGGLES GRANULARITÉ/HEATMAP ════════════════ */
 
   /**
@@ -1908,7 +3403,205 @@
     renderHeatmap(state.lastStats || computeStats(getVisible()));
   }
 
-  /* ══════════════════════════ 17. CÂBLAGE / INIT ══════════════════════════ */
+  /* ══════════════════ 16b. RACCOURCIS CLAVIER / FENÊTRE AIDE ═════════════ */
+
+  function openKbd() { const el = $('kbd-overlay'); if (el) el.classList.add('open'); }
+  function closeKbd() { const el = $('kbd-overlay'); if (el) el.classList.remove('open'); }
+
+  /** Vrai si l'utilisateur tape dans un champ (les raccourcis sont alors ignorés). */
+  function isTypingTarget(t) {
+    if (!t || !t.tagName) return false;
+    const tag = t.tagName.toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
+  }
+
+  /** Bascule l'ouverture du menu export (raccourci E). */
+  function toggleExportMenu() {
+    const menu = $('export-menu');
+    const btn = $('btn-export');
+    if (!menu || !btn) return;
+    const open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+    if (open) { const first = menu.querySelector('button'); if (first && first.focus) first.focus(); }
+  }
+
+  /** Raccourcis du dashboard : E export · P PDF · H HTML · G granularité · T thème · / filtre · ? aide. */
+  function wireShortcuts() {
+    document.addEventListener('keydown', e => {
+      if (isTypingTarget(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const dash = $('dashboard');
+      if (!dash || dash.style.display === 'none') return;
+      switch (e.key) {
+        case 'e': case 'E': toggleExportMenu(); e.preventDefault(); break;
+        case 'p': case 'P': exportPdf(); e.preventDefault(); break;
+        case 'h': case 'H': exportHtml(); e.preventDefault(); break;
+        case 'g': case 'G': setGran(state.currentGran === 'week' ? 'month' : 'week'); e.preventDefault(); break;
+        case 't': case 'T': Theme.cycle(); e.preventDefault(); break;
+        case '/': { const s = $('fl-search'); if (s) { s.focus(); e.preventDefault(); } break; }
+        case '?': openKbd(); e.preventDefault(); break;
+        default: break;
+      }
+    });
+  }
+
+  /* ══════════════════════ 17b. THÈME (auto / clair / sombre) ══════════════ */
+
+  /**
+   * Palette autonome + thème. Règle : si l'hôte fournit les jetons CSS, ils
+   * restent prioritaires sauf choix explicite de l'utilisateur (clair/sombre).
+   * Préférence persistée hors de la clé de session (non bloquant).
+   */
+  const Theme = (function () {
+    let mode = 'auto';
+
+    function hostVarsMissing() {
+      try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue('--color-background-secondary');
+        return !v || !String(v).trim();
+      } catch (_) { return true; }
+    }
+
+    function ensureNativePalette() {
+      try {
+        if (hostVarsMissing() || mode !== 'auto') document.documentElement.classList.add('tba-native');
+      } catch (_) { /* ignore */ }
+    }
+
+    function isDark() {
+      if (mode === 'dark') return true;
+      if (mode === 'light') return false;
+      try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+      catch (_) { return false; }
+    }
+
+    function apply(next) {
+      mode = (next === 'light' || next === 'dark') ? next : 'auto';
+      ensureNativePalette();
+      try { document.documentElement.setAttribute('data-tba-theme', isDark() ? 'dark' : 'light'); } catch (_) { /* ignore */ }
+      const btn = $('btn-theme');
+      if (btn) {
+        const label = mode === 'auto' ? 'auto' : (mode === 'light' ? 'clair' : 'sombre');
+        btn.textContent = (isDark() ? '☾' : '☀') + ' Thème : ' + label;
+      }
+      Store.set(THEME_SK, mode).catch(() => {});
+    }
+
+    function cycle() { apply(mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto'); }
+
+    function init() {
+      ensureNativePalette();
+      Store.get(THEME_SK)
+        .then(r => apply(r && r.value ? r.value : 'auto'))
+        .catch(() => apply('auto'));
+      try {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const onChange = () => { if (mode === 'auto') apply('auto'); };
+        if (mq.addEventListener) mq.addEventListener('change', onChange);
+        else if (mq.addListener) mq.addListener(onChange);
+      } catch (_) { /* ignore */ }
+    }
+
+    return { init, apply, cycle, ensureNativePalette, isDark, get mode() { return mode; } };
+  })();
+
+  /* ══════════════════ 18. SELF-TEST (console : tba.selfTest()) ═══════════ */
+
+  /**
+   * Batterie d'auto-contrôles sur les helpers purs des exports (CSV, slim,
+   * CRC/ZIP, PDF, Markdown, XLSX, HTML). À lancer depuis la console :
+   *   tba.selfTest()
+   * @returns {{passed:number,failed:number,results:{name:string,ok:boolean,detail:string}[]}}
+   */
+  function selfTest() {
+    const results = [];
+    const t = (name, ok, detail) => results.push({ name, ok: !!ok, detail: ok ? '' : String(detail || '') });
+    let saved = null;
+    try {
+      /* — utilitaires — */
+      t('esc/XSS', esc('<img onerror=x>') === '&lt;img onerror=x&gt;', esc('<img onerror=x>'));
+      t('csvCell quotes', csvCell('a"b') === '"a""b"');
+      t('csvCell simple', csvCell('abc') === 'abc');
+      t('fileSlug', fileSlug('  Projet — Phoenix !! ') === 'projet-phoenix', fileSlug('  Projet — Phoenix !! '));
+      t('classify', classify('commentCard') === 'Commentaires' && classify('zzz-inconnu') === 'Autres');
+
+      /* — données — */
+      const recs = normalizeActions([{
+        id: 'a1', type: 'commentCard', date: '2024-01-02T10:00:00.000Z',
+        _memberName: 'Zoé', data: { card: { name: 'Carte « X »' } }
+      }]);
+      t('normalizeAction', recs.length === 1 && recs[0].memberName === 'Zoé');
+      const csv = buildActionsCsv(recs);
+      t('csv BOM+header', csv.charAt(0) === '\uFEFF' && csv.indexOf('id,date,type,membre,carte') === 1);
+      const slim = slimAction(recs[0]), back = expandActionKeepId(slim);
+      t('slim roundtrip', back.type === 'commentCard' && back.id === 'a1' && back.data.card.name === 'Carte « X »');
+      t('validPayload', validPayload({ boardData: { name: 'x' }, actions: [] }) === true && validPayload({}) === false);
+
+      /* — ZIP / CRC — */
+      t('crc32 connu', crc32(utf8Bytes('123456789')) === 0xCBF43926, crc32(utf8Bytes('123456789')).toString(16));
+      const z = zipStore([{ name: 'a.txt', data: utf8Bytes('hello') }]);
+      t('zip magic', z[0] === 0x50 && z[1] === 0x4B && z[2] === 3 && z[3] === 4);
+      t('zip eocd', findEocd(z) >= 0);
+
+      /* — PDF — */
+      t('pdfSanitize', pdfSanitize('a → b — c…') === 'a - b \u0097 c\u0085', pdfSanitize('a → b — c…'));
+      t('pdfEsc', pdfEsc('a(b)c') === 'a\\(b\\)c');
+      t('wrapText', wrapText('un deux trois quatre', 10, 7, 'F1').length >= 2);
+
+      /* — modèle + rapports (sur un état factice) — */
+      saved = {
+        board: state.board, actions: state.actions, creds: state.creds,
+        filter: { members: new Set(state.filter.members), fromMs: state.filter.fromMs, toMs: state.filter.toMs }
+      };
+      state.board = { name: 'SelfTest' };
+      state.creds = {};
+      state.actions = normalizeActions([
+        { id: 'a1', type: 'commentCard', date: '2024-01-02T10:00:00.000Z', _memberName: 'Zoé', data: { card: { name: 'C1' } } },
+        { id: 'a2', type: 'createCard', date: '2024-01-03T11:00:00.000Z', _memberName: 'Ada', data: { card: { name: 'C2' } } }
+      ]);
+      state.filter.members.clear(); state.filter.fromMs = state.filter.toMs = null;
+      const model = buildReportModel();
+      t('model kpis', model.kpis.length === 8 && model.totals.actions === 2);
+      const md = buildMarkdownReport(model);
+      t('markdown', md.indexOf('| Indicateur | Valeur |') >= 0 && md.indexOf('SelfTest') >= 0);
+      const pdf = buildPdfReport(model, { timeline: { jpeg: new Uint8Array([0xFF, 0xD8, 0xFF, 0xD9]), w: 4, h: 4 } });
+      const head = String.fromCharCode.apply(null, Array.from(pdf.slice(0, 8)));
+      t('pdf header', head === '%PDF-1.4', head);
+      const pdfTxt = String.fromCharCode.apply(null, Array.from(pdf));
+      const streams = (pdfTxt.match(/endstream/g) || []).length;
+      t('pdf flux', streams >= 3 && pdfTxt.indexOf('/DCTDecode') > 0 && pdfTxt.indexOf('Tm (') > 0, 'endstream=' + streams);
+      let xrefOk = false;
+      try {
+        const tail = String.fromCharCode.apply(null, Array.from(pdf.slice(-40)));
+        const m = tail.match(/startxref\s+(\d+)/);
+        const off = m ? parseInt(m[1], 10) : -1;
+        xrefOk = off > 0 && String.fromCharCode.apply(null, Array.from(pdf.slice(off, off + 4))) === 'xref';
+      } catch (_) { xrefOk = false; }
+      t('pdf xref', xrefOk);
+      const xlsx = buildXlsxWorkbook(model);
+      t('xlsx zip', xlsx[0] === 0x50 && xlsx[1] === 0x4B && findEocd(xlsx) >= 0);
+      const htmlI = buildHtmlExport('/*chart*/');
+      t('html interactif', htmlI.indexOf('<!DOCTYPE html>') === 0 && htmlI.indexOf('__TBA_EMBEDDED__') > 0
+        && (htmlI.split('<\/script>').length - 1) === 3, 'inlining broken');
+      const htmlS = buildHtmlStatic(model, {});
+      t('html statique', htmlS.indexOf('stat-card') > 0 && htmlS.indexOf('hm-cell') > 0);
+    } catch (e) {
+      t('exception', false, String((e && e.message) || e));
+    } finally {
+      if (saved) {
+        state.board = saved.board; state.actions = saved.actions; state.creds = saved.creds;
+        state.filter.members = saved.filter.members;
+        state.filter.fromMs = saved.filter.fromMs;
+        state.filter.toMs = saved.filter.toMs;
+      }
+    }
+    const passed = results.filter(r => r.ok).length;
+    const summary = { passed, failed: results.length - passed, results };
+    (summary.failed ? log.warn : log.info)('Self-test : ' + passed + ' OK, ' + summary.failed + ' échec(s).');
+    return summary;
+  }
+
+  /* ══════════════════════════ 19. CÂBLAGE / INIT ══════════════════════════ */
 
   let wired = false;
   function init() {
@@ -1926,19 +3619,24 @@
       toast('Opération interrompue — détail dans le journal.', 'error');
     });
 
-    /* — boutons — */
-    $('btn-analyze').addEventListener('click', () => startAnalysis());
-    $('btn-reload-saved').addEventListener('click', () => loadSaved());
-    $('btn-clear-saved').addEventListener('click', () => clearSaved());
-    $('btn-refresh').addEventListener('click', () => refreshData(false));
-    $('btn-refresh-inc').addEventListener('click', () => refreshData(true));
-    $('btn-reset').addEventListener('click', () => resetApp());
-    $('btn-cancel').addEventListener('click', () => {
-      if (state.cancel) { state.cancel.abort(); log.info('Annulation demandée par l\'utilisateur.'); }
-    });
-    $$('#setup input').forEach(inp => inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); startAnalysis(); }
-    }));
+    /* — boutons — (non exposés en mode rapport hors-ligne) */
+    if (!EMBEDDED) {
+      $('btn-analyze').addEventListener('click', () => startAnalysis());
+      $('btn-reload-saved').addEventListener('click', () => loadSaved());
+      $('btn-clear-saved').addEventListener('click', () => clearSaved());
+      $('btn-refresh').addEventListener('click', () => refreshData(false));
+      $('btn-refresh-inc').addEventListener('click', () => refreshData(true));
+      $('btn-reset').addEventListener('click', () => resetApp());
+      $('btn-cancel').addEventListener('click', () => {
+        if (state.cancel) { state.cancel.abort(); log.info('Annulation demandée par l\'utilisateur.'); }
+      });
+      $$('#setup input').forEach(inp => inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); startAnalysis(); }
+      }));
+      $('keep-creds').addEventListener('change', e => { state.keepCreds = e.target.checked; });
+    } else {
+      bootEmbedded();
+    }
 
     /* — export — */
     const menu = $('export-menu');
@@ -1952,6 +3650,13 @@
     $('exp-csv').addEventListener('click', () => { menu.classList.remove('open'); exportCsv(); });
     $('exp-json').addEventListener('click', () => { menu.classList.remove('open'); exportJson(); });
     $('exp-png').addEventListener('click', () => { menu.classList.remove('open'); exportPng(); });
+    /* — exports v5 (rapports et formats complémentaires) — */
+    [['exp-html', exportHtml], ['exp-pdf', exportPdf], ['exp-md', exportMarkdown],
+     ['exp-xlsx', exportXlsx], ['exp-sheet', exportSheet], ['exp-zip', exportZip]
+    ].forEach(([id, fn]) => {
+      const el = $(id);
+      if (el) el.addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); fn(); });
+    });
 
     /* — journal — */
     $('btn-log').addEventListener('click', openLog);
@@ -1970,7 +3675,15 @@
       }
     });
     $('log-overlay').addEventListener('click', e => { if (e.target === $('log-overlay')) closeLog(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLog(); menu.classList.remove('open'); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLog(); closeKbd(); menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); } });
+
+    /* — fenêtre raccourcis + thème — */
+    $('btn-kbd').addEventListener('click', openKbd);
+    $('btn-kbd-close').addEventListener('click', closeKbd);
+    $('kbd-overlay').addEventListener('click', e => { if (e.target === $('kbd-overlay')) closeKbd(); });
+    $('btn-theme').addEventListener('click', () => Theme.cycle());
+    Theme.init();
+    wireShortcuts();
 
     /* — toggles — */
     $$('#tl-toggles .tgl').forEach(b => b.addEventListener('click', () => setGran(b.dataset.gran, b)));
@@ -1994,14 +3707,16 @@
       renderMemberTable(state.lastStats || computeStats(getVisible()));
     }));
 
-    /* — case « conserver les identifiants » — */
-    $('keep-creds').addEventListener('change', e => { state.keepCreds = e.target.checked; });
+    /* — case « conserver les identifiants » (déjà câblée en mode application) — */
 
     /* — état initial (v1 : checkSaved() en pied de script) — */
-    checkSaved();
-    if (window.__chartCdnFailed) ensureChartLib().then(ok => {
-      if (!ok) showError('Impossible de charger la bibliothèque graphique (Chart.js) — vérifiez votre connexion.');
-    });
+    if (!EMBEDDED) {
+      checkSaved();
+      if (window.__chartCdnFailed) ensureChartLib().then(ok => {
+        if (!ok) showError('Impossible de charger la bibliothèque graphique (Chart.js) — vérifiez votre connexion.');
+      });
+      warmChartJsCache(); // reprise hors-ligne future + rapports HTML autonomes
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
@@ -2023,6 +3738,14 @@
     persistData, checkSaved, showError,
     computeStats, getVisible,
     buildActionsCsv, buildAnalysisJson, validPayload, normalizeAction,
+    /* v5 : moteur d'export (constructeurs purs testables) */
+    buildReportModel, buildMarkdownReport, buildPdfReport, buildXlsxWorkbook,
+    buildZipArchive: zipStore, buildHtmlExport, buildHtmlStatic, buildContactSheetPng,
+    exportHtml, exportPdf, exportMarkdown, exportXlsx, exportSheet, exportZip,
+    exportCsv, exportJson, exportPng,
+    csvCell, crc32, pdfSanitize, pdfEsc, wrapText, zipStore, heatMatrix, embedJson,
+    selfTest,
+    Theme,
     state
   };
   window.tba = API;
