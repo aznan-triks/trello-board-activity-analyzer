@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: 'URL du site publié à tester (vide = serveur local)'
+        description: "URL à tester — vide = serveur local ; renseignée = vérification du site publié"
         required: false
         default: ''
         type: string
@@ -38,12 +38,16 @@ jobs:
           retention-days: 7
   production-tests:
     name: Vérification du site publié
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Publication automatique après un merge sur main, ou relance manuelle en
+    # fournissant l'URL à contrôler (Actions → Run workflow → base_url).
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.base_url != '')
     needs: browser-tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      BASE_URL: https://aznan-triks.github.io/trello-board-activity-analyzer/
+      BASE_URL: ${{ github.event.inputs.base_url || 'https://aznan-triks.github.io/trello-board-activity-analyzer/' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

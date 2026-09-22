@@ -286,8 +286,15 @@ des chemins relatifs compatibles avec le sous-chemin du dépôt.
    - l'**état de publication Pages** pour le commit courant via l'API GitHub ;
    - puis rejoue les 17 scénarios contre l'URL publique.
    Le récapitulatif (empreinte SHA-256 de l'arborescence publiée, tableau
-   fichier par fichier) est écrit dans le **résumé du job** ; les captures et
+   fichier par fichier) est écrit dans le **résumé du job** et en **annotations
+   de check** (visibles dans l'interface Actions et via l'API) ; les captures et
    traces restent dans les artefacts CI (7 jours), pas dans Git.
+
+Pour revérifier le site sans nouveau commit : onglet **Actions** → workflow
+**Validation UI et fonctionnelle** → **Run workflow** → renseigner `base_url`
+(ex. `https://aznan-triks.github.io/trello-board-activity-analyzer/`). Le job
+**Vérification du site publié** rejoue alors le contrôle complet et les
+17 scénarios contre cette URL (`base_url` vide = simple exécution locale).
 
 En cas de contenu divergent (propagation Pages parfois lente), le job réessaie
 20 fois à 15 s d'intervalle avant d'échouer avec un diagnostic précis

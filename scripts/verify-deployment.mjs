@@ -43,6 +43,15 @@ const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const short = digest => digest.slice(0, 12);
 const kilobytes = size => `${String(size).padStart(8)} o`;
 
+// Annotations GitHub Actions : le récapitulatif reste lisible dans l'interface
+// du job et interrogeable via l'API (check-runs/annotations), même quand les
+// journaux complets ne sont pas accessibles.
+const inActions = process.env.GITHUB_ACTIONS === 'true';
+const escapeCommand = value => String(value).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+function annotate(level, title, message) {
+  if (inActions) console.log(`::${level} title=${escapeCommand(title)}::${escapeCommand(message)}`);
+}
+
 async function walk(dir, found = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name) || entry.name === '.DS_Store') continue;
@@ -161,11 +170,14 @@ for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
   if (attempt < ATTEMPTS) {
     console.warn(`Attente de ${Math.round(DELAY_MS / 1000)} s avant la prochaine tentative (propagation Pages)…`);
     await delay(DELAY_MS);
+  } else {
+    for (const failure of failures.slice(0, 10)) annotate('error', 'Pages — contenu divergent', failure);
   }
 }
 
 if (!report) {
   console.error(`\nÉchec : GitHub Pages ne sert pas les octets de ce commit après ${ATTEMPTS} tentative(s) (${BASE.href}).`);
+  annotate('error', 'Pages — publication non conforme', `${BASE.href} ne sert pas les octets du commit ${process.env.GITHUB_SHA || 'local'} après ${ATTEMPTS} tentative(s).`);
   process.exit(1);
 }
 
@@ -179,6 +191,14 @@ const lines = [
   ...report.warnings.map(warning => `Avertissement : ${warning}`)
 ];
 for (const line of lines) console.log(line);
+
+const appDigests = [...local.keys()].filter(path => appFiles.has(path))
+  .map(path => `${path} sha256 ${short(local.get(path).digest)}`).join(' · ');
+annotate('notice', 'Pages à jour', `${BASE.href} · commit ${process.env.GITHUB_SHA || 'local'} · ${local.size} fichiers identiques · empreinte de l'arborescence sha256 ${short(treeDigest)}`);
+annotate('notice', 'Fichiers applicatifs publiés', appDigests);
+for (const warning of report.warnings) annotate('warning', 'Pages — avertissement', warning);
+if (report.state.warning) annotate('warning', 'Pages — état', report.state.warning);
+else if (report.state.message) annotate('notice', 'Pages — état', report.state.message);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   const table = [...report.checked].map(([path, published]) => `| \`${path}\` | ${published.ok ? '✅ identique' : `⚠️ HTTP ${published.status}`} | ${published.size} | \`${short(published.digest)}\` |`).join('\n');
