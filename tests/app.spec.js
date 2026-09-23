@@ -11,7 +11,14 @@ async function openApp(page) {
 }
 async function settleMotion(page) {
   // Audit the settled UI, not an intermediate frame of the entrance fade.
-  await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+  // v7 : les animations décoratives infinies (accroche pulsante, balayage)
+  // tournent en arrière-plan : on attend toutes les autres, pas celles-ci.
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter(animation => {
+      const timing = animation.effect && animation.effect.getTiming ? animation.effect.getTiming() : null;
+      return !(timing && timing.iterations === Infinity);
+    })
+    .map(animation => animation.finished.catch(() => {}))));
 }
 async function demo(page) {
   await page.locator('#btn-demo').click();
@@ -96,12 +103,16 @@ test('démo : huit graphiques, filtres, tri, granularité et isolation du stocka
   expect(errors).toEqual([]);
 });
 
-test('thèmes persistés, raccourcis et focus des fenêtres', async ({ page }) => {
+test('thème sombre par défaut, cycle, persistance, raccourcis et focus', async ({ page }) => {
   await openApp(page);
-  await page.locator('#btn-theme-top').click();
-  await page.locator('#btn-theme-top').click();
-  await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'dark'); // v7 : sombre par défaut
+  await page.locator('#btn-theme-top').click(); // sombre → auto (schéma clair du test ⇒ clair)
+  await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'light');
+  await page.locator('#btn-theme-top').click(); // auto → clair
+  await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'light');
   await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'light'); // choix persisté
+  await page.locator('#btn-theme-top').click(); // clair → sombre
   await expect(page.locator('html')).toHaveAttribute('data-tba-theme', 'dark');
   await demo(page);
   await page.locator('#btn-kbd').click();
@@ -146,6 +157,22 @@ for (const theme of ['light', 'dark']) {
     await settleMotion(page);
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
+    // v7 : audits étendus aux surfaces secondaires (menu export, aide, journal).
+    await page.locator('#btn-export').click();
+    await expect(page.locator('#export-menu')).toBeVisible();
+    results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    expect(results.violations).toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.locator('#btn-kbd').click();
+    await expect(page.locator('#kbd-overlay')).toBeVisible();
+    results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    expect(results.violations).toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.locator('#btn-log').click();
+    await expect(page.locator('#log-overlay')).toBeVisible();
+    results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    expect(results.violations).toEqual([]);
+    await page.keyboard.press('Escape');
     await page.screenshot({ path: `test-results/dashboard-${theme}.png`, fullPage: true });
   });
 }
@@ -156,6 +183,14 @@ test('réduction des animations CSS et Chart.js', async ({ page }) => {
   await demo(page);
   expect(await page.locator('#dashboard').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
   expect(await page.evaluate(() => tba.state.charts.timeline.options.animation)).toBe(false);
+});
+
+test('animations réduites = 0, décoratives comprises', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openApp(page);
+  await settleMotion(page);
+  // v7 : pulse de l'accroche et ligne de balayage doivent être coupés aussi.
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });
 
 test('Trello simulé : URL courte, analyse, sauvegarde, reprise et delta', async ({ page }) => {

@@ -312,6 +312,128 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
   @media print { .app-header, .site-footer, .skip-link, .demo-notice { display: none !important; } html.tba-native body { max-width: none; padding: 0; background: white; } .stat-card, .chart-card { box-shadow: none !important; transform: none !important; } }
 
+  /* ════════════════════════════════════════════════════════════════════════
+     4. v7 — Habillage technologique (sombre néon / clair technique)
+     Couche additive : jetons néon, panneaux de verre, grille technique,
+     ligne de balayage, chiffres monospaces, graphiques pilotés par jetons.
+     Aucun sélecteur v6 n'est supprimé ; la couche claire reste imprimable.
+     ════════════════════════════════════════════════════════════════════════ */
+  html.tba-native {
+    /* jetons partagés (indépendants du thème) */
+    --font-data: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sheet-bg: #0a0f1e; --sheet-panel: #101a30; --sheet-ink: #e8f1ff;
+    --sheet-soft: #93a4c4; --sheet-faint: #64769a; --sheet-tile: #16233c;
+    /* jetons thème clair (technique) */
+    --neon-cyan: #0e7490; --neon-violet: #6d28d9; --neon-magenta: #be185d;
+    --on-neon: #ffffff;
+    --chart-1: #6d28d9; --chart-2: #0369a1; --chart-3: #047857; --chart-4: #c2410c; --chart-5: #be185d;
+    --chart-6: #4f46e5; --chart-7: #4d7c0f; --chart-8: #b91c1c; --chart-9: #0f766e; --chart-10: #334155;
+    --hm-1: #a5f3fc; --hm-2: #22d3ee; --hm-3: #0891b2; --hm-4: #155e75; --hm-vol: #0891b2;
+    --grid-line: rgba(51, 65, 85, .06); --scan-line: rgba(8, 145, 178, .04);
+    --glass-bg: rgba(255, 255, 255, .82); --glass-border: rgba(109, 40, 217, .16);
+    --panel-top: rgba(109, 40, 217, .07); --panel-sheen: rgba(255, 255, 255, .5);
+    --glow: 0 0 0 1px rgba(109, 40, 217, .08), 0 16px 40px rgba(15, 23, 42, .10);
+    --glow-radial-a: rgba(124, 58, 237, .10); --glow-radial-b: rgba(14, 165, 233, .08);
+    background: var(--color-background-primary);
+  }
+  html.tba-native[data-tba-theme="dark"] {
+    --neon-cyan: #22d3ee; --neon-violet: #a78bfa; --neon-magenta: #f471b5;
+    --on-neon: #041018;
+    --chart-1: #a78bfa; --chart-2: #38bdf8; --chart-3: #34d399; --chart-4: #fb923c; --chart-5: #f471b5;
+    --chart-6: #818cf8; --chart-7: #a3e635; --chart-8: #f87171; --chart-9: #2dd4bf; --chart-10: #e2e8f0;
+    --hm-1: #164e63; --hm-2: #0e7490; --hm-3: #06b6d4; --hm-4: #67e8f9; --hm-vol: #22d3ee;
+    --grid-line: rgba(148, 163, 184, .07); --scan-line: rgba(34, 211, 238, .05);
+    --glass-bg: rgba(12, 20, 38, .78); --glass-border: rgba(103, 232, 249, .16);
+    --panel-top: rgba(103, 232, 249, .10); --panel-sheen: rgba(255, 255, 255, .04);
+    --glow: 0 0 0 1px rgba(34, 211, 238, .10), 0 18px 44px rgba(2, 6, 18, .55);
+    --glow-radial-a: rgba(124, 58, 237, .16); --glow-radial-b: rgba(34, 211, 238, .10);
+  }
+  html.tba-native body, html.tba-native[data-tba-theme="dark"] body { background: transparent; }
+  /* fond : dégradés radiaux + grille technique fixée au défilement */
+  html.tba-native body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(1100px 620px at 85% -5%, var(--glow-radial-a), transparent 60%),
+      radial-gradient(900px 540px at -10% 32%, var(--glow-radial-b), transparent 62%),
+      repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 44px);
+  }
+  /* ligne de balayage décorative (fixe ⇒ ignorée des audits de contraste) */
+  html.tba-native body::after {
+    content: ''; position: fixed; left: 0; right: 0; top: -30vh; height: 26vh;
+    z-index: 3; pointer-events: none;
+    background: linear-gradient(180deg, transparent, var(--scan-line) 45%, var(--scan-line) 55%, transparent);
+    animation: tba-scan 11s linear infinite;
+  }
+  @keyframes tba-scan { from { transform: translateY(0); } to { transform: translateY(160vh); } }
+  @keyframes tba-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
+  .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); display: inline-block; animation: tba-pulse 2.2s ease-in-out infinite; }
+  /* en-tête collant translucide */
+  .app-header {
+    position: sticky; top: 0; z-index: 60; min-height: 76px; margin-bottom: 40px;
+    backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    background: linear-gradient(180deg, var(--panel-top), transparent 72%), var(--glass-bg);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  /* panneaux de verre + rail supérieur dégradé */
+  .setup-card, .stat-card, .chart-card, .filters, .preview-card {
+    position: relative;
+    background: linear-gradient(180deg, var(--panel-sheen), transparent 32%), var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glow);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .setup-card::before, .stat-card::before, .chart-card::before, .filters::before, .preview-card::before {
+    content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan) 20%, var(--neon-violet) 55%, var(--neon-magenta) 80%, transparent);
+    opacity: .85; pointer-events: none;
+  }
+  .menu-pop, #kbd-panel, #log-panel { background: var(--color-background-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glow); }
+  #toast { border-color: var(--glass-border); }
+  /* typographie de données : chasse fixe, capitales espacées */
+  .stat-val, .stat-sub, .preview-number, .date-range, .filter-count, .mtable td.num { font-family: var(--font-data); }
+  .stat-label, .chart-card h3, .mtable th, .hm-hour-lbl, .eyebrow, .brand-sub { font-family: var(--font-data); text-transform: uppercase; letter-spacing: .14em; }
+  .chart-card h3 { font-size: 12px; }
+  .dash-btn, .cancel-btn, .tgl, .tgl-hm, .chip, .menu-pop button, .demo-btn { font-family: var(--font-data); }
+  .analyze-btn {
+    text-transform: uppercase; letter-spacing: .12em;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
+    color: var(--on-neon); box-shadow: var(--glow);
+  }
+  .analyze-btn:hover { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta)); }
+  .demo-btn { color: var(--neon-cyan); border-bottom-color: var(--neon-cyan); }
+  /* titre du héros en dégradé de texte + accroche pulsante */
+  .grad-text {
+    background: linear-gradient(92deg, var(--neon-cyan) 4%, var(--neon-violet) 52%, var(--neon-magenta) 96%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--neon-violet);
+    filter: drop-shadow(0 0 18px var(--glow-radial-a));
+  }
+  .preview-chart { color: var(--neon-cyan); }
+  /* chargement néon */
+  #loading .spinner { border-top-color: var(--neon-cyan); border-right-color: var(--neon-violet); box-shadow: 0 0 14px var(--glow-radial-b); }
+  #loading .prog-fill { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet)); box-shadow: 0 0 12px var(--glow-radial-b); }
+  :is(button, input, a, [tabindex]):focus-visible { outline-color: var(--neon-cyan); }
+  .mtable th { border-bottom-color: var(--glass-border); }
+  /* v7 : la chasse fixe élargit les libellés d'heures — colonnes bornées pour
+     éviter tout débordement horizontal aux petites largeurs. */
+  .hm-hour-labels, .heatmap-grid { grid-template-columns: 28px repeat(24, minmax(0, 1fr)); }
+  .hm-hour-lbl { overflow: hidden; }
+  /* v7 : libellés de sections du menu export sur fond opaque — contraste renforcé */
+  html.tba-native .menu-pop .muted { color: #4a5268; }
+  html.tba-native[data-tba-theme="dark"] .menu-pop .muted { color: #c0c7da; }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-dot { animation: none !important; }
+    html.tba-native body::after { animation: none !important; display: none; }
+  }
+  @media print {
+    html.tba-native { background: #fff; }
+    html.tba-native body::before, html.tba-native body::after { display: none !important; }
+    .app-header { position: static; backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; }
+    .grad-text { background: none; -webkit-text-fill-color: currentColor; color: var(--color-text-primary); filter: none; }
+    .setup-card, .stat-card, .chart-card, .filters, .preview-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; }
+  }
+
 </style>
 </head>
 <body>
@@ -327,14 +449,14 @@
   <div id="setup">
     <div class="setup-layout">
       <section class="hero" aria-labelledby="hero-title">
-        <span class="eyebrow">Moins de bruit, plus de clarté</span>
-        <h1 id="hero-title">Votre activité Trello.<br><span>Une nouvelle<br>perspective.</span></h1>
+        <span class="eyebrow"><i class="pulse-dot" aria-hidden="true"></i>Moins de bruit, plus de clarté</span>
+        <h1 id="hero-title" class="grad-text">Votre activité Trello.<br>Une nouvelle<br>perspective.</h1>
         <p class="hero-copy">Transformez l’historique de votre tableau en insights visuels. Comprenez les contributions, repérez les tendances et révélez le rythme de votre équipe.</p>
         <button class="demo-btn" id="btn-demo">Explorer la démonstration <span aria-hidden="true">↗</span></button>
         <div class="preview-card" role="img" aria-label="Aperçu illustratif : graphique d’activité hebdomadaire, 1 284 actions. Données fictives.">
           <div class="preview-top"><span>Le pouls de votre équipe</span><span class="preview-tag">Aperçu fictif</span></div>
           <div class="preview-number">1 284 <small>actions, une vision d’ensemble</small></div>
-          <svg class="preview-chart" viewBox="0 0 430 90" fill="none" aria-hidden="true"><defs><linearGradient id="preview-fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8872e5" stop-opacity=".22"/><stop offset="1" stop-color="#8872e5" stop-opacity="0"/></linearGradient></defs><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3 V90 H0Z" fill="url(#preview-fill)"/><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3" stroke="#8872e5" stroke-width="3" stroke-linecap="round"/></svg>
+          <svg class="preview-chart" viewBox="0 0 430 90" fill="none" aria-hidden="true"><defs><linearGradient id="preview-fill" x1="0" y1="0" x2="0" y2="1"><stop style="stop-color:var(--neon-violet)" stop-opacity=".22"/><stop offset="1" style="stop-color:var(--neon-violet)" stop-opacity="0"/></linearGradient></defs><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3 V90 H0Z" fill="url(#preview-fill)"/><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
           <div class="preview-axis"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
         </div>
       </section>
@@ -527,7 +649,7 @@
     </div>
   </div>
   </main>
-  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v6.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
+  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v7.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
 </div>
 
 <div id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
@@ -545,7 +667,7 @@
         <tr><td><kbd>P</kbd></td><td>Exporter le rapport PDF</td></tr>
         <tr><td><kbd>H</kbd></td><td>Exporter le rapport HTML hors-ligne</td></tr>
         <tr><td><kbd>G</kbd></td><td>Basculer granularité semaine / mois</td></tr>
-        <tr><td><kbd>T</kbd></td><td>Changer de thème (auto / clair / sombre)</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Changer de thème (clair → sombre → auto)</td></tr>
         <tr><td><kbd>/</kbd></td><td>Filtrer un membre (champ de recherche)</td></tr>
         <tr><td><kbd>?</kbd></td><td>Afficher / masquer cette aide</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Fermer les fenêtres et menus</td></tr>
@@ -576,7 +698,7 @@
 <script id="tba-chartjs-bundle" src="./vendor/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRELLO BOARD ACTIVITY ANALYZER — v6.0.0
+   TRELLO BOARD ACTIVITY ANALYZER — v7.0.0
    Analyse d'historique de tableau Trello, 100 % côté client.
 
    Architecture (le fichier reste autonome : aucun build, aucun module)
@@ -637,7 +759,7 @@
   /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
 
   /** Identifiants/version applicative (exposée dans l'export JSON). */
-  const APP_VERSION = '6.0.0';
+  const APP_VERSION = '7.0.0';
 
   /** Endpoint de base de l'API REST Trello v1. */
   const TRELLO_API = 'https://api.trello.com/1';
@@ -682,6 +804,66 @@
   const GROUP_COLORS = ['#6E5DC6','#3B8BD4','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#888780'];
   /** Libellés de jours (d'origine, index = getDay()). */
   const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+  /* — v7 : séries et heatmap pilotées par les jetons CSS du thème —
+     Les palettes v6 (MEMBER_COLORS / GROUP_COLORS) restent la référence
+     documentaire ; le rendu lit désormais --chart-*, --hm-* et --neon-*
+     pour suivre le thème clair/sombre au lieu de couleurs figées. */
+
+  /** Lit un jeton CSS sur <html> et le normalise en #RRGGBB (repli fourni). */
+  function cssHex(name, fallback) {
+    let v = '';
+    try { v = String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim(); }
+    catch (_) { v = ''; }
+    if (!v) v = fallback || '';
+    if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v.slice(1).split('').map(c => c + c).join('');
+    return /^#[0-9a-f]{6}$/i.test(v) ? v : (fallback || '#888888');
+  }
+  /** Jeton CSS brut (pour familles de police, etc.). */
+  function cssVar(name, fallback) {
+    try {
+      const v = String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim();
+      return v || fallback;
+    } catch (_) { return fallback; }
+  }
+  const CHART_TOKENS = ['--chart-1','--chart-2','--chart-3','--chart-4','--chart-5','--chart-6','--chart-7','--chart-8','--chart-9','--chart-10'];
+  /** Couleur d'une série membre (index → jeton --chart-n). */
+  function memberColors(n) {
+    const out = [];
+    for (let i = 0; i < Math.max(0, n); i++) out.push(cssHex(CHART_TOKENS[i % CHART_TOKENS.length], MEMBER_COLORS[i % MEMBER_COLORS.length]));
+    return out;
+  }
+  /** Couleur d'un groupe de types d'actions. */
+  const groupColor = i => cssHex(CHART_TOKENS[i % CHART_TOKENS.length], GROUP_COLORS[i % GROUP_COLORS.length]);
+  /** Palette complète des groupes présents. */
+  const groupPalette = n => Array.from({ length: Math.max(0, n) }, (_, i) => groupColor(i));
+  /** Accent principal des graphiques (timeline, barre horaire). */
+  const chartAccent = () => cssHex('--neon-violet', '#7158D9');
+  /** Encre des axes/légendes et couleur de grille, lues depuis le thème. */
+  const chartInk = () => cssHex('--color-text-secondary', '#575d77');
+  const chartGrid = () => cssVar('--grid-line', 'rgba(128,128,128,.08)');
+  const chartFont = () => cssVar('--font-data', 'Segoe UI, Arial, sans-serif');
+  /** Rampe heatmap « volume » : interpolation √(v/mx) entre 4 paliers thémés. */
+  function heatColor(v, mx) {
+    if (!v || !mx) return 'rgba(0,0,0,0)';
+    const ramp = [cssHex('--hm-1', '#164e63'), cssHex('--hm-2', '#0e7490'), cssHex('--hm-3', '#06b6d4'), cssHex('--hm-4', '#67e8f9')];
+    const t = Math.pow(v / mx, .5) * (ramp.length - 1);
+    const i = Math.min(ramp.length - 2, Math.floor(t));
+    return t <= i ? ramp[i] : ramp[i + 1];
+  }
+  /** Rampe heatmap « répartition % » (parts relatives d'une heure). */
+  function heatShareColor(r) {
+    return r >= .12 ? cssHex('--hm-4', '#67e8f9') : r >= .06 ? cssHex('--hm-3', '#06b6d4') : r >= .02 ? cssHex('--hm-2', '#0e7490') : hexA(cssHex('--hm-1', '#164e63'), .45);
+  }
+  /** Couleurs de la planche PNG (toujours sombre néon, lisible imprimée). */
+  function sheetColors() {
+    return {
+      bg: cssHex('--sheet-bg', '#0a0f1e'), panel: cssHex('--sheet-panel', '#101a30'),
+      ink: cssHex('--sheet-ink', '#e8f1ff'), soft: cssHex('--sheet-soft', '#93a4c4'),
+      faint: cssHex('--sheet-faint', '#64769a'), tile: cssHex('--sheet-tile', '#16233c'),
+      a: cssHex('--neon-cyan', '#22d3ee'), b: cssHex('--neon-violet', '#a78bfa')
+    };
+  }
 
   /**
    * Regroupement sémantique des types d'actions (verbatim v1, ordre inclus :
@@ -1418,7 +1600,8 @@
 
   /* ═══════════════════════════ 9. CHART KIT ════════════════════════════════ */
 
-  const TICK = { color: '#888', family: 'Segoe UI, Arial, sans-serif' };
+  /** v7 : pendant une capture d'export, les graphiques se reconstruisent sans animation. */
+  let captureMode = false;
   const GRID = 'rgba(128,128,128,.08)';
 
   /**
@@ -1435,11 +1618,16 @@
     el.setAttribute('aria-label', heading ? heading.textContent : 'Graphique d’activité');
     config.options = config.options || {};
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    config.options.animation = reduced ? false : { duration: 450, easing: 'easeOutQuart' };
-    const ink = getComputedStyle(document.documentElement).getPropertyValue('--color-text-secondary').trim() || '#575d77';
-    Object.values(config.options.scales || {}).forEach(scale => { if (scale.ticks) scale.ticks.color = ink; });
+    config.options.animation = (reduced || captureMode) ? false : { duration: 450, easing: 'easeOutQuart' };
+    const ink = chartInk();
+    const grid = chartGrid();
+    const fam = chartFont();
+    Object.values(config.options.scales || {}).forEach(scale => {
+      if (scale.ticks) { scale.ticks.color = ink; scale.ticks.font = Object.assign({}, scale.ticks.font, { family: fam }); }
+      if (scale.grid && scale.grid.color === GRID) scale.grid.color = grid;
+    });
     const labels = config.options.plugins?.legend?.labels;
-    if (labels) labels.color = ink;
+    if (labels) { labels.color = ink; labels.font = Object.assign({}, labels.font, { family: fam }); }
     const prev = state.charts[key];
     if (prev) { try { prev.destroy(); } catch (e) { log.debug('destroy ignoré :', e); } }
     try {
@@ -1961,9 +2149,9 @@
       data: {
         labels,
         datasets: [{
-          data, borderColor: '#7158D9', backgroundColor: 'rgba(113,88,217,.14)',
+          data, borderColor: chartAccent(), backgroundColor: hexA(chartAccent(), .16),
           fill: true, tension: .35, pointRadius: data.length < 30 ? 3 : 0,
-          borderWidth: 2, pointBackgroundColor: '#7158D9'
+          borderWidth: 2, pointBackgroundColor: chartAccent()
         }]
       },
       options: {
@@ -1980,7 +2168,7 @@
   /** Barres horizontales par membre + légende top 6 (v1 verbatim, +tooltip complet). */
   function renderMembers(st) {
     const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const mColors = ms.map((_, i) => MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    const mColors = memberColors(ms.length);
     state.memberFullLabels = ms.map(m => m[0] + ' — ' + m[1].toLocaleString() + ' action(s)');
     $('c-members-wrap').style.height = Math.max(120, ms.length * 32 + 40) + 'px';
     $('c-members-wrap').title = ms.map(m => m[0] + ' : ' + m[1]).join('\n');
@@ -2016,7 +2204,7 @@
         labels: tl,
         datasets: [{
           data: tl.map(l => st.typeCounts.get(l)),
-          backgroundColor: GROUP_COLORS, borderWidth: 0,
+          backgroundColor: groupPalette(tl.length), borderWidth: 0,
           hoverBorderWidth: 2, hoverBorderColor: '#fff'
         }]
       },
@@ -2024,7 +2212,7 @@
     });
     const tot = st.total;
     $('leg-types').innerHTML = tl.slice(0, LEGEND_MAX).map((l, i) =>
-      '<span class="leg-item"><span class="leg-dot" style="background:' + GROUP_COLORS[i % GROUP_COLORS.length] + '"></span>' +
+      '<span class="leg-item"><span class="leg-dot" style="background:' + groupColor(i) + '"></span>' +
       esc(l) + ' ' + Math.round(st.typeCounts.get(l) / tot * 100) + '%</span>').join('');
   }
 
@@ -2050,20 +2238,19 @@
         let bg, tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
         if (shareMode) {
           const r = hourTotals[h] ? v / hourTotals[h] : 0;
-          bg = v === 0 ? 'rgba(113,88,217,0)' : r >= .12 ? '#5140B5' : r >= .06 ? '#7158D9' : r >= .02 ? '#B6A6FF' : 'rgba(182,166,255,.4)';
+          bg = v === 0 ? heatColor(0, 1) : heatShareColor(r);
           tip += hourTotals[h] ? ' · ' + Math.round(r * 100) + '% de ' + h + 'h' : '';
         } else {
-          const alpha = st.heatMax > 0 ? Math.pow(v / st.heatMax, .5) : 0;
-          bg = 'rgba(113,88,217,' + alpha + ')';
+          bg = heatColor(v, st.heatMax);
         }
         html += '<div class="hm-cell" style="background:' + bg + '" data-tip="' + esc(tip) + '"></div>';
       }
     }
     $('hm-grid').innerHTML = html;
     $('hm-scale').innerHTML = shareMode
-      ? 'part de l\'heure : ' + ['rgba(182,166,255,.4)', '#B6A6FF', '#7158D9', '#5140B5']
+      ? 'part de l\'heure : ' + [heatShareColor(.005), heatShareColor(.03), heatShareColor(.07), heatShareColor(.13)]
         .map(c => '<span class="sw" style="background:' + c + '"></span>').join('') + ' 0% → ≥12%'
-      : 'volume : <span class="sw" style="background:rgba(113,88,217,0);border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:rgba(113,88,217,1)"></span>' + st.heatMax + ' actions/case';
+      : 'volume : <span class="sw" style="background:' + heatColor(0, 1) + ';border:0.5px solid var(--color-border-tertiary)"></span>0 → <span class="sw" style="background:' + heatColor(st.heatMax || 1, st.heatMax || 1) + '"></span>' + st.heatMax + ' actions/case';
   }
 
   /**
@@ -2077,8 +2264,9 @@
     const allKeys = new Set();
     members.forEach(m => { if (map[m]) Object.keys(map[m]).forEach(k => allKeys.add(k)); });
     const labels = Array.from(allKeys).sort();
+    const trendPalette = memberColors(members.length);
     $('leg-trends').innerHTML = members.map((m, i) =>
-      '<span class="leg-item"><span class="leg-dot" style="background:' + MEMBER_COLORS[i % MEMBER_COLORS.length] + '"></span>' +
+      '<span class="leg-item"><span class="leg-dot" style="background:' + trendPalette[i] + '"></span>' +
       esc(firstWord(m)) + '</span>').join('');
     chart('trends', 'c-trends', {
       type: 'line',
@@ -2086,7 +2274,7 @@
         labels,
         datasets: members.map((m, i) => ({
           label: m, data: labels.map(l => (map[m] || {})[l] || 0),
-          borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length], backgroundColor: 'transparent',
+          borderColor: trendPalette[i], backgroundColor: 'transparent',
           tension: .35, borderWidth: 2, pointRadius: 0
         }))
       },
@@ -2113,7 +2301,7 @@
       type: 'bar',
       data: {
         labels: top.map(t => truncate(t.name, 22, 20)),
-        datasets: [{ data: top.map(t => t.count), backgroundColor: '#3B8BD4', borderRadius: 3, borderSkipped: false }]
+        datasets: [{ data: top.map(t => t.count), backgroundColor: cssHex('--chart-2', '#3B8BD4'), borderRadius: 3, borderSkipped: false }]
       },
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -2137,7 +2325,7 @@
       type: 'bar',
       data: {
         labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
-        datasets: [{ data: h, backgroundColor: h.map(v => 'rgba(113,88,217,' + (mx > 0 ? .25 + .75 * (v / mx) : .25) + ')'), borderRadius: 2, borderSkipped: false }]
+        datasets: [{ data: h, backgroundColor: h.map(v => hexA(chartAccent(), mx > 0 ? .25 + .75 * (v / mx) : .25)), borderRadius: 2, borderSkipped: false }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -2170,7 +2358,7 @@
     groups.forEach(g => byGroup.get(g).forEach((count, key) => allKeys.add(key)));
     const labels = Array.from(allKeys).sort();
     $('leg-typetl').innerHTML = groups.map(g =>
-      '<span class="leg-item"><span class="leg-dot" style="background:' + GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length] + '"></span>' +
+      '<span class="leg-item"><span class="leg-dot" style="background:' + groupColor(Object.keys(ACTION_GROUPS).indexOf(g)) + '"></span>' +
       esc(g) + '</span>').join('');
     chart('typetl', 'c-typetl', {
       type: 'line',
@@ -2179,8 +2367,8 @@
         datasets: groups.map(g => ({
           label: g,
           data: labels.map(l => byGroup.get(g).get(l) || 0),
-          borderColor: GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length],
-          backgroundColor: hexA(GROUP_COLORS[Object.keys(ACTION_GROUPS).indexOf(g) % GROUP_COLORS.length], .4),
+          borderColor: groupColor(Object.keys(ACTION_GROUPS).indexOf(g)),
+          backgroundColor: hexA(groupColor(Object.keys(ACTION_GROUPS).indexOf(g)), .4),
           fill: true, tension: .25, borderWidth: 1, pointRadius: 0
         }))
       },
@@ -2200,9 +2388,9 @@
       type: 'doughnut',
       data: {
         labels: ['Semaine', 'Week-end'],
-        datasets: [{ data: [st.weekdays, st.weekend], backgroundColor: ['#3B8BD4', '#6E5DC6'], borderWidth: 0, hoverBorderWidth: 2, hoverBorderColor: '#fff' }]
+        datasets: [{ data: [st.weekdays, st.weekend], backgroundColor: [cssHex('--chart-2', '#3B8BD4'), cssHex('--chart-1', '#6E5DC6')], borderWidth: 0, hoverBorderWidth: 2, hoverBorderColor: '#fff' }]
       },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' }, boxWidth: 10 } } } }
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: chartInk(), font: { size: 10, family: chartFont() }, boxWidth: 10 } } } }
     });
   }
 
@@ -2225,7 +2413,7 @@
     });
     $('mt-body').innerHTML = rows.map((r, i) =>
       '<tr><td><span class="leg-dot" style="display:inline-block;margin-right:6px;background:' +
-      MEMBER_COLORS[i % MEMBER_COLORS.length] + '"></span>' + esc(r.name) + '</td>' +
+      memberColors(rows.length)[i] + '"></span>' + esc(r.name) + '</td>' +
       '<td class="num">' + r.count.toLocaleString() + '</td>' +
       '<td class="num">' + r.comments.toLocaleString() + '</td>' +
       '<td class="num">' + r.cards.toLocaleString() + '</td>' +
@@ -2379,7 +2567,8 @@
     const c = state.charts.timeline;
     if (!c || !c.toBase64Image) { toast('Timeline indisponible pour l\'export PNG.', 'error'); return; }
     let url;
-    try { url = c.toBase64Image('image/png', '#ffffff'); }
+    const bg = Theme.isDark() ? sheetColors().panel : '#ffffff';
+    try { url = c.toBase64Image('image/png', bg); }
     catch (e) { log.error('toBase64Image :', e); toast('Export PNG impossible : canvas non exportable.', 'error'); return; }
     download(url, 'image/png', fileSlug(state.board && state.board.name) + '-timeline-' + todayStamp() + '.png', true);
     toast('PNG de la timeline exporté.', 'success');
@@ -3145,7 +3334,7 @@
   }
 
   /** Canvas → JPEG sur fond blanc (JPEG = flot DCTDecode direct dans le PDF). */
-  function snapshotCanvasJpeg(canvas, quality) {
+  function snapshotCanvasJpeg(canvas, quality, bg) {
     try {
       const w = canvas.width, h = canvas.height;
       if (!w || !h) return null;
@@ -3153,7 +3342,7 @@
       tmp.width = w; tmp.height = h;
       const ctx = tmp.getContext('2d');
       if (!ctx) return null;
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = bg || '#ffffff'; ctx.fillRect(0, 0, w, h);
       ctx.drawImage(canvas, 0, 0);
       const url = tmp.toDataURL('image/jpeg', quality);
       if (!url || url.indexOf('data:image') !== 0) return null;
@@ -3162,7 +3351,7 @@
   }
 
   /** Canvas → octets PNG sur fond blanc. */
-  function snapshotCanvasPng(canvas) {
+  function snapshotCanvasPng(canvas, bg) {
     try {
       const w = canvas.width, h = canvas.height;
       if (!w || !h) return null;
@@ -3170,7 +3359,7 @@
       tmp.width = w; tmp.height = h;
       const ctx = tmp.getContext('2d');
       if (!ctx) return null;
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = bg || '#ffffff'; ctx.fillRect(0, 0, w, h);
       ctx.drawImage(canvas, 0, 0);
       const url = tmp.toDataURL('image/png');
       return url && url.indexOf('data:') === 0 && url.length > 32 ? dataUrlToBytes(url) : null;
@@ -3178,25 +3367,25 @@
   }
 
   /** Capture tous les graphiques vivants : JPEG (PDF) + PNG (ZIP). */
-  function collectChartImages() {
+  function collectChartImages(bg) {
     /** @type {Object} */ const jpegMap = {};
     /** @type {Object} */ const pngMap = {};
     CHART_EXPORT_KEYS.forEach(([key]) => {
       const c = state.charts[key];
       if (!c || !c.canvas) return;
-      const j = snapshotCanvasJpeg(c.canvas, EXPORT_JPEG_QUALITY);
+      const j = snapshotCanvasJpeg(c.canvas, EXPORT_JPEG_QUALITY, bg);
       if (j) jpegMap[key] = j;
-      const p = snapshotCanvasPng(c.canvas);
+      const p = snapshotCanvasPng(c.canvas, bg);
       if (p) pngMap[key] = p;
     });
     return { jpegMap, pngMap };
   }
 
   /** Dessine un canvas source dans une boîte (contain) sur un contexte 2D. */
-  function drawFit(ctx, src, x, y, w, h) {
+  function drawFit(ctx, src, x, y, w, h, bg) {
     const scale = Math.min(w / src.width, h / src.height);
     const dw = src.width * scale, dh = src.height * scale;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = bg || '#ffffff';
     ctx.fillRect(x, y, w, h);
     ctx.drawImage(src, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
@@ -3218,15 +3407,18 @@
       const ctx = cv.getContext('2d');
       if (!ctx) return null;
       ctx.scale(S, S);
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+      const SB = sheetColors();
+      ctx.fillStyle = SB.bg; ctx.fillRect(0, 0, W, H);
 
-      /* en-tête */
-      ctx.fillStyle = '#7158D9'; ctx.fillRect(0, 0, W, 6);
-      ctx.fillStyle = '#2b2a27'; ctx.font = '600 25px Arial';
+      /* en-tête : barre dégradée néon */
+      const bar = ctx.createLinearGradient(0, 0, W, 0);
+      bar.addColorStop(0, SB.a); bar.addColorStop(1, SB.b);
+      ctx.fillStyle = bar; ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = SB.ink; ctx.font = '600 25px Arial';
       ctx.fillText(truncate(model.boardName, 64, 60), M, 44);
-      ctx.fillStyle = '#5c594f'; ctx.font = '13px Arial';
+      ctx.fillStyle = SB.soft; ctx.font = '13px Arial';
       ctx.fillText('Analyse d’activité Trello — ' + model.range.oldestLabel + ' → ' + model.range.newestLabel, M, 68);
-      ctx.fillStyle = '#8b867a'; ctx.font = '11px Arial';
+      ctx.fillStyle = SB.faint; ctx.font = '11px Arial';
       ctx.fillText(model.totals.actions.toLocaleString() + ' action(s) affichée(s)' +
         (model.filters.active ? ' · filtres : ' + truncate(model.filters.label, 70, 65) : '') +
         ' · généré le ' + model.generatedLabel + ' · v' + model.version, M, 88);
@@ -3237,12 +3429,12 @@
       model.kpis.forEach((k, i) => {
         const x = M + (i % 4) * (kW + 10);
         const yy = y + Math.floor(i / 4) * (kH + 8);
-        ctx.fillStyle = '#f4f1ea'; ctx.fillRect(x, yy, kW, kH);
-        ctx.fillStyle = '#8b867a'; ctx.font = '10px Arial';
+        ctx.fillStyle = SB.tile; ctx.fillRect(x, yy, kW, kH);
+        ctx.fillStyle = SB.faint; ctx.font = '10px Arial';
         ctx.fillText(k.label.toUpperCase(), x + 10, yy + 18);
-        ctx.fillStyle = '#2b2a27'; ctx.font = '600 21px Arial';
+        ctx.fillStyle = SB.ink; ctx.font = '600 21px Arial';
         ctx.fillText(k.value, x + 10, yy + 42);
-        ctx.fillStyle = '#5c594f'; ctx.font = '10px Arial';
+        ctx.fillStyle = SB.soft; ctx.font = '10px Arial';
         ctx.fillText(truncate(k.sub, 28, 26), x + 10, yy + 60);
       });
       y += kpiH;
@@ -3254,36 +3446,35 @@
         if (!c || !c.canvas) return;
         const x = M + col * (W / 2 - M + 8);
         const boxW = (W - 2 * M - 16) / 2;
-        ctx.fillStyle = '#5c594f'; ctx.font = '600 13px Arial';
+        ctx.fillStyle = SB.soft; ctx.font = '600 13px Arial';
         ctx.fillText(CHART_EXPORT_TITLES[key] || key, x, y + 16);
-        drawFit(ctx, c.canvas, x, y + 26, boxW, cellH - 40);
+        drawFit(ctx, c.canvas, x, y + 26, boxW, cellH - 40, SB.panel);
         col = 1 - col;
         if (col === 0) y += cellH;
       });
       if (col === 1) y += cellH;
 
       /* heatmap */
-      ctx.fillStyle = '#5c594f'; ctx.font = '600 13px Arial';
+      ctx.fillStyle = SB.soft; ctx.font = '600 13px Arial';
       ctx.fillText('Heatmap — Heure × Jour de la semaine', M, y + 16);
       const hm = model.heat, labelW = 30, cellW = (W - 2 * M - labelW) / 24, chH = 24;
       ctx.font = '10px Arial';
       for (let h = 0; h < 24; h += 2) {
-        ctx.fillStyle = '#8b867a';
+        ctx.fillStyle = SB.faint;
         ctx.fillText(String(h), M + labelW + h * cellW + 2, y + 36);
       }
       for (let day = 1; day <= 7; day++) {
         const d = day % 7;
-        ctx.fillStyle = '#8b867a';
+        ctx.fillStyle = SB.faint;
         ctx.fillText(DAYS[d], M + 2, y + 52 + (day - 1) * (chH + 2) + 16);
         for (let h = 0; h < 24; h++) {
           const v = hm.cells[d][h];
-          const alpha = hm.max > 0 ? Math.sqrt(v / hm.max) : 0;
-          ctx.fillStyle = 'rgba(113,88,217,' + alpha + ')';
+          ctx.fillStyle = heatColor(v, hm.max);
           ctx.fillRect(M + labelW + h * cellW + 1, y + 42 + (day - 1) * (chH + 2), cellW - 2, chH);
         }
       }
       y += heatH;
-      ctx.fillStyle = '#8b867a'; ctx.font = '10px Arial';
+      ctx.fillStyle = SB.faint; ctx.font = '10px Arial';
       ctx.fillText('Trello Board Activity Analyzer v' + model.version + ' — export local, aucune donnée transmise.', M, y + 18);
       return cv.toDataURL('image/png');
     } catch (e) {
@@ -3367,9 +3558,8 @@
       html += '<div class="hm-label">' + DAYS[d] + '</div>';
       for (let h = 0; h < 24; h++) {
         const v = hm.cells[d][h];
-        const alpha = hm.max > 0 ? Math.pow(v / hm.max, .5) : 0;
         const tip = DAYS[d] + ' ' + h + 'h: ' + v + ' action' + (v > 1 ? 's' : '');
-        html += '<div class="hm-cell" style="background:rgba(113,88,217,' + alpha + ')" data-tip="' + esc(tip) + '"></div>';
+        html += '<div class="hm-cell" style="background:' + heatColor(v, hm.max) + '" data-tip="' + esc(tip) + '"></div>';
       }
     }
     return html + '</div></div>';
@@ -3453,6 +3643,26 @@
 
   /* ══════════════════ 15h. ACTIONS D'EXPORT (menu + raccourcis) ══════════ */
 
+  /**
+   * v7 : exécute une capture d'export sous un thème imposé — les graphiques
+   * suivant les jetons CSS, PDF et rapport HTML sont capturés en clair et la
+   * planche PNG en sombre néon — puis restaure le choix de l'utilisateur.
+   * Les graphiques sont reconstruits sans animation (captureMode) pour des
+   * instantanés nets.
+   */
+  async function withThemeForCapture(theme, fn) {
+    const user = Theme.mode;
+    const prev = captureMode;
+    captureMode = true;
+    if (user !== theme) Theme.apply(theme);
+    await sleep(30);
+    try { return await fn(); }
+    finally {
+      captureMode = prev;
+      if (Theme.mode !== user) Theme.apply(user);
+    }
+  }
+
   /** Garde anti double-clic sur les exports lourds. */
   let exportBusy = false;
   async function withExport(fn) {
@@ -3500,9 +3710,12 @@
       if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
       toast('Préparation du rapport PDF…');
       await sleep(30); // laisse le toast s'afficher avant le travail synchrone
-      const model = buildReportModel();
-      const { jpegMap } = collectChartImages();
-      const pdf = buildPdfReport(model, jpegMap);
+      /* v7 : rapport PDF clair — instantanés pris sous thème clair, puis thème restauré. */
+      const pdf = await withThemeForCapture('light', () => {
+        const model = buildReportModel();
+        const { jpegMap } = collectChartImages('#ffffff');
+        return buildPdfReport(model, jpegMap);
+      });
       downloadBytes(pdf, 'application/pdf', exportName('rapport', 'pdf'));
       toast('Rapport PDF exporté (' + Math.ceil(pdf.length / 1024) + ' Ko).', 'success');
     });
@@ -3528,7 +3741,8 @@
   function exportSheet() {
     return withExport(async () => {
       if (!state.actions.length) { toast('Aucune donnée à exporter.', 'error'); return; }
-      const url = buildContactSheetPng(buildReportModel());
+      /* v7 : planche sombre néon, quel que soit le thème actif de l'utilisateur. */
+      const url = await withThemeForCapture('dark', () => buildContactSheetPng(buildReportModel()));
       if (!url) { toast('Planche PNG indisponible.', 'error'); return; }
       download(url, 'image/png', exportName('planche', 'png'), true);
       toast('Planche PNG exportée (tous les graphiques).', 'success');
@@ -3541,7 +3755,9 @@
       toast('Préparation de l’archive ZIP…');
       await sleep(30);
       const model = buildReportModel();
-      const { pngMap, jpegMap } = collectChartImages();
+      /* v7 : chaque famille d'images sous son thème (PDF clair, PNG/planche sombres). */
+      const { jpegMap } = await withThemeForCapture('light', () => collectChartImages('#ffffff'));
+      const { pngMap } = await withThemeForCapture('dark', () => collectChartImages(sheetColors().panel));
       const entries = [];
       /* rapport HTML : interactif si possible, statique sinon */
       const chartSrc = await getChartJsSource();
@@ -3566,7 +3782,7 @@
         const png = pngMap[key];
         if (png) entries.push({ name: 'graphiques/' + fname + '.png', data: png });
       });
-      const sheet = buildContactSheetPng(model);
+      const sheet = await withThemeForCapture('dark', () => buildContactSheetPng(model));
       if (sheet) entries.push({ name: 'graphiques/planche.png', data: dataUrlToBytes(sheet) });
       entries.push({
         name: 'readme.txt', data: utf8Bytes(
@@ -3749,7 +3965,9 @@
   /**
    * Palette autonome + thème. Règle : si l'hôte fournit les jetons CSS, ils
    * restent prioritaires sauf choix explicite de l'utilisateur (clair/sombre).
-   * Préférence persistée hors de la clé de session (non bloquant).
+   * v7 : sans préférence mémorisée, le thème **sombre** est appliqué par
+   * défaut ; le cycle reste clair → sombre → auto et le choix est persisté
+   * hors de la clé de session (non bloquant).
    */
   const Theme = (function () {
     let mode = 'auto';
@@ -3794,8 +4012,8 @@
     function init() {
       ensureNativePalette();
       Store.get(THEME_SK)
-        .then(r => apply(r && r.value ? r.value : 'auto'))
-        .catch(() => apply('auto'));
+        .then(r => apply(r && r.value ? r.value : 'dark'))
+        .catch(() => apply('dark'));
       try {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         const onChange = () => { if (mode === 'auto') apply('auto'); };
@@ -3887,6 +4105,7 @@
         && (htmlI.split('<\/script>').length - 1) === 3, 'inlining broken');
       const htmlS = buildHtmlStatic(model, {});
       t('html statique', htmlS.indexOf('stat-card') > 0 && htmlS.indexOf('hm-cell') > 0);
+      t('jetons v7', /^#[0-9a-f]{6}$/i.test(cssHex('--chart-1', '#6d28d9')) && memberColors(4).length === 4 && /^#[0-9a-f]{6}$/i.test(heatColor(3, 3)));
     } catch (e) {
       t('exception', false, String((e && e.message) || e));
     } finally {
@@ -4050,6 +4269,8 @@
     setGran, renderDashboard, setProgress, setSaveStatus,
     persistData, checkSaved, showError,
     computeStats, getVisible,
+    cssHex, cssVar, memberColors, groupColor, chartAccent, chartInk, chartGrid,
+    heatColor, heatShareColor, sheetColors, withThemeForCapture,
     buildActionsCsv, buildAnalysisJson, validPayload, normalizeAction,
     /* v5 : moteur d'export (constructeurs purs testables) */
     buildReportModel, buildMarkdownReport, buildPdfReport, buildXlsxWorkbook,

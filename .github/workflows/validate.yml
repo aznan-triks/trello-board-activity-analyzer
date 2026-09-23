@@ -61,7 +61,7 @@ jobs:
         run: node scripts/verify-deployment.mjs
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Exécuter les 17 scénarios contre le site public
+      - name: Exécuter les 18 scénarios contre le site public
         run: npm test
       - uses: actions/upload-artifact@v4
         if: always()
