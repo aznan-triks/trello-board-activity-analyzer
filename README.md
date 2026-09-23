@@ -5,6 +5,18 @@ client, sans build ni serveur applicatif. Le code applicatif reste dans
 `index.html` ; Chart.js 4.4.1 est livré dans `vendor/` (licence MIT incluse).
 Les rapports HTML exportés restent des fichiers uniques autonomes.
 
+> **v7.0.0** — habillage technologique : thème **sombre néon par défaut**
+> (clair et auto conservés, choix persisté), panneaux de verre à rail
+> supérieur dégradé et liseré lumineux, fond quadrillé technique fixé au
+> défilement avec ligne de balayage, titre du héros en dégradé de texte et
+> accroche pulsante, chiffres / KPI / commandes en chasse fixe capitales
+> espacées, **graphiques et heatmap pilotés par jetons CSS** (`--chart-*`,
+> `--hm-*`, `--neon-*`) qui suivent le thème au lieu de couleurs figées,
+> planche PNG **sombre néon** (panneaux sombres sous les graphiques) tandis
+> que le PDF et le rapport HTML restent **clairs** (captures prises sous le
+> thème adapté puis thème utilisateur restauré), animations décoratives
+> (pulse, balayage) supprimées sous `prefers-reduced-motion`.
+>
 > **v6.0.0** — nouvelle interface sans esthétique terminal : typographie sans
 > empattement, accents violet/menthe/corail, cartes aérées, accueil guidé,
 > thèmes clair/sombre et micro-interactions respectant les préférences de mouvement.
@@ -65,14 +77,14 @@ identifiants API.
 | Format | Fichier | Contenu |
 |---|---|---|
 | **Rapport HTML interactif (hors-ligne)** | `*-rapport-*.html` | **Fichier autonome** : styles + Chart.js + l'application (mode rapport) + données embarquées. Une fois téléchargé, il s'ouvre dans n'importe quel navigateur **sans connexion** et reste **pleinement interactif** : filtres membres/dates, tri du tableau, granularité semaine/mois, heatmap volume/part %, tooltips — et il peut lui-même **re-exporter** (CSV, JSON, Markdown, PNG, PDF, HTML). Aucun identifiant embarqué ; noms de cartes échappés (`\u003c`) contre l'injection de script. |
-| **Rapport PDF (A4)** | `*-rapport-*.pdf` | Document multi-pages : bandeau + 8 indicateurs, les 8 graphiques en images JPEG (DCTDecode), **heatmap vectorielle**, top cartes, **tableau détaillé par membre**, pieds de page « Page n / N ». Écrit par un **mini-générateur PDF intégré** (PDF 1.4, Helvetica/Courier WinAnsi — accents français OK), sans aucune dépendance. |
+| **Rapport PDF (A4)** | `*-rapport-*.pdf` | Document multi-pages : bandeau + 8 indicateurs, les 8 graphiques en images JPEG (DCTDecode), **heatmap vectorielle**, top cartes, **tableau détaillé par membre**, pieds de page « Page n / N ». Écrit par un **mini-générateur PDF intégré** (PDF 1.4, Helvetica/Courier WinAnsi — accents français OK), sans aucune dépendance. v7 : toujours **clair** — les instantanés de graphiques sont pris sous thème clair puis le thème utilisateur est restauré. |
 | **Rapport Markdown** | `*-synthese-*.md` | Synthèse (KPI), tableaux membres / cartes / types — prêt pour un wiki ou un dépôt. |
 | **Classeur Excel (.xlsx)** | `*-classeur-*.xlsx` | OOXML réel (3 feuilles : **Synthèse**, **Membres**, **Actions**), en-têtes figés, colonnes dimensionnées. Empaqueté par le mini-ZIP intégré (STORE + CRC-32). |
 | **Archive ZIP complète** | `*-archive-*.zip` | Tout d'un coup : `rapport.html`, `rapport.pdf`, `analyse.json`, `actions.csv`, `synthese.md`, `membres.xlsx`, `graphiques/*.png` (8 graphiques + `planche.png`), `readme.txt` (manifeste). |
 | Actions — CSV (Excel) *(v4)* | `*-actions-*.csv` | CSV RFC 4180, BOM UTF-8 — inchangé. |
 | Analyse complète — JSON *(v4)* | `*-analyse-*.json` | Stats + actions brutes, sans identifiants — inchangé. |
 | Timeline — PNG *(v4)* | `*-timeline-*.png` | Image de la timeline — inchangé. |
-| **Planche — tous les graphiques (PNG)** | `*-planche-*.png` | Une seule image : en-tête, 8 indicateurs, les 8 graphiques et la heatmap. |
+| **Planche — tous les graphiques (PNG)** | `*-planche-*.png` | Une seule image : en-tête, 8 indicateurs, les 8 graphiques et la heatmap. v7 : composition **sombre néon** (fond et panneaux sombres sous les graphiques, barre d'en-tête dégradée), quel que soit le thème actif. |
 
 **Export PDF via navigateur** : le CSS `@media print` d'origine est conservé —
 `Ctrl+P` sur le dashboard reste possible (et sur le rapport statique, avec son
@@ -110,7 +122,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 | Chargement | Écran spinner + barre de progression avec les mêmes paliers (5 → 15 → +8/page plafonné à 85 → 90 → 100) et les mêmes libellés |
 | Sauvegarde | Clé `trello-v3`, payload `{boardData, actions, creds, savedAt}`, schéma slim `{t,d,m,c}`, garde-fou 4,8 Mo (`Trop volumineux (x.xx MB)`), pastille d'état (Sauvegarde…/Sauvegardé/erreur) |
 | Stats | Total actions + « sur N jours », membres actifs + top, jour le + actif + compte, moyenne/semaine — formules et cas particuliers (ties, `+ ' actions'`) à l'identique |
-| Graphiques | Timeline semaine/mois (bucket dimanche local → clé ISO), barres membres (troncature 18/16, hauteur `max(120, n·32+40)`), donut types groupés (`ACTION_GROUPS`), heatmap Lun→Dim × 0-23h (alpha `√(v/mx)`, tooltips `Dim 0h: N action(s)`), tendances top-5 membres, top-10 cartes (22/20), activité horaire (`.25+.75·v/mx`) — Chart.js 4.4.1, moteur conservé, typographie sans empattement et couleurs adaptées au thème en v6 |
+| Graphiques | Timeline semaine/mois (bucket dimanche local → clé ISO), barres membres (troncature 18/16, hauteur `max(120, n·32+40)`), donut types groupés (`ACTION_GROUPS`), heatmap Lun→Dim × 0-23h (alpha `√(v/mx)`, tooltips `Dim 0h: N action(s)`), tendances top-5 membres, top-10 cartes (22/20), activité horaire (`.25+.75·v/mx`) — Chart.js 4.4.1, moteur conservé, typographie sans empattement et couleurs adaptées au thème en v6, puis **séries, légendes et heatmap pilotées par jetons CSS** (`--chart-*`, `--hm-*`) en v7 |
 | Flux | `refreshData` complet, `resetApp` (destruction des charts, re-`checkSaved`), granularité qui mémorise les membres de tendances (`renderTrends(null)`) |
 | Exports v4 | `buildActionsCsv` / `buildAnalysisJson` : sorties **octet à octet inchangées** (contrat des tests E2E) |
 
@@ -141,12 +153,13 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
   cache pré-chauffé en tâche de fond après analyse.
 - **Palette autonome + thème** : jetons CSS locaux injectés seulement si
   l'hôte n'en fournit pas (ou si l'utilisateur force clair/sombre) ; suivi de
-  `prefers-color-scheme` ; préférence persistée (`trello-v3:theme`).
+  `prefers-color-scheme` ; préférence persistée (`trello-v3:theme`). v7 :
+  **sombre par défaut** sans préférence mémorisée ; cycle clair → sombre → auto.
 - **Raccourcis clavier** + fenêtre d'aide (`?`), `aria-*` sur la fenêtre,
   `prefers-reduced-motion` respecté.
-- **Self-test intégré** : `tba.selfTest()` (console) — 23 contrôles sur les
+- **Self-test intégré** : `tba.selfTest()` (console) — 24 contrôles sur les
   helpers purs (CSV, slim/expand, validPayload, CRC/ZIP, PDF header/xref/flux,
-  Markdown, XLSX, HTML inlining sûr).
+  Markdown, XLSX, HTML inlining sûr, jetons de couleur v7).
 
 ### v4 — robustesse, analyses, sécurité (toutes conservées)
 
@@ -209,7 +222,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 15h EXPORT ACTIONS exportHtml/Pdf/Markdown/Xlsx/Sheet/Zip (+ v4 CSV/JSON/PNG)
 15i MODE RAPPORT   visionneuse d'un export HTML (bootEmbedded)
 16b RACCOURCIS     clavier + fenêtre d'aide
-17b THÈME          palette autonome, auto/clair/sombre
+17b THÈME          palette autonome, sombre par défaut (v7), captures thémées
 18 SELF-TEST       tba.selfTest()
 19 WIRING          init unique, events, error boundary
 API PUBLIQUE       window.tba + alias globaux non conflictuels (rétrocompat)
@@ -223,7 +236,7 @@ relance la même application avec `window.__TBA_EMBEDDED__`.
 
 ## Vérification
 
-- `tba.selfTest()` (console) : 23 assertions sur les helpers purs des exports.
+- `tba.selfTest()` (console) : 24 assertions sur les helpers purs des exports.
 - Suite E2E jsdom (hors dépôt) : analyse complète, chemins d'erreur
   401/validation, reprise de session v1 et v3, delta avec fusion/dédup, toggles,
   filtres, export, annulation, board vide, XSS d'échappement — chaque sortie DOM
@@ -246,12 +259,15 @@ Le serveur statique démarre automatiquement pour les tests. Aucun `npm install`
 n’est nécessaire pour utiliser ou publier l’application. Pour inspecter le
 rapport de tests : `npx playwright show-report`.
 
-La suite Playwright couvre : affichage à 360/390/768/1440 px, débordements du
-menu mobile, parcours de démonstration, filtres et état vide, granularité,
-cohérence des séries, tri au clavier, thèmes persistés, focus des modales,
-réduction des animations, audits axe WCAG A/AA en clair et sombre,
-stockage bloqué, consentement de stockage des identifiants, échappement HTML,
-absence de secrets dans les exports, impression et neuf formats d’export.
+La suite Playwright (18 scénarios) couvre : affichage à 360/390/768/1440 px,
+débordements du menu mobile, parcours de démonstration, filtres et état vide,
+granularité, cohérence des séries, tri au clavier, thème sombre par défaut et
+persistance du choix, focus des modales, réduction des animations (décoratives
+comprises : aucune animation sous `prefers-reduced-motion`), audits axe WCAG
+A/AA en clair et sombre — étendus au menu d’export, à l’aide clavier et au
+journal —, stockage bloqué, consentement de stockage des identifiants,
+échappement HTML, absence de secrets dans les exports, impression et neuf
+formats d’export.
 Le rapport HTML est réouvert avec le réseau bloqué. Les parcours API sont
 **simulés** (succès, delta, reprise, erreur 401, annulation), sans secret réel.
 Le self-test historique des constructeurs est aussi exécuté dans Chromium.
@@ -271,7 +287,7 @@ Conserver `index.html` et `vendor/` ensemble ; toutes les ressources utilisent
 des chemins relatifs compatibles avec le sous-chemin du dépôt.
 
 1. Ouvrir une pull request depuis la branche de travail (`arena/…`) vers `main`.
-2. Attendre le workflow **Validation UI et fonctionnelle** (17 scénarios
+2. Attendre le workflow **Validation UI et fonctionnelle** (18 scénarios
    navigateur + audits WCAG), puis fusionner — le merge doit aller **sur `main`**.
 3. Attendre la publication **pages build and deployment** du commit de fusion.
 4. Le job **Vérification du site publié** (déclenché par le push sur `main`)
@@ -284,7 +300,7 @@ des chemins relatifs compatibles avec le sous-chemin du dépôt.
    - la **racine du site** (`/`) : même HTML que `index.html`, version de
      `package.json` et titre attendus ;
    - l'**état de publication Pages** pour le commit courant via l'API GitHub ;
-   - puis rejoue les 17 scénarios contre l'URL publique.
+   - puis rejoue les 18 scénarios contre l'URL publique.
    Le récapitulatif (empreinte SHA-256 de l'arborescence publiée, tableau
    fichier par fichier) est écrit dans le **résumé du job** et en **annotations
    de check** (visibles dans l'interface Actions et via l'API) ; les captures et
@@ -294,7 +310,7 @@ Pour revérifier le site sans nouveau commit : onglet **Actions** → workflow
 **Validation UI et fonctionnelle** → **Run workflow** → renseigner `base_url`
 (ex. `https://aznan-triks.github.io/trello-board-activity-analyzer/`). Le job
 **Vérification du site publié** rejoue alors le contrôle complet et les
-17 scénarios contre cette URL (`base_url` vide = simple exécution locale).
+18 scénarios contre cette URL (`base_url` vide = simple exécution locale).
 
 En cas de contenu divergent (propagation Pages parfois lente), le job réessaie
 20 fois à 15 s d'intervalle avant d'échouer avec un diagnostic précis
@@ -305,7 +321,7 @@ Vérification manuelle, avant ou après fusion :
 ```sh
 npm run serve                                      # terminal 1 : http://127.0.0.1:8080
 BASE_URL=http://127.0.0.1:8080/ npm run verify:pages  # terminal 2
-BASE_URL=http://127.0.0.1:8080/ npm test              # les 17 scénarios
+BASE_URL=http://127.0.0.1:8080/ npm test              # les 18 scénarios
 
 # ou directement contre le site publié :
 BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm run verify:pages
