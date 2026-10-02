@@ -295,6 +295,41 @@ test('confidentialité : identifiants opt-in, texte hostile échappé et exports
   expect(await page.locator('#dashboard img').count()).toBe(0);
 });
 
+test('nexus : briefing, recherche, fenêtre, comparateur et commandes', async ({ page }) => {
+  const errors = await openApp(page);
+  await demo(page);
+  await expect(page.locator('#nexus')).toBeVisible();
+  await expect(page.locator('#nx-score')).toHaveText(/^\d{1,3}$/);
+  await expect(page.locator('#nx-brief')).toContainText(/actions/);
+  await expect(page.locator('#nx-insights li').first()).toBeVisible();
+  await page.locator('#fl-query').fill('accueil');
+  await expect(page.locator('#s-total')).not.toHaveText(/1.?284/);
+  await expect(page.locator('#s-total')).not.toHaveText('0');
+  await page.locator('#fl-clear').click();
+  await expect(page.locator('#s-total')).toHaveText(/1.?284/);
+  await page.locator('#win-7').click();
+  await expect(page.locator('#s-total')).not.toHaveText('0');
+  await expect(page.locator('#s-total')).not.toHaveText(/1.?284/);
+  await page.locator('#win-all').click();
+  await expect(page.locator('#s-total')).toHaveText(/1.?284/);
+  await page.locator('#cmp-a').selectOption({ index: 1 });
+  await page.locator('#cmp-b').selectOption({ index: 2 });
+  await expect(page.locator('#nx-compare')).toContainText('Actions');
+  await page.locator('#goal-input').fill('40');
+  await page.locator('#goal-input').dispatchEvent('change');
+  await expect(page.locator('#nx-goal')).toContainText('40');
+  await page.keyboard.press('k');
+  await expect(page.locator('#cmd-overlay')).toBeVisible();
+  await expect(page.locator('#cmd-input')).toBeFocused();
+  await settleMotion(page);
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#cmd-overlay')).not.toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('trello-v3'))).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test('impression : commandes masquées, graphiques conservés', async ({ page }) => {
   await openApp(page);
   await demo(page);

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Analyse complète de l'historique d'un tableau Trello — modifications, membres, tendances. 100 % local, aucune donnée envoyée ailleurs qu'à l'API Trello.">
-<title>Trello Analyzer — Votre activité, en perspective</title>
+<title>Trello Analyzer — Console d’activité</title>
 <style id="tba-style">
   /* ════════════════════════════════════════════════════════════════════════
      1. Styles d'origine (conservés verbatim — aucune règle ne change)
@@ -434,6 +434,165 @@
     .setup-card, .stat-card, .chart-card, .filters, .preview-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; }
   }
 
+  /* ════════════════════════════════════════════════════════════════════════
+     5. v8 — Console Nexus
+     Cadres instrumentaux, briefing local, palette de commandes.
+     Couche additive : les sélecteurs et contrats v1–v7 restent en place.
+     ════════════════════════════════════════════════════════════════════════ */
+  html.tba-native { --grid-line: rgba(14, 116, 144, .075); }
+  html.tba-native[data-tba-theme="dark"] {
+    --glow-radial-a: rgba(124, 58, 237, .22);
+    --glow-radial-b: rgba(34, 211, 238, .14);
+    --grid-line: rgba(34, 211, 238, .06);
+  }
+  .app-header, .header-tools { flex-wrap: wrap; }
+  .header-tools { justify-content: flex-end; }
+  .brand { min-width: 0; }
+  .brand-mark {
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px var(--glass-border), 0 0 16px var(--glow-radial-b);
+    animation: tba-glow 3.8s ease-in-out infinite;
+  }
+  @keyframes tba-glow {
+    0%, 100% { box-shadow: 0 0 0 1px var(--glass-border), 0 0 12px var(--glow-radial-b); }
+    50% { box-shadow: 0 0 0 1px var(--neon-cyan), 0 0 20px var(--glow-radial-a); }
+  }
+  .hud-status {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-data); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--color-text-secondary);
+    border: 1px solid var(--glass-border); border-radius: 999px;
+    padding: 5px 10px; background: var(--color-background-secondary);
+  }
+  .hud-status time { font-variant-numeric: tabular-nums; color: var(--color-text-primary); letter-spacing: .08em; }
+  .hud-tag { color: var(--color-text-primary); }
+  .telemetry {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 0 0 18px; max-width: 480px;
+    font-family: var(--font-data); font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--color-text-secondary);
+  }
+  .telemetry span { display: inline-flex; align-items: center; gap: 6px; }
+  .telemetry span::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--neon-cyan); box-shadow: 0 0 6px var(--neon-cyan); }
+  .preview-card, .preview-card:hover { transform: none; }
+  .preview-card:hover { transform: translateY(-3px); }
+  .setup-card, .stat-card, .chart-card, .filters, .preview-card, .nexus, .nx-panel {
+    border-radius: 14px;
+    background:
+      linear-gradient(var(--neon-cyan), var(--neon-cyan)) 0 0 / 16px 2px no-repeat,
+      linear-gradient(var(--neon-cyan), var(--neon-cyan)) 0 0 / 2px 16px no-repeat,
+      linear-gradient(var(--neon-violet), var(--neon-violet)) 100% 0 / 16px 2px no-repeat,
+      linear-gradient(var(--neon-violet), var(--neon-violet)) 100% 0 / 2px 16px no-repeat,
+      linear-gradient(var(--neon-violet), var(--neon-violet)) 0 100% / 16px 2px no-repeat,
+      linear-gradient(var(--neon-violet), var(--neon-violet)) 0 100% / 2px 16px no-repeat,
+      linear-gradient(var(--neon-cyan), var(--neon-cyan)) 100% 100% / 16px 2px no-repeat,
+      linear-gradient(var(--neon-cyan), var(--neon-cyan)) 100% 100% / 2px 16px no-repeat,
+      linear-gradient(180deg, var(--panel-sheen), transparent 28%),
+      var(--glass-bg);
+  }
+  .stat-row .stat-card:nth-child(4n+1) { box-shadow: inset 3px 0 0 var(--neon-cyan), var(--glow); }
+  .stat-row .stat-card:nth-child(4n+2) { box-shadow: inset 3px 0 0 var(--chart-3), var(--glow); }
+  .stat-row .stat-card:nth-child(4n+3) { box-shadow: inset 3px 0 0 var(--chart-4), var(--glow); }
+  .stat-row .stat-card:nth-child(4n+4) { box-shadow: inset 3px 0 0 var(--chart-2), var(--glow); }
+  #dashboard { counter-reset: deck; }
+  .chart-card { counter-increment: deck; }
+  .chart-card h3::before {
+    content: counter(deck, decimal-leading-zero) "  ";
+    color: var(--neon-cyan); font-family: var(--font-data); letter-spacing: .12em;
+  }
+  .deck-nav {
+    display: flex; gap: 8px; overflow-x: auto; width: 100%; max-width: 100%;
+    margin: 0 0 16px; padding: 8px 0; position: sticky; top: 76px; z-index: 40;
+    background: var(--color-background-primary); border-bottom: 1px solid var(--glass-border);
+  }
+  #nexus, .chart-card, .stat-row { scroll-margin-top: 96px; }
+  .deck-nav a {
+    flex: 0 0 auto; text-decoration: none; font-family: var(--font-data);
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-text-secondary); border: 1px solid var(--glass-border);
+    padding: 6px 10px; border-radius: 999px; background: var(--color-background-secondary);
+  }
+  .deck-nav a:hover { color: var(--color-text-primary); border-color: var(--neon-cyan); }
+  .win-group { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; min-width: 0; }
+  .win-group .dash-btn[aria-pressed="true"] { background: var(--color-accent-solid); color: #fff; border-color: var(--color-accent-solid); }
+  .filters > * { min-width: 0; max-width: 100%; }
+  #fl-query { width: min(220px, 100%); }
+  .nexus { padding: 20px; margin: 0 0 22px; border: 1px solid var(--glass-border); box-shadow: var(--glow); }
+  .nexus-head, .nexus-tools, .goal-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .nexus-head { justify-content: space-between; margin-bottom: 16px; }
+  .nexus-head h2 { margin: 4px 0 0; font-size: 20px; letter-spacing: -.4px; color: var(--color-text-primary); }
+  .nexus-grid { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 18px; align-items: center; }
+  .ring {
+    --p: 0; width: 128px; height: 128px; border-radius: 50%; margin: 0 auto;
+    background: conic-gradient(from 220deg, var(--neon-cyan), var(--neon-violet) calc(var(--p) * 1%), var(--color-border-tertiary) 0);
+    display: grid; place-items: center;
+  }
+  .ring-core {
+    width: 96px; height: 96px; border-radius: 50%; background: var(--color-background-secondary);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid var(--glass-border);
+  }
+  .ring-core strong { font-family: var(--font-data); font-size: 32px; line-height: 1; letter-spacing: -1px; color: var(--color-text-primary); }
+  .ring-core span, .ring-caption, .nx-k {
+    font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-secondary);
+  }
+  .ring-caption { text-align: center; margin: 10px 0 0; }
+  .nx-brief { margin: 0; font-size: 14px; line-height: 1.65; color: var(--color-text-primary); overflow-wrap: anywhere; }
+  .nx-insights { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .nx-insights li { position: relative; padding-left: 14px; font-size: 12px; line-height: 1.5; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+  .nx-insights li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 1px; background: var(--neon-cyan); }
+  .nx-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; }
+  .nx-chip, .nx-quiet {
+    font-family: var(--font-data); font-size: 11px; color: var(--color-text-primary);
+    background: var(--color-background-secondary); border: 1px solid var(--glass-border); border-radius: 999px; padding: 4px 8px;
+  }
+  .nx-quiet { color: var(--color-text-secondary); }
+  .nx-help { margin-top: 10px; font-size: 12px; color: var(--color-text-secondary); }
+  .nx-help summary { cursor: pointer; color: var(--color-text-primary); }
+  .nx-panels { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); gap: 12px; margin-top: 14px; }
+  .nx-panel { padding: 14px; border: 1px solid var(--glass-border); min-width: 0; }
+  .nx-panel h3 { margin: 0 0 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-family: var(--font-data); color: var(--color-text-secondary); }
+  .cmp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .nx-panel select, .nx-panel input[type="number"], #cmd-input {
+    width: 100%; min-width: 0; min-height: 40px; border: 1px solid var(--color-border-tertiary);
+    border-radius: 8px; background: var(--color-background-primary); color: var(--color-text-primary);
+    font-family: var(--font-data); font-size: 12px; padding: 0 10px;
+  }
+  #cmd-input::placeholder, .nx-panel input::placeholder { color: var(--color-text-secondary); opacity: 1; }
+  .goal-row { align-items: stretch; flex-direction: column; }
+  .goal-track { height: 8px; border-radius: 99px; background: var(--color-border-tertiary); overflow: hidden; margin-bottom: 8px; }
+  .goal-track > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet)); }
+  .goal-out, .cmp-out { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; overflow-wrap: anywhere; }
+  .cmp-line { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, .8fr); gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--color-border-tertiary); font-size: 12px; }
+  .cmp-line span { color: var(--color-text-secondary); }
+  .cmp-line strong { font-family: var(--font-data); text-align: right; color: var(--color-text-primary); font-weight: 650; overflow-wrap: anywhere; }
+  .spark { display: inline-flex; align-items: flex-end; gap: 1px; height: 14px; margin-left: 8px; vertical-align: middle; }
+  .spark i { display: block; width: 3px; min-height: 2px; background: var(--neon-cyan); border-radius: 1px; }
+  .tbl-wrap { max-width: 100%; }
+  #cmd-overlay { position: fixed; inset: 0; background: rgba(4, 10, 22, .55); display: none; align-items: flex-start; justify-content: center; z-index: 130; padding: 10vh 16px 16px; }
+  #cmd-overlay.open { display: flex; }
+  #cmd-panel { width: min(560px, 100%); max-height: min(70vh, 640px); display: flex; flex-direction: column; background: var(--color-background-secondary); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: var(--glow); padding: 14px; }
+  #cmd-list { overflow: auto; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+  .cmd-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: 0; color: var(--color-text-primary); padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: var(--font-data); }
+  .cmd-item.active, .cmd-item:hover { background: var(--soft-purple); color: var(--color-text-primary); }
+  .cmd-item kbd, .nexus-tools kbd { font-family: var(--font-data); font-size: 10px; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 1px 5px; color: var(--color-text-secondary); }
+  @media (max-width: 900px) { .hud-status { display: none !important; } }
+  @media (max-width: 760px) {
+    .nexus-grid, .nx-panels, .cmp-row { grid-template-columns: 1fr; }
+    .deck-nav { top: 64px; }
+    .nexus { padding: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand-mark { animation: none !important; }
+  }
+  @media print {
+    .deck-nav, #cmd-overlay, .hud-status, .nexus-tools, .win-group, .telemetry { display: none !important; }
+    .setup-card, .stat-card, .chart-card, .filters, .preview-card, .nexus, .nx-panel {
+      background: #fff !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    }
+    .ring { box-shadow: none !important; }
+  }
+
+
 </style>
 </head>
 <body>
@@ -441,8 +600,8 @@
 <div id="tapp">
   <a class="skip-link" href="#main-content">Aller au contenu</a>
   <header class="app-header">
-    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><span class="brand-name">Trello Analyzer<span style="color:var(--color-accent)">.</span></span><span class="brand-sub">Board activity insights</span></div></div>
-    <div class="header-tools"><span class="privacy-pill">Vos données restent chez vous</span><button class="dash-btn" id="btn-theme-top" title="Changer le thème d’affichage">☀ Thème : auto</button></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><span class="brand-name">Trello Analyzer<span style="color:var(--color-accent)">.</span></span><span class="brand-sub">Nexus local</span></div></div>
+    <div class="header-tools"><span class="hud-status"><i class="pulse-dot" aria-hidden="true"></i><time id="hud-clock">--:--:--</time><span class="hud-tag">Local</span></span><span class="privacy-pill">Vos données restent chez vous</span><button class="dash-btn" id="btn-theme-top" title="Changer le thème d’affichage">☀ Thème : auto</button></div>
   </header>
   <main id="main-content" tabindex="-1">
 
@@ -452,9 +611,10 @@
         <span class="eyebrow"><i class="pulse-dot" aria-hidden="true"></i>Moins de bruit, plus de clarté</span>
         <h1 id="hero-title" class="grad-text">Votre activité Trello.<br>Une nouvelle<br>perspective.</h1>
         <p class="hero-copy">Transformez l’historique de votre tableau en insights visuels. Comprenez les contributions, repérez les tendances et révélez le rythme de votre équipe.</p>
+        <p class="telemetry"><span>Analyse locale</span><span>0 serveur</span><span>Lien direct Trello</span><span>Briefing calculé ici</span></p>
         <button class="demo-btn" id="btn-demo">Explorer la démonstration <span aria-hidden="true">↗</span></button>
         <div class="preview-card" role="img" aria-label="Aperçu illustratif : graphique d’activité hebdomadaire, 1 284 actions. Données fictives.">
-          <div class="preview-top"><span>Le pouls de votre équipe</span><span class="preview-tag">Aperçu fictif</span></div>
+          <div class="preview-top"><span>Signal · 7 jours</span><span class="preview-tag">Aperçu fictif</span></div>
           <div class="preview-number">1 284 <small>actions, une vision d’ensemble</small></div>
           <svg class="preview-chart" viewBox="0 0 430 90" fill="none" aria-hidden="true"><defs><linearGradient id="preview-fill" x1="0" y1="0" x2="0" y2="1"><stop style="stop-color:var(--neon-violet)" stop-opacity=".22"/><stop offset="1" style="stop-color:var(--neon-violet)" stop-opacity="0"/></linearGradient></defs><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3 V90 H0Z" fill="url(#preview-fill)"/><path d="M0 72 C20 72 23 45 48 50 S75 75 100 48 S130 36 151 43 S178 55 204 28 S233 45 259 27 S290 38 315 14 S347 36 375 12 S407 18 430 3" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
           <div class="preview-axis"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
@@ -495,9 +655,9 @@
     </div>
     </div>
     <section class="feature-row" aria-label="Les points forts">
-      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, tendances et heatmap pour<br>comprendre ce qui fait avancer vos projets.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, heatmap, score et briefing<br>calculés dans votre navigateur.</p></div></article>
       <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3>Privé, par conception</h3><p>Vos analyses restent dans votre navigateur.<br>Pas de compte supplémentaire à créer.</p></div></article>
-      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Des insights à partager</h3><p>Exportez en PDF, Excel ou HTML interactif.<br>Vos rapports vous suivent, même hors ligne.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Des insights à partager</h3><p>PDF, Excel, HTML hors-ligne ou briefing texte.<br>Comparez deux membres, fixez un objectif.</p></div></article>
     </section>
   </div>
 
@@ -533,17 +693,34 @@
             <span class="muted">Images</span>
             <button id="exp-png" role="menuitem">Timeline — PNG</button>
             <button id="exp-sheet" role="menuitem" title="Indicateurs + 8 graphiques + heatmap en une seule image">Planche — tous les graphiques (PNG)</button>
+            <button id="exp-brief" role="menuitem" title="Synthèse texte du briefing tactique, sans identifiants">Briefing tactique — texte</button>
           </span>
         </span>
         <button class="dash-btn" id="btn-log" title="Journal technique (identifiants masqués)">☰ Journal</button>
         <button class="dash-btn" id="btn-reset">← Changer</button>
       </div>
     </div>
+    <nav class="deck-nav" aria-label="Sections du tableau">
+      <a href="#nexus">Briefing</a>
+      <a href="#sec-timeline">Temps</a>
+      <a href="#sec-members">Membres</a>
+      <a href="#sec-heat">Heatmap</a>
+      <a href="#sec-trends">Tendances</a>
+      <a href="#sec-detail">Détail</a>
+    </nav>
     <div class="filters" id="filters">
       <label for="fl-search">Membres</label>
       <input type="search" id="fl-search" placeholder="Filtrer un membre puis Entrée" list="fl-datalist" autocomplete="off">
       <datalist id="fl-datalist"></datalist>
       <span class="chips" id="fl-chips"></span>
+      <label for="fl-query">Recherche</label>
+      <input type="search" id="fl-query" placeholder="Carte, type ou membre" autocomplete="off">
+      <div class="win-group" role="group" aria-label="Fenêtre temporelle">
+        <button type="button" class="dash-btn" id="win-7" data-win="7" aria-pressed="false">7 j</button>
+        <button type="button" class="dash-btn" data-win="30" aria-pressed="false">30 j</button>
+        <button type="button" class="dash-btn" data-win="90" aria-pressed="false">90 j</button>
+        <button type="button" class="dash-btn" id="win-all" data-win="0" aria-pressed="false">Tout</button>
+      </div>
       <label for="fl-from">Du</label>
       <input type="datetime-local" id="fl-from">
       <label for="fl-to">Au</label>
@@ -557,7 +734,61 @@
       <div class="stat-card"><div class="stat-label">Jour le + actif</div><div class="stat-val" id="s-peak-day">—</div><div class="stat-sub" id="s-peak-count">—</div></div>
       <div class="stat-card"><div class="stat-label">Moy. / semaine</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
     </div>
-    <div class="chart-card">
+
+    <section class="nexus" id="nexus" aria-labelledby="nexus-title">
+      <div class="nexus-head">
+        <div>
+          <p class="eyebrow"><i class="pulse-dot" aria-hidden="true"></i> Briefing tactique</p>
+          <h2 id="nexus-title">Lecture de la vue courante</h2>
+        </div>
+        <div class="nexus-tools">
+          <button type="button" class="dash-btn" id="btn-brief-copy">Copier le briefing</button>
+          <button type="button" class="dash-btn" id="btn-cmd">Commandes <kbd>K</kbd></button>
+        </div>
+      </div>
+      <div class="nexus-grid">
+        <div class="ring-wrap">
+          <div class="ring" id="nx-ring" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score d’activité de la vue courante">
+            <div class="ring-core"><strong id="nx-score">—</strong><span>score</span></div>
+          </div>
+          <p class="ring-caption" id="nx-rhythm">En attente de données</p>
+        </div>
+        <div>
+          <p class="nx-brief" id="nx-brief">Le briefing se calcule localement, sans modèle distant.</p>
+          <ul class="nx-insights" id="nx-insights"></ul>
+          <details class="nx-help">
+            <summary>Comment le score est calculé</summary>
+            <p>Cadence (jusqu’à 6 actions par jour), part des jours couverts, régularité de la série et répartition entre membres. 100 décrit un rythme soutenu, continu et partagé. Aucune donnée ne quitte l’appareil.</p>
+          </details>
+        </div>
+      </div>
+      <div class="nx-meta" id="nx-anomalies"></div>
+      <div class="nx-panels">
+        <div class="nx-panel">
+          <h3>Comparateur</h3>
+          <div class="cmp-row">
+            <div class="field-row">
+              <label for="cmp-a">Membre A</label>
+              <select id="cmp-a"><option value="">—</option></select>
+            </div>
+            <div class="field-row">
+              <label for="cmp-b">Membre B</label>
+              <select id="cmp-b"><option value="">—</option></select>
+            </div>
+          </div>
+          <div id="nx-compare" class="cmp-out">Choisissez deux membres pour comparer leur empreinte.</div>
+        </div>
+        <div class="nx-panel">
+          <h3>Objectif hebdomadaire</h3>
+          <div class="goal-row">
+            <label for="goal-input">Actions visées cette semaine</label>
+            <input type="number" id="goal-input" min="1" max="9999" step="1" inputmode="numeric" placeholder="ex. 40">
+          </div>
+          <div id="nx-goal" class="goal-out">Définissez un objectif local — il reste sur cet appareil.</div>
+        </div>
+      </div>
+    </section>
+    <div class="chart-card" id="sec-timeline">
       <h3>Activité dans le temps</h3>
       <div class="toggle-group" id="tl-toggles">
         <button class="tgl active" data-gran="week">Semaine</button>
@@ -566,7 +797,7 @@
       <div style="position:relative;height:200px;"><canvas id="c-timeline"></canvas></div>
     </div>
     <div class="chart-row">
-      <div class="chart-card">
+      <div class="chart-card" id="sec-members">
         <h3>Actions par membre</h3>
         <div class="legend" id="leg-members"></div>
         <div id="c-members-wrap" style="position:relative;"><canvas id="c-members"></canvas></div>
@@ -577,7 +808,7 @@
         <div style="position:relative;height:220px;"><canvas id="c-types"></canvas></div>
       </div>
     </div>
-    <div class="chart-card">
+    <div class="chart-card" id="sec-heat">
       <h3>Heatmap — Heure × Jour de la semaine</h3>
       <div class="toggle-group" id="hm-toggles">
         <button class="tgl-hm active" data-hm="count" title="Volume brut par case">Volume</button>
@@ -587,7 +818,7 @@
       <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid" role="img" aria-label="Heatmap de l'activité par jour de semaine et heure"></div></div>
       <div class="hm-scale" id="hm-scale"></div>
     </div>
-    <div class="chart-card">
+    <div class="chart-card" id="sec-trends">
       <h3>Tendances membres dans le temps</h3>
       <div class="legend" id="leg-trends"></div>
       <div style="position:relative;height:220px;"><canvas id="c-trends"></canvas></div>
@@ -622,7 +853,7 @@
         <div style="position:relative;height:200px;"><canvas id="c-weekend"></canvas></div>
       </div>
     </div>
-    <div class="chart-card">
+    <div class="chart-card" id="sec-detail">
       <h3>Détail par membre</h3>
       <div class="tbl-wrap">
         <table class="mtable" id="mtable">
@@ -649,7 +880,7 @@
     </div>
   </div>
   </main>
-  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v7.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
+  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v8.0.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
 </div>
 
 <div id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
@@ -669,10 +900,25 @@
         <tr><td><kbd>G</kbd></td><td>Basculer granularité semaine / mois</td></tr>
         <tr><td><kbd>T</kbd></td><td>Changer de thème (clair → sombre → auto)</td></tr>
         <tr><td><kbd>/</kbd></td><td>Filtrer un membre (champ de recherche)</td></tr>
+        <tr><td><kbd>K</kbd></td><td>Ouvrir la palette de commandes</td></tr>
+        <tr><td><kbd>B</kbd></td><td>Aller au briefing tactique</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Recherche plein texte (carte, type, membre)</td></tr>
         <tr><td><kbd>?</kbd></td><td>Afficher / masquer cette aide</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Fermer les fenêtres et menus</td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+  <div id="cmd-panel">
+    <div class="lp-head">
+      <strong>Commandes</strong>
+      <span class="grow"><button type="button" class="dash-btn" id="btn-cmd-close">Fermer</button></span>
+    </div>
+    <label class="sr-only" for="cmd-input">Rechercher une commande</label>
+    <input type="search" id="cmd-input" placeholder="Filtrer, exporter, naviguer…" autocomplete="off">
+    <div id="cmd-list"></div>
   </div>
 </div>
 
@@ -698,7 +944,7 @@
 <script id="tba-chartjs-bundle" src="./vendor/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRELLO BOARD ACTIVITY ANALYZER — v7.0.0
+   TRELLO BOARD ACTIVITY ANALYZER — v8.0.0
    Analyse d'historique de tableau Trello, 100 % côté client.
 
    Architecture (le fichier reste autonome : aucun build, aucun module)
@@ -744,7 +990,7 @@
       const parts = [];
       const tapp = document.getElementById('tapp');
       if (tapp) parts.push(tapp.outerHTML);
-      ['toast', 'log-overlay', 'kbd-overlay'].forEach(id => {
+      ['toast', 'log-overlay', 'kbd-overlay', 'cmd-overlay'].forEach(id => {
         const el = document.getElementById(id);
         if (el) parts.push(el.outerHTML);
       });
@@ -759,7 +1005,7 @@
   /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
 
   /** Identifiants/version applicative (exposée dans l'export JSON). */
-  const APP_VERSION = '7.0.0';
+  const APP_VERSION = '8.0.0';
 
   /** Endpoint de base de l'API REST Trello v1. */
   const TRELLO_API = 'https://api.trello.com/1';
@@ -899,6 +1145,8 @@
   const CHART_CACHE_SK = SK + ':chartjs:4.4.1';
   /** Clé de la préférence de thème (auto | light | dark). */
   const THEME_SK = SK + ':theme';
+  /** Objectif hebdomadaire local (hors clé de session). */
+  const GOAL_SK = SK + ':goal';
   /** Qualité JPEG des graphiques embarqués dans le PDF (DCTDecode). */
   const EXPORT_JPEG_QUALITY = 0.93;
   /** Format A4 en points PDF (portrait). */
@@ -1426,7 +1674,7 @@
     /** @type {{[k:string]:*}} instances Chart vivantes */ charts: {},
     /** @type {AbortController|null} */ cancel: null,
     /** Filtres : Set de noms + bornes ms (null = tout, comportement v1) */
-    filter: { members: new Set(), fromMs: null, toMs: null },
+    filter: { members: new Set(), fromMs: null, toMs: null, query: '' },
     /** Tri du tableau membres */
     msort: { k: 'count', dir: -1 },
     /** Nom complet des labels tronqués du barplot membres (tooltip) */
@@ -1452,11 +1700,13 @@
   function getVisible() {
     const f = state.filter;
     const noMembers = f.members.size === 0, noRange = !f.fromMs && !f.toMs;
-    if (noMembers && noRange) return state.actions;
+    const q = String(f.query || '').trim().toLowerCase();
+    if (noMembers && noRange && !q) return state.actions;
     return state.actions.filter(a =>
-      (!noMembers && f.members.has(a.memberName)) &&
+      (noMembers || f.members.has(a.memberName)) &&
       (!f.fromMs || a.dateMs >= f.fromMs) &&
-      (!f.toMs || a.dateMs <= f.toMs)
+      (!f.toMs || a.dateMs <= f.toMs) &&
+      (!q || actionHaystack(a).indexOf(q) >= 0)
     );
   }
 
@@ -2037,7 +2287,7 @@
       state.creds = {};
       state.savedAtIso = null;
       state.board = { name: 'Studio · Lancement produit (démo)' };
-      state.filter = { members: new Set(), fromMs: null, toMs: null };
+      state.filter = { members: new Set(), fromMs: null, toMs: null, query: '' };
       const names = ['Camille Martin', 'Alex Dubois', 'Léa Bernard', 'Thomas Petit', 'Sarah Laurent'];
       const cards = ['Nouvelle page d’accueil', 'Recherche utilisateur', 'Design system', 'Parcours d’inscription', 'Campagne de lancement', 'Application mobile', 'Tests d’accessibilité', 'Documentation'];
       const types = ['createCard', 'updateCard', 'commentCard', 'updateCheckItemStateOnCard', 'updateCard', 'commentCard', 'addMemberToCard', 'addAttachmentToCard'];
@@ -2072,16 +2322,383 @@
     $('demo-notice').hidden = true;
     $('btn-refresh').hidden = $('btn-refresh-inc').hidden = false;
     $('fl-from').value = $('fl-to').value = $('fl-search').value = '';
+    if ($('fl-query')) $('fl-query').value = '';
     $('err-msg').style.display = 'none';
     state.actions = [];
     state.board = null;
-    state.filter = { members: new Set(), fromMs: null, toMs: null };
+    state.filter = { members: new Set(), fromMs: null, toMs: null, query: '' };
     state.trendMembers = [];
     destroyCharts();
     $('dashboard').style.display = 'none';
     $('setup').style.display = 'block';
     checkSaved();
   }
+
+  /* ══════════════════════ 12b. NEXUS — briefing, recherche, commandes ═════ */
+
+  function actionHaystack(a) {
+    return (String(a.cardName || '') + ' ' + String(a.memberName || '') + ' ' + String(a.type || '') + ' ' + classify(a.type)).toLowerCase();
+  }
+
+  function buildInsights(list, st) {
+    const total = st.total || 0;
+    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const top = ms[0] || null;
+    const topShare = top && total ? Math.round(top[1] / total * 100) : 0;
+    let hhi = 0;
+    if (total) st.memberCounts.forEach(c => { const p = c / total; hhi += p * p; });
+    const concentration = Math.round(hhi * 100);
+    const days = Math.max(1, st.spanDays || 1);
+    const dayAvg = total / days;
+    const coverage = total ? Math.min(1, st.dayCounts.size / days) : 0;
+    const cadence = clamp(dayAvg / 6, 0, 1);
+    const consistency = total ? clamp(st.longestStreak / Math.max(5, Math.min(21, days)), 0, 1) : 0;
+    const teamwork = st.memberCounts.size <= 1 ? 0.55 : clamp(1 - hhi, 0, 1);
+    const score = total ? Math.round(clamp(cadence * 34 + coverage * 28 + consistency * 22 + teamwork * 16, 0, 100)) : 0;
+    const nuit = total ? st.nuit / total : 0;
+    const wknd = total ? st.weekend / total : 0;
+    const vals = Array.from(st.dayCounts.values());
+    let mean = 0, sd = 0;
+    if (vals.length) {
+      mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) * (b - mean), 0) / vals.length);
+    }
+    const burst = mean > 0 && sd / mean > 0.85;
+    let rhythm = 'Rythme régulier';
+    if (!total) rhythm = 'Aucune activité';
+    else if (nuit >= 0.4) rhythm = 'Rythme nocturne';
+    else if (wknd >= 0.34) rhythm = 'Charge week-end';
+    else if (burst) rhythm = 'Activité en rafales';
+    const weeks = periodSeries(st.weekCounts);
+    let weekDelta = null;
+    if (weeks.labels.length >= 2) {
+      const cur = weeks.data[weeks.data.length - 1];
+      const prev = weeks.data[weeks.data.length - 2];
+      weekDelta = { cur: cur, prev: prev, pct: prev ? Math.round((cur - prev) / prev * 100) : null };
+    }
+    const forecast = total ? Math.max(0, Math.round(dayAvg * 7)) : 0;
+    const anomalies = [];
+    if (vals.length >= 5 && sd > 0) {
+      const thr = mean + Math.max(sd * 1.5, 1);
+      st.dayCounts.forEach((count, day) => { if (count >= thr && count >= 3) anomalies.push({ day: day, count: count }); });
+      anomalies.sort((a, b) => b.count - a.count);
+      anomalies.splice(5);
+    }
+    const dow = [0, 0, 0, 0, 0, 0, 0];
+    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) dow[d] += st.dayHour.get(d * 24 + h) || 0;
+    let qi = 0;
+    for (let d = 1; d < 7; d++) if (dow[d] < dow[qi]) qi = d;
+    const quietDay = total ? DAYS[qi] : '—';
+    const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const peakLabel = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    const bullets = [];
+    if (top) bullets.push(firstWord(top[0]) + ' porte ' + topShare + ' % des actions' + (topShare >= 55 ? ' — concentration élevée' : ''));
+    if (weekDelta) bullets.push('Dernière semaine observée : ' + weekDelta.cur + ' actions' + (weekDelta.pct == null ? '' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' % vs la précédente)'));
+    bullets.push('Projection 7 jours : environ ' + forecast.toLocaleString(LS) + ' actions au rythme actuel');
+    if (total) bullets.push('Jour le plus calme : ' + quietDay + ' · série max ' + st.longestStreak + ' j');
+    if (total && st.comments / total < 0.08) bullets.push('Peu de commentaires (' + Math.round(st.comments / total * 100) + ' %) — activité surtout opérationnelle');
+    if (wknd >= 0.3) bullets.push('Week-end : ' + Math.round(wknd * 100) + ' % du volume');
+    if (nuit >= 0.35) bullets.push('Nuit (18 h–6 h) : ' + Math.round(nuit * 100) + ' % du volume');
+    const briefing = !total
+      ? 'Aucune action dans la vue courante. Élargissez les filtres pour relancer la lecture.'
+      : total.toLocaleString(LS) + ' actions sur ' + Math.round(days) + ' jours, soit ' + dayAvg.toFixed(1) + ' par jour. ' +
+        (top ? firstWord(top[0]) + ' concentre ' + topShare + ' %. ' : '') +
+        'Le jour le plus chargé est le ' + peakLabel + (ds[0] ? ' (' + ds[0][1] + ' actions)' : '') + ', autour de ' + st.peakHour + ' h. ' +
+        rhythm + '. Projection : environ ' + forecast.toLocaleString(LS) + ' actions sur 7 jours si le rythme tient.';
+    return { score: score, rhythm: rhythm, concentration: concentration, topShare: topShare, briefing: briefing, bullets: bullets, anomalies: anomalies, weekDelta: weekDelta, forecast: forecast, quietDay: quietDay };
+  }
+
+  function briefingPlain() {
+    const ins = state.lastInsights;
+    if (!ins) return '';
+    const name = state.board && state.board.name ? state.board.name : 'Tableau';
+    return [name, ins.briefing, ''].concat(ins.bullets.map(b => '• ' + b)).concat(['', 'Trello Analyzer v' + APP_VERSION + ' — généré localement, sans identifiant.']).join('\n');
+  }
+
+  function renderNexus(list, st) {
+    if (!$('nexus')) return;
+    const ins = buildInsights(list, st);
+    state.lastInsights = ins;
+    $('nx-score').textContent = st.total ? String(ins.score) : '—';
+    const ring = $('nx-ring');
+    if (ring) {
+      ring.style.setProperty('--p', String(ins.score));
+      ring.setAttribute('aria-valuenow', String(ins.score));
+    }
+    $('nx-rhythm').textContent = st.total ? ins.rhythm + ' · concentration ' + ins.concentration : ins.rhythm;
+    $('nx-brief').textContent = ins.briefing;
+    $('nx-insights').innerHTML = ins.bullets.map(b => '<li>' + esc(b) + '</li>').join('');
+    const anom = $('nx-anomalies');
+    if (anom) {
+      anom.innerHTML = '<span class="nx-k">Jours atypiques</span>' + (ins.anomalies.length
+        ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(new Date(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
+        : '<span class="nx-quiet">Aucun pic statistique marqué</span>');
+    }
+    fillCompareSelects();
+    renderCompare();
+    renderGoal(list);
+  }
+
+  function memberNames() {
+    return Array.from(new Set(state.actions.map(a => a.memberName))).sort((a, b) => a.localeCompare(b, LS));
+  }
+
+  function fillCompareSelects() {
+    ['cmp-a', 'cmp-b'].forEach(id => {
+      const sel = $(id);
+      if (!sel) return;
+      const current = sel.value;
+      const names = memberNames();
+      sel.innerHTML = '<option value="">—</option>' + names.map(n => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+      if (current && names.indexOf(current) >= 0) sel.value = current;
+    });
+  }
+
+  function memberProfile(name, list) {
+    const cards = new Set();
+    let comments = 0, last = 0, count = 0;
+    const hours = new Array(24).fill(0);
+    const days = new Set();
+    for (const a of list) {
+      if (a.memberName !== name) continue;
+      count++;
+      if (a.cardName) cards.add(a.cardName);
+      if (a.type === 'commentCard') comments++;
+      if (a.dateMs > last) last = a.dateMs;
+      hours[new Date(a.dateMs).getHours()]++;
+      days.add(Math.floor(a.dateMs / 864e5));
+    }
+    let peak = 0;
+    for (let h = 1; h < 24; h++) if (hours[h] > hours[peak]) peak = h;
+    return { count: count, comments: comments, cards: cards.size, days: days.size, last: last, peak: peak };
+  }
+
+  function renderCompare() {
+    const out = $('nx-compare');
+    if (!out || !$('cmp-a') || !$('cmp-b')) return;
+    const a = $('cmp-a').value, b = $('cmp-b').value;
+    if (!a || !b) { out.textContent = 'Choisissez deux membres pour comparer leur empreinte.'; return; }
+    const list = state.lastList || [];
+    const A = memberProfile(a, list), B = memberProfile(b, list);
+    const row = (label, va, vb) => '<div class="cmp-line"><span>' + esc(label) + '</span><strong>' + esc(va) + '</strong><strong>' + esc(vb) + '</strong></div>';
+    out.innerHTML =
+      '<div class="cmp-line"><span>Indicateur</span><strong>' + esc(truncate(a, 22, 20)) + '</strong><strong>' + esc(truncate(b, 22, 20)) + '</strong></div>' +
+      row('Actions', A.count.toLocaleString(LS), B.count.toLocaleString(LS)) +
+      row('Commentaires', A.comments.toLocaleString(LS), B.comments.toLocaleString(LS)) +
+      row('Cartes', String(A.cards), String(B.cards)) +
+      row('Jours actifs', String(A.days), String(B.days)) +
+      row('Heure de pointe', A.count ? A.peak + ' h' : '—', B.count ? B.peak + ' h' : '—') +
+      row('Dernière activité', A.last ? fmtDate(A.last) : '—', B.last ? fmtDate(B.last) : '—');
+  }
+
+  function currentWeekCount(list) {
+    const key = periodKey(new Date(), 'week');
+    let n = 0;
+    for (const a of list || []) if (periodKey(new Date(a.dateMs), 'week') === key) n++;
+    return n;
+  }
+
+  function renderGoal(list) {
+    const el = $('nx-goal');
+    const input = $('goal-input');
+    if (!el || !input) return;
+    const raw = parseInt(input.value, 10);
+    const goal = Number.isFinite(raw) && raw > 0 ? Math.min(9999, raw) : 0;
+    const count = currentWeekCount(list || state.lastList || []);
+    if (!goal) {
+      el.textContent = 'Définissez un objectif local — enregistré sur cet appareil, jamais envoyé.';
+      return;
+    }
+    const pct = Math.min(100, Math.round(count / goal * 100));
+    el.innerHTML = '<div class="goal-track" role="meter" aria-valuemin="0" aria-valuemax="' + goal + '" aria-valuenow="' + count + '" aria-label="Progression de l’objectif hebdomadaire"><span style="width:' + pct + '%"></span></div><p>' + count + ' / ' + goal + ' actions cette semaine · ' + pct + ' %</p>';
+  }
+
+  function saveGoal() {
+    const input = $('goal-input');
+    if (!input) return;
+    const raw = parseInt(input.value, 10);
+    const v = Number.isFinite(raw) && raw > 0 ? String(Math.min(9999, raw)) : '';
+    Store.set(GOAL_SK, v).catch(() => {});
+    renderGoal(state.lastList);
+  }
+
+  function loadGoal() {
+    Store.get(GOAL_SK).then(r => {
+      const n = r && r.value ? parseInt(r.value, 10) : 0;
+      const input = $('goal-input');
+      if (n > 0 && input) {
+        input.value = String(Math.min(9999, n));
+        if (state.lastList) renderGoal(state.lastList);
+      }
+    }).catch(() => {});
+  }
+
+  function sparkBuckets(list) {
+    const by = new Map();
+    for (const a of list || []) {
+      let m = by.get(a.memberName);
+      if (!m) { m = new Map(); by.set(a.memberName, m); }
+      const k = periodKey(new Date(a.dateMs), 'week');
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return by;
+  }
+
+  function sparkHtml(name, buckets) {
+    const weeks = buckets && buckets.get(name);
+    if (!weeks || !weeks.size) return '';
+    const keys = Array.from(weeks.keys()).sort().slice(-8);
+    const max = Math.max.apply(null, keys.map(k => weeks.get(k)));
+    if (!max) return '';
+    return '<span class="spark" aria-hidden="true">' + keys.map(k => '<i style="height:' + Math.max(2, Math.round(weeks.get(k) / max * 14)) + 'px"></i>').join('') + '</span>';
+  }
+
+  function markWindow(days) {
+    $$('[data-win]').forEach(b => {
+      const on = days != null && Number(b.dataset.win) === Number(days);
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  function setTimeWindow(days) {
+    if (!$('fl-from') || !$('fl-to')) return;
+    if (!days) {
+      $('fl-from').value = '';
+      $('fl-to').value = '';
+    } else {
+      let newest = -Infinity;
+      for (const a of state.actions) if (a.dateMs > newest) newest = a.dateMs;
+      if (!Number.isFinite(newest) || newest < 0) return;
+      $('fl-from').value = msToLocalInput(newest - days * 864e5, false);
+      $('fl-to').value = msToLocalInput(newest, true);
+    }
+    applyDateFilter();
+    markWindow(Number(days) || 0);
+  }
+
+  function scrollToId(id) {
+    const el = $(id);
+    if (!el || !el.scrollIntoView) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  async function copyBriefing() {
+    const text = briefingPlain();
+    if (!text) { toast('Briefing indisponible.', 'error'); return; }
+    try { await navigator.clipboard.writeText(text); toast('Briefing copié.', 'success'); }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Briefing copié.', 'success'); }
+      catch (_) { toast('Copie impossible.', 'error'); }
+      ta.remove();
+    }
+  }
+
+  function exportBriefing() {
+    return withExport(async () => {
+      const text = briefingPlain();
+      if (!text) { toast('Aucune donnée à exporter.', 'error'); return; }
+      download(text, 'text/plain;charset=utf-8', exportName('briefing', 'txt'));
+      toast('Briefing texte exporté.', 'success');
+    });
+  }
+
+  let cmdIndex = 0;
+  let cmdShown = [];
+
+  function commandCatalog() {
+    const cmds = [
+      { label: 'Aller au briefing', hint: 'B', run: () => scrollToId('nexus') },
+      { label: 'Aller à la chronologie', run: () => scrollToId('sec-timeline') },
+      { label: 'Aller aux membres', run: () => scrollToId('sec-members') },
+      { label: 'Aller à la heatmap', run: () => scrollToId('sec-heat') },
+      { label: 'Aller aux tendances', run: () => scrollToId('sec-trends') },
+      { label: 'Aller au détail membres', run: () => scrollToId('sec-detail') },
+      { label: 'Granularité semaine / mois', hint: 'G', run: () => setGran(state.currentGran === 'week' ? 'month' : 'week') },
+      { label: 'Heatmap volume / répartition', run: () => setHeatMetric(state.heatMetric === 'count' ? 'share' : 'count') },
+      { label: 'Réinitialiser les filtres', run: () => clearFilters() },
+      { label: 'Fenêtre : 7 jours', run: () => setTimeWindow(7) },
+      { label: 'Fenêtre : 30 jours', run: () => setTimeWindow(30) },
+      { label: 'Fenêtre : 90 jours', run: () => setTimeWindow(90) },
+      { label: 'Fenêtre : tout l’historique', run: () => setTimeWindow(0) },
+      { label: 'Copier le briefing', run: () => copyBriefing() },
+      { label: 'Exporter le briefing texte', run: () => exportBriefing() },
+      { label: 'Exporter le PDF', hint: 'P', run: () => exportPdf() },
+      { label: 'Exporter le HTML hors-ligne', hint: 'H', run: () => exportHtml() },
+      { label: 'Exporter le Markdown', run: () => exportMarkdown() },
+      { label: 'Exporter le classeur Excel', run: () => exportXlsx() },
+      { label: 'Exporter l’archive ZIP', run: () => exportZip() },
+      { label: 'Changer de thème', hint: 'T', run: () => Theme.cycle() },
+      { label: 'Ouvrir le journal', run: () => openLog() },
+      { label: 'Raccourcis clavier', hint: '?', run: () => openKbd() }
+    ];
+    memberNames().forEach(n => cmds.push({ label: 'Filtrer le membre : ' + n, run: () => addMemberFilter(n) }));
+    return cmds;
+  }
+
+  function renderCmdList(q) {
+    const query = String(q || '').trim().toLowerCase();
+    cmdShown = commandCatalog().filter(c => !query || c.label.toLowerCase().indexOf(query) >= 0).slice(0, 12);
+    cmdIndex = 0;
+    const box = $('cmd-list');
+    if (!box) return;
+    if (!cmdShown.length) { box.innerHTML = '<p class="nx-quiet">Aucune commande.</p>'; return; }
+    box.innerHTML = cmdShown.map((c, i) =>
+      '<button type="button" class="cmd-item' + (i === 0 ? ' active' : '') + '" data-i="' + i + '"><span>' + esc(c.label) + '</span>' +
+      (c.hint ? '<kbd>' + esc(c.hint) + '</kbd>' : '') + '</button>'
+    ).join('');
+  }
+
+  function moveCmd(delta) {
+    if (!cmdShown.length) return;
+    cmdIndex = (cmdIndex + delta + cmdShown.length) % cmdShown.length;
+    $$('.cmd-item', $('cmd-list')).forEach((b, i) => b.classList.toggle('active', i === cmdIndex));
+    const active = $('cmd-list').querySelector('.cmd-item.active');
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  function runCmd(i) {
+    const c = cmdShown[i];
+    closeCmd();
+    if (c) c.run();
+  }
+
+  function openCmd() {
+    const dash = $('dashboard');
+    if (!dash || getComputedStyle(dash).display === 'none') return;
+    if (document.querySelector('[role="dialog"].open')) return;
+    const el = $('cmd-overlay');
+    if (!el) return;
+    dialogReturnFocus = document.activeElement;
+    el.classList.add('open');
+    $('tapp').inert = true;
+    if ($('cmd-input')) $('cmd-input').value = '';
+    renderCmdList('');
+    if ($('cmd-input')) $('cmd-input').focus();
+  }
+
+  function closeCmd() {
+    const el = $('cmd-overlay');
+    if (!el || !el.classList.contains('open')) return;
+    el.classList.remove('open');
+    $('tapp').inert = false;
+    if (dialogReturnFocus && dialogReturnFocus.focus) dialogReturnFocus.focus();
+    dialogReturnFocus = null;
+  }
+
+  function tickClock() {
+    const el = $('hud-clock');
+    if (!el) return;
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    el.dateTime = d.toISOString();
+    el.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
 
   /* ══════════════════════════ 13. RENDU DASHBOARD ══════════════════════════ */
 
@@ -2113,10 +2730,12 @@
     renderTypeTimeline(list);
     renderWeekend(st);
     renderMemberTable(st);
+    renderNexus(list, st);
     updateFilterUI();
     $('dash-footer').textContent =
       list.length.toLocaleString() + ' action(s) affichée(s) · ' + st.dayCounts.size + ' jour(s) actif(s) · ' +
-      'série la + longue : ' + st.longestStreak + ' j · rendu en ' + (Date.now() - t0) + ' ms · v' + APP_VERSION;
+      'série la + longue : ' + st.longestStreak + ' j · score ' + (state.lastInsights ? state.lastInsights.score : '—') +
+      ' · rendu en ' + (Date.now() - t0) + ' ms · v' + APP_VERSION;
   }
 
   /** En-tête : nom + plage de dates (formules v1 exactes, y compris repli `new Date()`). */
@@ -2411,9 +3030,10 @@
       const ar = th.querySelector('.ar');
       if (ar) ar.textContent = th.dataset.k === k ? (dir === 1 ? '▲' : '▼') : '';
     });
+    const sparks = sparkBuckets(state.lastList);
     $('mt-body').innerHTML = rows.map((r, i) =>
       '<tr><td><span class="leg-dot" style="display:inline-block;margin-right:6px;background:' +
-      memberColors(rows.length)[i] + '"></span>' + esc(r.name) + '</td>' +
+      memberColors(rows.length)[i] + '"></span>' + esc(r.name) + sparkHtml(r.name, sparks) + '</td>' +
       '<td class="num">' + r.count.toLocaleString() + '</td>' +
       '<td class="num">' + r.comments.toLocaleString() + '</td>' +
       '<td class="num">' + r.cards.toLocaleString() + '</td>' +
@@ -2431,7 +3051,8 @@
     $('fl-chips').innerHTML = Array.from(f.members).map(n =>
       '<span class="chip">' + esc(n) + '<button type="button" data-rm="' + esc(n) + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'
     ).join('');
-    const active = f.members.size > 0 || f.fromMs || f.toMs;
+    const q = String(f.query || '').trim();
+    const active = f.members.size > 0 || f.fromMs || f.toMs || !!q;
     $('filters').style.display = state.actions.length ? 'flex' : 'none';
     $('fl-count').textContent = active
       ? state.lastList.length.toLocaleString() + ' / ' + state.actions.length.toLocaleString() + ' actions · ' +
@@ -2448,6 +3069,7 @@
     renderStats(st); renderTimeline(list); renderMembers(st); renderTypes(st);
     renderHeatmap(st); renderTrends(null); renderTopCards(st); renderHourly(st);
     renderExtStats(st); renderTypeTimeline(list); renderWeekend(st); renderMemberTable(st);
+    renderNexus(list, st);
     updateFilterUI();
   }
 
@@ -2473,13 +3095,17 @@
   function applyDateFilter() {
     state.filter.fromMs = parseFilterDate('fl-from', false);
     state.filter.toMs = parseFilterDate('fl-to', true);
+    markWindow(null);
     applyFilterRerender();
   }
 
   function clearFilters() {
     state.filter.members.clear();
     state.filter.fromMs = state.filter.toMs = null;
+    state.filter.query = '';
     $('fl-from').value = $('fl-to').value = $('fl-search').value = '';
+    if ($('fl-query')) $('fl-query').value = '';
+    markWindow(null);
     applyFilterRerender();
   }
 
@@ -2617,7 +3243,8 @@
       .sort((a, b) => b.count - a.count).slice(0, 10);
 
     const f = state.filter;
-    const filterActive = f.members.size > 0 || f.fromMs || f.toMs;
+    const q = String(f.query || '').trim();
+    const filterActive = f.members.size > 0 || f.fromMs || f.toMs || !!q;
 
     const model = {
       app: 'trello-board-activity-analyzer',
@@ -2641,7 +3268,8 @@
           ? [
               f.members.size ? 'membres : ' + Array.from(f.members).join(', ') : '',
               f.fromMs ? 'du ' + fmtDate(f.fromMs) : '',
-              f.toMs ? 'au ' + fmtDate(f.toMs) : ''
+              f.toMs ? 'au ' + fmtDate(f.toMs) : '',
+              q ? 'recherche : ' + q : ''
             ].filter(Boolean).join(' · ')
           : 'aucun'
       },
@@ -2750,6 +3378,13 @@
     md.push('|---|---:|---:|');
     model.types.forEach(ty => md.push('| ' + mdCell(ty.group) + ' | ' + ty.count.toLocaleString() + ' | ' + ty.share + '% |'));
     if (!model.types.length) md.push('| — | 0 | 0% |');
+    md.push('');
+    const brief = buildInsights(model.list, computeStats(model.list));
+    md.push('## Briefing');
+    md.push('');
+    md.push(brief.briefing);
+    md.push('');
+    brief.bullets.forEach(b => md.push('- ' + mdCell(b)));
     md.push('');
     md.push('---');
     md.push('');
@@ -3259,6 +3894,7 @@
     synthRows.push([s('Filtres'), s(model.filters.label)]);
     synthRows.push([s('Généré le'), s(model.generatedLabel)]);
     synthRows.push([s('Application'), s('trello-board-activity-analyzer v' + model.version)]);
+    synthRows.push([s('Briefing'), s(buildInsights(model.list, computeStats(model.list)).briefing)]);
 
     const memRows = [[s('Membre'), s('Actions'), s('Commentaires'), s('Créations'), s('Cartes touchées'), s('Jours actifs'), s('Dernière activité')]];
     model.members.forEach(m => memRows.push([
@@ -3509,7 +4145,8 @@
       heatMetric: state.heatMetric,
       filter: {
         members: Array.from(f.members),
-        fromMs: f.fromMs, toMs: f.toMs
+        fromMs: f.fromMs, toMs: f.toMs,
+        query: String(f.query || '')
       },
       actions: state.actions.map(slimAction)
     };
@@ -3846,6 +4483,10 @@
           state.filter.toMs = p.filter.toMs;
           const el = $('fl-to'); if (el) el.value = msToLocalInput(p.filter.toMs, true);
         }
+        if (p.filter.query) {
+          state.filter.query = String(p.filter.query);
+          const qEl = $('fl-query'); if (qEl) qEl.value = state.filter.query;
+        }
       }
       /* masquer les actions réseau / session */
       ['btn-refresh', 'btn-refresh-inc', 'btn-reset'].forEach(id => {
@@ -3954,9 +4595,20 @@
         case 'g': case 'G': setGran(state.currentGran === 'week' ? 'month' : 'week'); e.preventDefault(); break;
         case 't': case 'T': Theme.cycle(); e.preventDefault(); break;
         case '/': { const s = $('fl-search'); if (s) { s.focus(); e.preventDefault(); } break; }
+        case 'k': case 'K': openCmd(); e.preventDefault(); break;
+        case 'b': case 'B': scrollToId('nexus'); e.preventDefault(); break;
+        case 'f': case 'F': { const q = $('fl-query'); if (q) { q.focus(); e.preventDefault(); } break; }
         case '?': openKbd(); e.preventDefault(); break;
         default: break;
       }
+    });
+    document.addEventListener('keydown', e => {
+      if (!(e.ctrlKey || e.metaKey) || (e.key !== 'k' && e.key !== 'K')) return;
+      const dash = $('dashboard');
+      if (!dash || getComputedStyle(dash).display === 'none') return;
+      e.preventDefault();
+      if ($('cmd-overlay') && $('cmd-overlay').classList.contains('open')) closeCmd();
+      else openCmd();
     });
   }
 
@@ -4106,6 +4758,7 @@
       const htmlS = buildHtmlStatic(model, {});
       t('html statique', htmlS.indexOf('stat-card') > 0 && htmlS.indexOf('hm-cell') > 0);
       t('jetons v7', /^#[0-9a-f]{6}$/i.test(cssHex('--chart-1', '#6d28d9')) && memberColors(4).length === 4 && /^#[0-9a-f]{6}$/i.test(heatColor(3, 3)));
+      t('insights vides', buildInsights([], computeStats([])).score === 0);
     } catch (e) {
       t('exception', false, String((e && e.message) || e));
     } finally {
@@ -4179,7 +4832,7 @@
     $('exp-png').addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); exportPng(); });
     /* — exports v5 (rapports et formats complémentaires) — */
     [['exp-html', exportHtml], ['exp-pdf', exportPdf], ['exp-md', exportMarkdown],
-     ['exp-xlsx', exportXlsx], ['exp-sheet', exportSheet], ['exp-zip', exportZip]
+     ['exp-xlsx', exportXlsx], ['exp-sheet', exportSheet], ['exp-zip', exportZip], ['exp-brief', exportBriefing]
     ].forEach(([id, fn]) => {
       const el = $(id);
       if (el) el.addEventListener('click', () => { menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); fn(); });
@@ -4202,7 +4855,7 @@
       }
     });
     $('log-overlay').addEventListener('click', e => { if (e.target === $('log-overlay')) closeLog(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLog(); closeKbd(); menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLog(); closeKbd(); closeCmd(); menu.classList.remove('open'); $('btn-export').setAttribute('aria-expanded', 'false'); } });
 
     /* — fenêtre raccourcis + thème — */
     $('btn-kbd').addEventListener('click', openKbd);
@@ -4220,6 +4873,38 @@
 
     /* — filtres — */
     $('fl-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMemberFilter(e.target.value); } });
+    const qInput = $('fl-query');
+    if (qInput) qInput.addEventListener('input', () => { state.filter.query = qInput.value.trim(); applyFilterRerender(); });
+    $$('[data-win]').forEach(b => b.addEventListener('click', () => setTimeWindow(Number(b.dataset.win))));
+    const copyBtn = $('btn-brief-copy');
+    if (copyBtn) copyBtn.addEventListener('click', () => copyBriefing());
+    const cmdBtn = $('btn-cmd');
+    if (cmdBtn) cmdBtn.addEventListener('click', openCmd);
+    const cmdClose = $('btn-cmd-close');
+    if (cmdClose) cmdClose.addEventListener('click', closeCmd);
+    const cmdOverlay = $('cmd-overlay');
+    if (cmdOverlay) cmdOverlay.addEventListener('click', e => { if (e.target === cmdOverlay) closeCmd(); });
+    const cmdInput = $('cmd-input');
+    if (cmdInput) {
+      cmdInput.addEventListener('input', e => renderCmdList(e.target.value));
+      cmdInput.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveCmd(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); moveCmd(-1); }
+        else if (e.key === 'Enter') { e.preventDefault(); runCmd(cmdIndex); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeCmd(); }
+      });
+    }
+    const cmdList = $('cmd-list');
+    if (cmdList) cmdList.addEventListener('click', e => {
+      const b = e.target.closest ? e.target.closest('.cmd-item') : null;
+      if (b) runCmd(Number(b.dataset.i));
+    });
+    ['cmp-a', 'cmp-b'].forEach(id => { const el = $(id); if (el) el.addEventListener('change', renderCompare); });
+    const goal = $('goal-input');
+    if (goal) goal.addEventListener('change', saveGoal);
+    loadGoal();
+    tickClock();
+    setInterval(tickClock, 1000);
     $('fl-chips').addEventListener('click', e => {
       const rm = e.target.closest ? e.target.closest('[data-rm]') : null;
       if (rm) { state.filter.members.delete(rm.dataset.rm); applyFilterRerender(); }
@@ -4276,7 +4961,8 @@
     buildReportModel, buildMarkdownReport, buildPdfReport, buildXlsxWorkbook,
     buildZipArchive: zipStore, buildHtmlExport, buildHtmlStatic, buildContactSheetPng,
     exportHtml, exportPdf, exportMarkdown, exportXlsx, exportSheet, exportZip,
-    exportCsv, exportJson, exportPng,
+    exportCsv, exportJson, exportPng, exportBriefing,
+    buildInsights, setTimeWindow,
     csvCell, crc32, pdfSanitize, pdfEsc, wrapText, zipStore, heatMatrix, embedJson,
     selfTest,
     Theme,
