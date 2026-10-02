@@ -375,13 +375,18 @@
     background: linear-gradient(180deg, var(--panel-top), transparent 72%), var(--glass-bg);
     border-bottom: 1px solid var(--glass-border);
   }
-  /* panneaux de verre + rail supérieur dégradé */
+  /* panneaux de verre + rail supérieur dégradé.
+     Pas de `backdrop-filter` ici : ces panneaux sont statiques et leur
+     arrière-plan (dégradés fixes + grille à 6 % d'opacité) est si lisse que le
+     flou ne se voyait pas (≤ 6/255 mesuré à l'image) — alors que le navigateur
+     ré-échantillonnait et floutait le décor pour ~20 éléments à chaque image
+     de défilement (p95 de trame : 22 ms → 17 ms une fois retiré). Le coût
+     restait réel, l'effet non : l'en-tête collant, lui, garde son flou. */
   .setup-card, .stat-card, .chart-card, .filters, .preview-card {
     position: relative;
     background: linear-gradient(180deg, var(--panel-sheen), transparent 32%), var(--glass-bg);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glow);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .setup-card::before, .stat-card::before, .chart-card::before, .filters::before, .preview-card::before {
     content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 2px; border-radius: 2px;
@@ -431,7 +436,7 @@
     html.tba-native body::before, html.tba-native body::after { display: none !important; }
     .app-header { position: static; backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; }
     .grad-text { background: none; -webkit-text-fill-color: currentColor; color: var(--color-text-primary); filter: none; }
-    .setup-card, .stat-card, .chart-card, .filters, .preview-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; }
+    .setup-card, .stat-card, .chart-card, .filters, .preview-card { background: #fff; }
   }
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -884,7 +889,7 @@
     </div>
   </div>
   </main>
-  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v8.0.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
+  <footer class="site-footer"><span>Conçu pour y voir plus clair. Pas pour vous suivre.</span><span>Trello Analyzer · v8.1.0 <span aria-hidden="true"> / </span> <a href="https://github.com/aznan-triks/trello-board-activity-analyzer" target="_blank" rel="noopener noreferrer">Code source ↗</a></span></footer>
 </div>
 
 <div id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
@@ -944,11 +949,17 @@
 
 <!-- Bibliothèque de graphiques : URL d'origine conservée ; un plan de
      secours jsDelivr/unpkg est tenté automatiquement par l'application si
-     ce CDN est injoignable (voir ensureChartLib). -->
-<script id="tba-chartjs-bundle" src="./vendor/chart.umd.js" onerror="window.__chartCdnFailed=true;"></script>
+     ce CDN est injoignable (voir ensureChartLib).
+
+     `async` : l'écran de configuration n'a pas besoin de Chart.js. Chargé en
+     tâche de fond, le bundle (~165 Ko) ne bloque plus le script applicatif qui
+     suit — sur une connexion lente le formulaire répond ~250 ms plus tôt.
+     Toute vue qui dessine passe par `ensureChartLib()`, qui attend ce
+     chargement avant de construire le moindre graphique. -->
+<script id="tba-chartjs-bundle" src="./vendor/chart.umd.js" async onerror="window.__chartCdnFailed=true;"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRELLO BOARD ACTIVITY ANALYZER — v8.0.0
+   TRELLO BOARD ACTIVITY ANALYZER — v8.1.0
    Analyse d'historique de tableau Trello, 100 % côté client.
 
    Architecture (le fichier reste autonome : aucun build, aucun module)
@@ -1009,7 +1020,7 @@
   /* ═══════════════════════════ 1. CONFIGURATION ═══════════════════════════ */
 
   /** Identifiants/version applicative (exposée dans l'export JSON). */
-  const APP_VERSION = '8.0.0';
+  const APP_VERSION = '8.1.0';
 
   /** Endpoint de base de l'API REST Trello v1. */
   const TRELLO_API = 'https://api.trello.com/1';
@@ -1060,21 +1071,40 @@
      documentaire ; le rendu lit désormais --chart-*, --hm-* et --neon-*
      pour suivre le thème clair/sombre au lieu de couleurs figées. */
 
+  /**
+   * Jetons CSS lus sur <html> — mémoïsés : chaque lecture appelle
+   * `getComputedStyle`, qui force un recalcul de style, et le rendu en
+   * enchaînait plusieurs centaines (palettes, 168 cases de heatmap…).
+   * Le cache est vidé dès que le thème change.
+   */
+  const CssTokens = (function () {
+    /** @type {Map<string,string>} */
+    const cache = new Map();
+    return {
+      /** @param {string} name @returns {string} valeur brute et nettoyée ('' si absente) */
+      read(name) {
+        let v = cache.get(name);
+        if (v === undefined) {
+          try { v = String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim(); }
+          catch (_) { v = ''; }
+          cache.set(name, v);
+        }
+        return v;
+      },
+      clear() { cache.clear(); }
+    };
+  })();
+
   /** Lit un jeton CSS sur <html> et le normalise en #RRGGBB (repli fourni). */
   function cssHex(name, fallback) {
-    let v = '';
-    try { v = String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim(); }
-    catch (_) { v = ''; }
+    let v = CssTokens.read(name);
     if (!v) v = fallback || '';
     if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v.slice(1).split('').map(c => c + c).join('');
     return /^#[0-9a-f]{6}$/i.test(v) ? v : (fallback || '#888888');
   }
   /** Jeton CSS brut (pour familles de police, etc.). */
   function cssVar(name, fallback) {
-    try {
-      const v = String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim();
-      return v || fallback;
-    } catch (_) { return fallback; }
+    return CssTokens.read(name) || fallback;
   }
   const CHART_TOKENS = ['--chart-1','--chart-2','--chart-3','--chart-4','--chart-5','--chart-6','--chart-7','--chart-8','--chart-9','--chart-10'];
   /** Couleur d'une série membre (index → jeton --chart-n). */
@@ -1155,8 +1185,6 @@
   const EXPORT_JPEG_QUALITY = 0.93;
   /** Format A4 en points PDF (portrait). */
   const PDF_PAGE = { w: 595.28, h: 841.89, m: 42 };
-  /** Seuil d'alerte pour les exports volumineux (actions visibles). */
-  const EXPORT_WARN_ACTIONS = 50000;
   /**
    * Graphiques exportables : clé interne → nom de fichier ASCII (ZIP/PNG).
    * L'ordre détermine la planche PNG et l'ordre des sections du PDF.
@@ -1184,10 +1212,10 @@
    * permettraient une injection HTML (corrigé par rapport à la v1).
    * @param {unknown} s @returns {string}
    */
+  /** Table figée : l'objet littéral était recréé à chaque caractère échappé. */
+  const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC_MAP[c]);
   }
 
   /** @param {Date|number} d @returns {string} "5 janv. 2024" (format d'origine) */
@@ -1211,11 +1239,60 @@
   function periodKey(d, gran) {
     if (gran === 'week') {
       const t = new Date(d);
-      t.setDate(d.getDate() - d.getDay());
+      t.setDate(t.getDate() - t.getDay());
       t.setHours(0, 0, 0, 0);
       return t.toISOString().slice(0, 10);
     }
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  /* — Agrégation par période : premier poste du rendu (≈ 40 % du temps sur
+     50 000 actions). `periodKey` allouait une Date, appelait toISOString() et
+     reconstruisait une chaîne pour CHAQUE action et CHAQUE appelant. Les clés
+     ne dépendent que du jour local (semaine) ou du mois local : on les met en
+     cache par jour/mois civil (quelques centaines d'entrées), et on lit
+     `dateMs` au lieu de reparser la chaîne ISO. Sémantique identique. */
+  const _pkDay = new Date();
+  /** @type {Map<number,string>} minuit local (ms) → clé de semaine */
+  const weekKeyCache = new Map();
+  /** @type {Map<number,string>} ordinal de mois local → clé de mois */
+  const monthKeyCache = new Map();
+
+  /**
+   * Clé de période d'un horodatage, mémoïsée (variante chaude de `periodKey`).
+   * @param {number} ms @param {'week'|'month'} gran @returns {string}
+   */
+  function periodKeyMs(ms, gran) {
+    const d = _pkDay;
+    d.setTime(ms);
+    if (gran === 'month') {
+      const ord = d.getFullYear() * 12 + d.getMonth();
+      let k = monthKeyCache.get(ord);
+      if (k === undefined) { k = periodKey(d, 'month'); monthKeyCache.set(ord, k); }
+      return k;
+    }
+    d.setHours(0, 0, 0, 0);
+    const dayMs = d.getTime();
+    let k = weekKeyCache.get(dayMs);
+    if (k === undefined) { k = periodKey(new Date(dayMs), 'week'); weekKeyCache.set(dayMs, k); }
+    return k;
+  }
+
+  /** Horodatage d'une action normalisée (secours : parse de la date ISO). */
+  const actionMs = a => (a.dateMs != null ? a.dateMs : Date.parse(a.date));
+
+  /** @type {Map<number,string>} jour UTC (ordinal) → 'AAAA-MM-JJ' */
+  const dayKeyCache = new Map();
+  /** Date de calcul réutilisée (évite une allocation par action). */
+  const _statDate = new Date();
+
+  /** Jour UTC au format ISO court, mémoïsé (toISOString coûte une allocation
+   *  + un formatage complet : une fois par jour civil, pas par action). */
+  function dayKeyMs(ms) {
+    const ord = Math.floor(ms / 864e5);
+    let k = dayKeyCache.get(ord);
+    if (k === undefined) { k = new Date(ord * 864e5).toISOString().slice(0, 10); dayKeyCache.set(ord, k); }
+    return k;
   }
 
   /** #RRGGBB → #RRGGBBAA (alpha 0..1) pour les aires empilées. */
@@ -1745,19 +1822,20 @@
       const ms = a.dateMs;
       if (ms < st.oldest) st.oldest = ms;
       if (ms > st.newest) st.newest = ms;
-      const d = new Date(ms);
+      const d = _statDate;
+      d.setTime(ms);
       const name = a.memberName;
 
       st.memberCounts.set(name, (st.memberCounts.get(name) || 0) + 1);
 
-      const dayKey = d.toISOString().slice(0, 10);
+      const dayKey = dayKeyMs(ms);
       st.dayCounts.set(dayKey, (st.dayCounts.get(dayKey) || 0) + 1);
 
       const g = classify(a.type);
       st.typeCounts.set(g, (st.typeCounts.get(g) || 0) + 1);
 
-      const wk = periodKey(d, 'week'); st.weekCounts.set(wk, (st.weekCounts.get(wk) || 0) + 1);
-      const mk = periodKey(d, 'month'); st.monthCounts.set(mk, (st.monthCounts.get(mk) || 0) + 1);
+      const wk = periodKeyMs(ms, 'week'); st.weekCounts.set(wk, (st.weekCounts.get(wk) || 0) + 1);
+      const mk = periodKeyMs(ms, 'month'); st.monthCounts.set(mk, (st.monthCounts.get(mk) || 0) + 1);
 
       const dow = d.getDay(), hr = d.getHours();
       const dh = dow * 24 + hr;
@@ -1808,8 +1886,8 @@
   function byPeriod(actions, gran) {
     const c = new Map();
     for (const a of actions) {
-      const d = new Date(a.date);
-      const k = (isNaN(d.getTime())) ? '??' : periodKey(d, gran);
+      const ms = actionMs(a);
+      const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
       c.set(k, (c.get(k) || 0) + 1);
     }
     const keys = Array.from(c.keys()).sort();
@@ -1822,8 +1900,8 @@
     const m = {};
     for (const a of actions) {
       const name = a._memberName || a.memberName || 'Inconnu';
-      const d = new Date(a.date);
-      const k = (isNaN(d.getTime())) ? '??' : periodKey(d, gran);
+      const ms = actionMs(a);
+      const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
       if (!m[name]) m[name] = {};
       m[name][k] = (m[name][k] || 0) + 1;
     }
@@ -1842,9 +1920,9 @@
     const byGroup = new Map();
     for (const a of list) {
       const g = classify(a.type);
-      const d = new Date(a.date);
-      if (isNaN(d.getTime())) continue;
-      const k = periodKey(d, gran);
+      const ms = actionMs(a);
+      if (!Number.isFinite(ms)) continue;
+      const k = periodKeyMs(ms, gran);
       let m = byGroup.get(g);
       if (!m) { m = new Map(); byGroup.set(g, m); }
       m.set(k, (m.get(k) || 0) + 1);
@@ -1857,6 +1935,35 @@
   /** v7 : pendant une capture d'export, les graphiques se reconstruisent sans animation. */
   let captureMode = false;
   const GRID = 'rgba(128,128,128,.08)';
+  /** Grille plus marquée, reprise des configurations d'origine. */
+  const GRID_STRONG = 'rgba(128,128,128,.1)';
+
+  /**
+   * Fabriques d'axes : les huit graphiques recopiaient six fois les mêmes
+   * blocs `scales` (couleurs/polices ensuite reprises par `chart()` depuis les
+   * jetons du thème). Chaque appel renvoie un objet neuf — `chart()` réécrit
+   * `ticks.color`/`ticks.font`, un objet partagé serait muté d'un graphique à
+   * l'autre. @param {Object} [extra] options complémentaires
+   */
+  const axisX = extra => Object.assign({
+    grid: { color: GRID },
+    ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 }
+  }, extra);
+  const axisY = extra => Object.assign({
+    grid: { color: GRID },
+    ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } },
+    beginAtZero: true
+  }, extra);
+  /** Repère horizontal « descendant » (barres indexAxis:'y') : grille discrète. */
+  const axisValue = extra => Object.assign({
+    grid: { color: GRID_STRONG },
+    ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } }
+  }, extra);
+  /** Repère des catégories (barres indexAxis:'y') : pas de grille. */
+  const axisCategory = extra => Object.assign({
+    grid: { display: false },
+    ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } }
+  }, extra);
 
   /**
    * (Re)construit un graphique : même cycle destroy+new que la v1 — les
@@ -1902,9 +2009,20 @@
     state.charts = {};
   }
 
-  /** Charge Chart.js si le CDN principal a échoué (fallback CDN puis cache local). */
+  /** Suit le <script id="tba-chartjs-bundle"> (`async`) : résolu dès que le
+   *  bundle a réussi ou échoué, sans jamais réinjecter un doublon. */
+  const chartTagSettled = new Promise(resolve => {
+    const tag = document.getElementById('tba-chartjs-bundle');
+    if (!tag || typeof Chart !== 'undefined') { resolve(typeof Chart !== 'undefined'); return; }
+    tag.addEventListener('load', () => resolve(typeof Chart !== 'undefined'));
+    tag.addEventListener('error', () => resolve(false));
+  });
+
+  /** Charge Chart.js si le bundle de la page a échoué (fallback CDN puis cache local). */
   async function ensureChartLib() {
     if (typeof Chart !== 'undefined') return true;
+    // Le bundle de la page est peut-être encore en vol : on l'attend d'abord.
+    if (await chartTagSettled) return true;
     for (const url of CHART_FALLBACK_CDNS) {
       try {
         await new Promise((res, rej) => {
@@ -1995,9 +2113,15 @@
     return null;
   }
 
-  /** Pré-charge la source Chart.js en tâche de fond (une fois, pour l'hors-ligne). */
+  /**
+   * Pré-charge la source Chart.js (une fois, pour l'hors-ligne) — seulement
+   * quand il y a des données à exporter : sinon chaque visite de la page
+   * d'accueil transférait ~160 Ko pour les écrire dans le stockage local.
+   */
+  let chartJsWarmed = false;
   function warmChartJsCache() {
-    if (EMBEDDED || chartJsSrcMemo) return;
+    if (EMBEDDED || chartJsWarmed || chartJsSrcMemo) return;
+    chartJsWarmed = true;
     const run = () => { getChartJsSource().catch(() => {}); };
     if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(run, { timeout: 8000 });
     else setTimeout(run, 2500);
@@ -2443,17 +2567,35 @@
     renderGoal(list);
   }
 
-  function memberNames() {
-    return Array.from(new Set(state.actions.map(a => a.memberName))).sort((a, b) => a.localeCompare(b, LS));
-  }
+  /**
+   * Noms de membres distincts, triés (listes de filtres et de comparaison).
+   * Mémoïsé sur l'identité de `state.actions` : sinon toutes les actions
+   * étaient reparcourues 3 fois par rendu (filtres + 2 selects).
+   */
+  const memberNames = (function () {
+    /** @type {{src:Rec[]|null, value:string[]}} */
+    let memo = { src: null, value: [] };
+    return function () {
+      const src = state.actions;
+      if (memo.src === src) return memo.value;
+      const value = Array.from(new Set(src.map(a => a.memberName))).sort((a, b) => a.localeCompare(b, LS));
+      memo = { src, value };
+      return value;
+    };
+  })();
 
   function fillCompareSelects() {
+    const names = memberNames();
+    // Ne reconstruire les <option> que si la liste a changé : le rendu complet
+    // recréait sinon des dizaines d'éléments (et la sélection courante) à
+    // chaque frappe dans les filtres.
+    const sig = names.join('\u0000');
     ['cmp-a', 'cmp-b'].forEach(id => {
       const sel = $(id);
-      if (!sel) return;
+      if (!sel || sel.dataset.sig === sig) return;
       const current = sel.value;
-      const names = memberNames();
       sel.innerHTML = '<option value="">—</option>' + names.map(n => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+      sel.dataset.sig = sig;
       if (current && names.indexOf(current) >= 0) sel.value = current;
     });
   }
@@ -2496,9 +2638,9 @@
   }
 
   function currentWeekCount(list) {
-    const key = periodKey(new Date(), 'week');
+    const key = periodKeyMs(Date.now(), 'week');
     let n = 0;
-    for (const a of list || []) if (periodKey(new Date(a.dateMs), 'week') === key) n++;
+    for (const a of list || []) if (periodKeyMs(a.dateMs, 'week') === key) n++;
     return n;
   }
 
@@ -2542,7 +2684,7 @@
     for (const a of list || []) {
       let m = by.get(a.memberName);
       if (!m) { m = new Map(); by.set(a.memberName, m); }
-      const k = periodKey(new Date(a.dateMs), 'week');
+      const k = periodKeyMs(a.dateMs, 'week');
       m.set(k, (m.get(k) || 0) + 1);
     }
     return by;
@@ -2697,6 +2839,9 @@
   function tickClock() {
     const el = $('hud-clock');
     if (!el) return;
+    // Onglet en arrière-plan : l'horloge ne se voit pas — on s'épargne une
+    // écriture DOM (et le recalcul de style qu'elle entraîne) chaque seconde.
+    if (document.hidden) return;
     const d = new Date();
     const pad = n => String(n).padStart(2, '0');
     el.dateTime = d.toISOString();
@@ -2736,6 +2881,10 @@
     renderMemberTable(st);
     renderNexus(list, st);
     updateFilterUI();
+    // Première vue affichée : on peut maintenant mettre en cache la source de
+    // Chart.js (rapports HTML autonomes / reprise hors-ligne) sans rien voler
+    // au chargement initial.
+    warmChartJsCache();
     $('dash-footer').textContent =
       list.length.toLocaleString() + ' action(s) affichée(s) · ' + st.dayCounts.size + ' jour(s) actif(s) · ' +
       'série la + longue : ' + st.longestStreak + ' j · score ' + (state.lastInsights ? state.lastInsights.score : '—') +
@@ -2780,10 +2929,7 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-        scales: {
-          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
-        }
+        scales: { x: axisX(), y: axisY() }
       }
     });
   }
@@ -2808,8 +2954,8 @@
           tooltip: { callbacks: { title: items => state.memberFullLabels[items[0].dataIndex] || items[0].label } }
         },
         scales: {
-          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } },
-          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } }
+          x: axisValue(),
+          y: axisCategory({ ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } })
         }
       }
     });
@@ -2904,10 +3050,7 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
-        }
+        scales: { x: axisX(), y: axisY() }
       }
     });
   }
@@ -2932,10 +3075,7 @@
           legend: { display: false },
           tooltip: { callbacks: { title: items => full[items[0].dataIndex] || items[0].label } }
         },
-        scales: {
-          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } },
-          y: { grid: { display: false }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } } }
-        }
+        scales: { x: axisValue(), y: axisCategory() }
       }
     });
   }
@@ -2955,7 +3095,7 @@
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#888', font: { size: 8, family: 'Segoe UI, Arial, sans-serif' }, maxRotation: 0, autoSkip: false } },
-          y: { grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } }, beginAtZero: true }
+          y: axisY({ ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } } })
         }
       }
     });
@@ -2998,10 +3138,7 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-        scales: {
-          x: { stacked: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' }, maxTicksLimit: 12, maxRotation: 45 } },
-          y: { stacked: true, beginAtZero: true, grid: { color: GRID }, ticks: { color: '#888', font: { size: 10, family: 'Segoe UI, Arial, sans-serif' } } }
-        }
+        scales: { x: axisX({ stacked: true }), y: axisY({ stacked: true }) }
       }
     });
   }
@@ -3035,9 +3172,12 @@
       if (ar) ar.textContent = th.dataset.k === k ? (dir === 1 ? '▲' : '▼') : '';
     });
     const sparks = sparkBuckets(state.lastList);
+    // palette calculée une fois : `memberColors(n)[i]` dans la boucle refaisait
+    // n lectures de jetons CSS par ligne (O(n²) sur le tableau des membres).
+    const palette = memberColors(rows.length);
     $('mt-body').innerHTML = rows.map((r, i) =>
       '<tr><td><span class="leg-dot" style="display:inline-block;margin-right:6px;background:' +
-      memberColors(rows.length)[i] + '"></span>' + esc(r.name) + sparkHtml(r.name, sparks) + '</td>' +
+      palette[i] + '"></span>' + esc(r.name) + sparkHtml(r.name, sparks) + '</td>' +
       '<td class="num">' + r.count.toLocaleString() + '</td>' +
       '<td class="num">' + r.comments.toLocaleString() + '</td>' +
       '<td class="num">' + r.cards.toLocaleString() + '</td>' +
@@ -3050,8 +3190,13 @@
 
   function updateFilterUI() {
     const f = state.filter;
-    const names = Array.from(new Set(state.actions.map(a => a.memberName))).sort((a, b) => a.localeCompare(b, LS));
-    $('fl-datalist').innerHTML = names.map(n => '<option value="' + esc(n) + '"></option>').join('');
+    const names = memberNames();
+    const nameSig = names.join('\u0000');
+    const list = $('fl-datalist');
+    if (list.dataset.sig !== nameSig) { // reconstruit uniquement si la liste change
+      list.innerHTML = names.map(n => '<option value="' + esc(n) + '"></option>').join('');
+      list.dataset.sig = nameSig;
+    }
     $('fl-chips').innerHTML = Array.from(f.members).map(n =>
       '<span class="chip">' + esc(n) + '<button type="button" data-rm="' + esc(n) + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'
     ).join('');
@@ -3062,6 +3207,23 @@
       ? state.lastList.length.toLocaleString() + ' / ' + state.actions.length.toLocaleString() + ' actions · ' +
         '⚠ filtres actifs : sauvegarde inchangée (données brutes complètes).'
       : '';
+  }
+
+  /** Temporisation des filtres texte : chaque frappe relançait une passe
+   *  d'agrégation complète + la reconstruction des 8 graphiques (~0,7 s par
+   *  caractère sur 50 000 actions). On attend la fin de la saisie. */
+  const FILTER_DEBOUNCE_MS = 90;
+  /** @type {number} identifiant du timer de rendu différé */
+  let filterTimer = 0;
+  /** Programme `applyFilterRerender` et annule la programmation précédente. */
+  function scheduleRerender() {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilterRerender, FILTER_DEBOUNCE_MS);
+  }
+  /** Rendu immédiat (clic, changement de date) : annule toute temporisation. */
+  function flushRerender() {
+    clearTimeout(filterTimer);
+    applyFilterRerender();
   }
 
   function applyFilterRerender() {
@@ -3100,7 +3262,7 @@
     state.filter.fromMs = parseFilterDate('fl-from', false);
     state.filter.toMs = parseFilterDate('fl-to', true);
     markWindow(null);
-    applyFilterRerender();
+    flushRerender();
   }
 
   function clearFilters() {
@@ -3110,7 +3272,7 @@
     $('fl-from').value = $('fl-to').value = $('fl-search').value = '';
     if ($('fl-query')) $('fl-query').value = '';
     markWindow(null);
-    applyFilterRerender();
+    flushRerender();
   }
 
   /* ═══════════════════════════ 15. EXPORTS ════════════════════════════════ */
@@ -3519,8 +3681,6 @@
     /** @type {{ops:string[]}[]} */ const pages = [];
     /** @type {{ops:string[], y:number} | null} */ let page = null;
     let y = 0;
-    const foot = [];
-
     function newPage() { page = { ops: [] }; pages.push(page); y = PH - M; }
     function room(h) { if (y - h < M + 34) newPage(); }
     function rect(x, yy, w, h, c) { page.ops.push(c + ' rg ' + fmtN(x) + ' ' + fmtN(yy) + ' ' + fmtN(w) + ' ' + fmtN(h) + ' re f'); }
@@ -3862,23 +4022,66 @@
     return s;
   }
 
+  /** `xml:space="preserve"` n'est utile que si les espaces comptent. */
+  const needsPreserve = v => /^\s|\s$/.test(String(v == null ? '' : v));
+
+  /**
+   * Table de chaînes partagées (sharedStrings.xml). Les colonnes d'export sont
+   * massivement redondantes (type, groupe, membre, carte…) et `inlineStr`
+   * répétait chaque texte + ~65 caractères de balisage : un tableau de 50 000
+   * actions dépassait 28 Mo en mémoire. Une cellule ne porte plus qu'un index
+   * (`t="s"`) : classeur divisé par ~2,5.
+   */
+  const SharedStrings = (function () {
+    /** @type {Map<string,number>} */
+    let index = new Map();
+    /** @type {string[]} */
+    let items = [];
+    /** @type {number} nombre total de références (attribut `count` du SST) */
+    let refs = 0;
+    return {
+      reset() { index = new Map(); items = []; refs = 0; },
+      /** Enregistre une chaîne et renvoie son index. @param {*} v */
+      ref(v) {
+        const key = String(v == null ? '' : v);
+        let i = index.get(key);
+        if (i === undefined) { i = items.length; index.set(key, i); items.push(key); }
+        refs++;
+        return i;
+      },
+      /** @returns {string} XML de xl/sharedStrings.xml */
+      xml() {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' + refs +
+          '" uniqueCount="' + items.length + '">' +
+          items.map(v => '<si><t' + (needsPreserve(v) ? ' xml:space="preserve"' : '') + '>' + xmlEsc(v) + '</t></si>').join('') +
+          '</sst>';
+      }
+    };
+  })();
+
   /** Feuille XLSX minimale : lignes [{v, t:'s'|'n'}], en-têtes figés, largeurs. */
   function xlsxSheet(rows, widths) {
     const cols = '<cols>' + widths.map((w, i) =>
       '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>';
-    const data = rows.map((row, ri) => {
-      const cells = row.map((c, ci) => {
+    // Une seule concaténation finale : `rows.map(...).join('')` créait une
+    // chaîne intermédiaire par ligne (300 000 pour un gros tableau).
+    const data = [];
+    for (let ri = 0; ri < rows.length; ri++) {
+      const row = rows[ri];
+      const cells = [];
+      for (let ci = 0; ci < row.length; ci++) {
+        const c = row[ci];
         const ref = colName(ci) + (ri + 1);
-        if (c && c.t === 'n' && Number.isFinite(c.v)) return '<c r="' + ref + '"><v>' + c.v + '</v></c>';
-        const v = c && c.v != null ? c.v : '';
-        return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>';
-      }).join('');
-      return '<row r="' + (ri + 1) + '">' + cells + '</row>';
-    }).join('');
+        if (c && c.t === 'n' && Number.isFinite(c.v)) cells.push('<c r="' + ref + '"><v>' + c.v + '</v></c>');
+        else cells.push('<c r="' + ref + '" t="s"><v>' + SharedStrings.ref(c && c.v != null ? c.v : '') + '</v></c>');
+      }
+      data.push('<row r="' + (ri + 1) + '">' + cells.join('') + '</row>');
+    }
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
       '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
-      cols + '<sheetData>' + data + '</sheetData></worksheet>';
+      cols + '<sheetData>' + data.join('') + '</sheetData></worksheet>';
   }
 
   /**
@@ -3890,6 +4093,7 @@
     const s = v => ({ t: 's', v });
     const n = v => ({ t: 'n', v });
     const t = model.totals;
+    SharedStrings.reset(); // une table par classeur (les index sont locaux)
 
     const synthRows = [[s('Indicateur'), s('Valeur')]];
     model.kpis.forEach(k => synthRows.push([s(k.label + (k.sub ? ' — ' + k.sub : '')), s(k.value)]));
@@ -3923,6 +4127,7 @@
       '<Default Extension="xml" ContentType="application/xml"/>' +
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
       sheets.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') +
+      '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' +
       '</Types>';
 
     const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -3940,6 +4145,7 @@
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
       sheets.map((_, i) =>
         '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+      '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>' +
       '</Relationships>';
 
     return zipStore([
@@ -3947,7 +4153,8 @@
       { name: '_rels/.rels', data: utf8Bytes(rootRels) },
       { name: 'xl/workbook.xml', data: utf8Bytes(workbook) },
       { name: 'xl/_rels/workbook.xml.rels', data: utf8Bytes(wbRels) }
-    ].concat(sheets.map((sh, i) => ({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: utf8Bytes(sh.xml) }))));
+    ].concat(sheets.map((sh, i) => ({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: utf8Bytes(sh.xml) })))
+      .concat([{ name: 'xl/sharedStrings.xml', data: utf8Bytes(SharedStrings.xml()) }]));
   }
 
   /* ══════════════════ 15f. CAPTURES D'IMAGES + PLANCHE PNG ═══════════════ */
@@ -4639,6 +4846,7 @@
       try {
         if (hostVarsMissing() || mode !== 'auto') document.documentElement.classList.add('tba-native');
       } catch (_) { /* ignore */ }
+      CssTokens.clear(); // la palette vient de changer : les jetons mémorisés sont périmés
     }
 
     function isDark() {
@@ -4650,6 +4858,7 @@
 
     function apply(next) {
       mode = (next === 'light' || next === 'dark') ? next : 'auto';
+      CssTokens.clear();
       ensureNativePalette();
       try { document.documentElement.setAttribute('data-tba-theme', isDark() ? 'dark' : 'light'); } catch (_) { /* ignore */ }
       ['btn-theme', 'btn-theme-top'].forEach(id => {
@@ -4878,7 +5087,7 @@
     /* — filtres — */
     $('fl-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMemberFilter(e.target.value); } });
     const qInput = $('fl-query');
-    if (qInput) qInput.addEventListener('input', () => { state.filter.query = qInput.value.trim(); applyFilterRerender(); });
+    if (qInput) qInput.addEventListener('input', () => { state.filter.query = qInput.value.trim(); scheduleRerender(); });
     $$('[data-win]').forEach(b => b.addEventListener('click', () => setTimeWindow(Number(b.dataset.win))));
     const copyBtn = $('btn-brief-copy');
     if (copyBtn) copyBtn.addEventListener('click', () => copyBriefing());
@@ -4909,6 +5118,8 @@
     loadGoal();
     tickClock();
     setInterval(tickClock, 1000);
+    // Retour d'un onglet en arrière-plan : resynchronise l'horloge tout de suite.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tickClock(); });
     $('fl-chips').addEventListener('click', e => {
       const rm = e.target.closest ? e.target.closest('[data-rm]') : null;
       if (rm) { state.filter.members.delete(rm.dataset.rm); applyFilterRerender(); }
@@ -4936,7 +5147,6 @@
       if (window.__chartCdnFailed) ensureChartLib().then(ok => {
         if (!ok) showError('Impossible de charger la bibliothèque graphique (Chart.js) — vérifiez votre connexion.');
       });
-      warmChartJsCache(); // reprise hors-ligne future + rapports HTML autonomes
     }
   }
 

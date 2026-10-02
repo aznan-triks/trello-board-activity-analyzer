@@ -2,9 +2,21 @@
 
 Analyse complète de l'historique d'un tableau Trello (API REST v1) — 100 % côté
 client, sans build ni serveur applicatif. Le code applicatif reste dans
-`index.html` ; Chart.js 4.4.1 est livré dans `vendor/` (licence MIT incluse).
+`index.html` ; Chart.js 4.4.1 est livré dans `vendor/` (licence MIT incluse),
+sous la forme d'un bundle **allégé** régénérable par `npm run build:vendor`.
 Les rapports HTML exportés restent des fichiers uniques autonomes.
 
+> **v8.1.0** — passe de **performance et de légèreté** (sans changement
+> fonctionnel ni visuel) : Chart.js réduit aux seuls composants utilisés
+> (−18 % sur le bundle, −11 Ko en gzip) et chargé en `async` (le formulaire
+> répond ~250 ms plus tôt sur une connexion lente), clés de période et
+> jour mémoïsées (rendu divisé par ~2 sur un gros tableau : 800 ms → 390 ms
+> pour 50 000 actions), jetons CSS mis en cache (−90 % de `getComputedStyle`),
+> saisie de filtre temporisée, horloge suspendue en arrière-plan, panneaux de
+> verre sans `backdrop-filter` (p95 de trame au défilement : 22 ms → 17 ms),
+> exports XLSX à table de chaînes partagées (classeur et mémoire divisés par
+> ~2 sur 50 000 actions). 19 scénarios E2E + `tba.selfTest()` toujours verts.
+>
 > **v8.0.0** — console **Nexus** : le thème technologique v7 est poussé
 > (cadres instrumentaux, rail de statut, typographie de données) **sans retirer**
 > les thèmes clair / sombre / auto ni les exports. Ajouts locaux, toujours
@@ -163,7 +175,8 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
   toast + journal (jamais de crash), messages de taille.
 - **Hors-ligne** : bundle Chart.js mis en cache local (`trello-v3:chartjs:…`)
   après le premier chargement — l'app et les exports HTML repartent sans CDN ;
-  cache pré-chauffé en tâche de fond après analyse.
+  cache pré-chauffé en tâche de fond dès qu'un tableau est affiché (inutile de
+  le transférer sur la page d'accueil, où il n'y a encore rien à exporter).
 - **Palette autonome + thème** : jetons CSS locaux injectés seulement si
   l'hôte n'en fournit pas (ou si l'utilisateur force clair/sombre) ; suivi de
   `prefers-color-scheme` ; préférence persistée (`trello-v3:theme`). v7 :
@@ -217,6 +230,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 0  SELF-CAPTURE    source + markup + CSS captés au boot (exports autonomes)
 1  CONFIG          constantes, seuils, palettes, ACTION_GROUPS, exports
 2  UTILS           $, esc, fmt, periodKey (sémantique v1 documentée)
+                  + caches de clés de période/jour et de jetons CSS
 3  LOGGER          anneau 400 entrées, redaction des secrets, never-throw
 4  STORAGE         adapter window.storage / localStorage / mémoire
 5  TRELLO CLIENT   fetchJSON (timeout, retries, limiter), pagination, since/before
@@ -271,6 +285,22 @@ npm test
 Le serveur statique démarre automatiquement pour les tests. Aucun `npm install`
 n’est nécessaire pour utiliser ou publier l’application. Pour inspecter le
 rapport de tests : `npx playwright show-report`.
+
+### Le bundle `vendor/chart.umd.js`
+
+Le dépôt n'a pas de chaîne de build à l'exécution : `index.html` est servie
+telle quelle. La seule exception est `vendor/chart.umd.js`, un artefact
+versionné produit par rollup à partir de la dépendance `chart.js` — il ne
+contient que les composants réellement utilisés (ligne, barres, anneau ;
+échelles catégorie et linéaire ; greffons filler, legend, tooltip), soit 164 Ko
+au lieu des 200 Ko du bundle officiel.
+
+```sh
+npm run build:vendor   # à relancer si un type de graphique ou la version change
+```
+
+La liste exacte des composants conservés est dans `scripts/chart.entry.js` ;
+le repli CDN (jsDelivr / unpkg) utilise, lui, le bundle officiel complet.
 
 La suite Playwright (19 scénarios) couvre : affichage à 360/390/768/1440 px,
 débordements du menu mobile, parcours de démonstration, filtres et état vide,
