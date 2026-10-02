@@ -170,6 +170,7 @@ for (const theme of ['light', 'dark']) {
     await page.keyboard.press('Escape');
     await page.locator('#btn-log').click();
     await expect(page.locator('#log-overlay')).toBeVisible();
+    await settleMotion(page);
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.keyboard.press('Escape');
@@ -318,6 +319,7 @@ test('nexus : briefing, recherche, fenêtre, comparateur et commandes', async ({
   await page.locator('#goal-input').fill('40');
   await page.locator('#goal-input').dispatchEvent('change');
   await expect(page.locator('#nx-goal')).toContainText('40');
+  await page.locator('#goal-input').blur();
   await page.keyboard.press('k');
   await expect(page.locator('#cmd-overlay')).toBeVisible();
   await expect(page.locator('#cmd-input')).toBeFocused();

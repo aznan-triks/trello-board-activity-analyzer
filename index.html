@@ -501,9 +501,13 @@
   }
   .deck-nav {
     display: flex; gap: 8px; overflow-x: auto; width: 100%; max-width: 100%;
-    margin: 0 0 16px; padding: 8px 0; position: sticky; top: 76px; z-index: 40;
+    margin: 0 0 16px; padding: 8px 0; position: sticky; top: 76px; z-index: 30;
     background: var(--color-background-primary); border-bottom: 1px solid var(--glass-border);
   }
+  /* Le menu d’export déborde sous l’en-tête et la barre de sections : il doit
+     rester cliquable, au-dessus des deux (z-index 60 et 30). */
+  .menu:has(.menu-pop.open) { position: relative; z-index: 80; }
+  .menu-pop.open { z-index: 80; }
   #nexus, .chart-card, .stat-row { scroll-margin-top: 96px; }
   .deck-nav a {
     flex: 0 0 auto; text-decoration: none; font-family: var(--font-data);
