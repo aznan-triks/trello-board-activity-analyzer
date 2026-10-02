@@ -5,6 +5,16 @@ client, sans build ni serveur applicatif. Le code applicatif reste dans
 `index.html` ; Chart.js 4.4.1 est livré dans `vendor/` (licence MIT incluse).
 Les rapports HTML exportés restent des fichiers uniques autonomes.
 
+> **v8.0.0** — console **Nexus** : le thème technologique v7 est poussé
+> (cadres instrumentaux, rail de statut, typographie de données) **sans retirer**
+> les thèmes clair / sombre / auto ni les exports. Ajouts locaux, toujours
+> sans serveur : **briefing tactique** (score, rythme, concentration, projection,
+> jours atypiques), **recherche** carte / type / membre, **fenêtres** 7 / 30 / 90 jours,
+> **comparateur** de deux membres, **objectif hebdomadaire** mémorisé à part de la
+> session, **sparklines** dans le tableau, **palette de commandes** (`K` ou `Ctrl+K`)
+> et export **briefing texte**. Le filtre par dates seul fonctionne à nouveau
+> (il excluait tout le tableau s’il n’y avait pas de membre sélectionné).
+>
 > **v7.0.0** — habillage technologique : thème **sombre néon par défaut**
 > (clair et auto conservés, choix persisté), panneaux de verre à rail
 > supérieur dégradé et liseré lumineux, fond quadrillé technique fixé au
@@ -109,6 +119,9 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 | `G` | Basculer granularité semaine / mois |
 | `T` | Thème : auto → clair → sombre |
 | `/` | Filtrer un membre |
+| `K` | Palette de commandes (`Ctrl+K` / `Cmd+K` aussi) |
+| `B` | Aller au briefing tactique |
+| `F` | Recherche plein texte |
 | `?` | Aide clavier |
 | `Esc` | Fermer fenêtres et menus |
 
@@ -259,7 +272,7 @@ Le serveur statique démarre automatiquement pour les tests. Aucun `npm install`
 n’est nécessaire pour utiliser ou publier l’application. Pour inspecter le
 rapport de tests : `npx playwright show-report`.
 
-La suite Playwright (18 scénarios) couvre : affichage à 360/390/768/1440 px,
+La suite Playwright (19 scénarios) couvre : affichage à 360/390/768/1440 px,
 débordements du menu mobile, parcours de démonstration, filtres et état vide,
 granularité, cohérence des séries, tri au clavier, thème sombre par défaut et
 persistance du choix, focus des modales, réduction des animations (décoratives
@@ -287,7 +300,7 @@ Conserver `index.html` et `vendor/` ensemble ; toutes les ressources utilisent
 des chemins relatifs compatibles avec le sous-chemin du dépôt.
 
 1. Ouvrir une pull request depuis la branche de travail (`arena/…`) vers `main`.
-2. Attendre le workflow **Validation UI et fonctionnelle** (18 scénarios
+2. Attendre le workflow **Validation UI et fonctionnelle** (19 scénarios
    navigateur + audits WCAG), puis fusionner — le merge doit aller **sur `main`**.
 3. Attendre la publication **pages build and deployment** du commit de fusion.
 4. Le job **Vérification du site publié** (déclenché par le push sur `main`)
@@ -300,7 +313,7 @@ des chemins relatifs compatibles avec le sous-chemin du dépôt.
    - la **racine du site** (`/`) : même HTML que `index.html`, version de
      `package.json` et titre attendus ;
    - l'**état de publication Pages** pour le commit courant via l'API GitHub ;
-   - puis rejoue les 18 scénarios contre l'URL publique.
+   - puis rejoue les 19 scénarios contre l'URL publique.
    Le récapitulatif (empreinte SHA-256 de l'arborescence publiée, tableau
    fichier par fichier) est écrit dans le **résumé du job** et en **annotations
    de check** (visibles dans l'interface Actions et via l'API) ; les captures et
@@ -310,7 +323,7 @@ Pour revérifier le site sans nouveau commit : onglet **Actions** → workflow
 **Validation UI et fonctionnelle** → **Run workflow** → renseigner `base_url`
 (ex. `https://aznan-triks.github.io/trello-board-activity-analyzer/`). Le job
 **Vérification du site publié** rejoue alors le contrôle complet et les
-18 scénarios contre cette URL (`base_url` vide = simple exécution locale).
+19 scénarios contre cette URL (`base_url` vide = simple exécution locale).
 
 En cas de contenu divergent (propagation Pages parfois lente), le job réessaie
 20 fois à 15 s d'intervalle avant d'échouer avec un diagnostic précis
@@ -321,7 +334,7 @@ Vérification manuelle, avant ou après fusion :
 ```sh
 npm run serve                                      # terminal 1 : http://127.0.0.1:8080
 BASE_URL=http://127.0.0.1:8080/ npm run verify:pages  # terminal 2
-BASE_URL=http://127.0.0.1:8080/ npm test              # les 18 scénarios
+BASE_URL=http://127.0.0.1:8080/ npm test              # les 19 scénarios
 
 # ou directement contre le site publié :
 BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm run verify:pages
