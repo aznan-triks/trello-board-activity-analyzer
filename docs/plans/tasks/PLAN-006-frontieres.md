@@ -1,6 +1,6 @@
 # PLAN-006 — Valider avant de restaurer et isoler les noms non fiables
 
-**Statut : en cours (2026-10-21) · Priorité : P1 — Majeur.** Restauration de snapshots et rapports fragiles ; validation aux frontières sans ajouter d'infrastructure.
+**Statut : validé localement (2026-10-21) · Priorité : P1 — Majeur.** Restauration de snapshots et rapports fragiles ; validation aux frontières sans ajouter d'infrastructure.
 
 ## 1. Problème et preuves
 
@@ -79,3 +79,7 @@ Première suite : 63 verts, 1 échec axe (contraste du dialogue d’aide pendant
 transition). Le test attend déjà les animations des autres surfaces mais pas
 celle de l’aide : attente de fin ajoutée, sans désactiver de règle axe ni modifier
 les couleurs. Cette stabilisation de mesure est vérifiée à répétition ci-dessous.
+
+## Exécution — 2026-10-21 · validé localement
+
+Implémentation a124b1d. 7 tests ciblés échouaient avant puis passent (7,0 s), 2 contrôles complémentaires ajoutés. Suite complète finale : 64/64 (1,1 min), npm test avec Chromium alternatif 153. Sessions invalides sans mutation/suppression, legacy sans ID/nom/creds/date, noms spéciaux/prototypes, raw objets, selfTest avec query et références restaurées, 10 rapports invalides et ancien rapport, membres non array, révocation sur snapshot corrompu vérifiés. Bornes finies hors plage Date refusées car non réexportables. Mesure axe stabilisée sur toutes les surfaces animées et après deux frames ; seconde série 6/6 audits répétés (32,2 s), sans règle désactivée. Pas de lecteur d’écran manuel ni publication. Jalon prioritaire implémenté, limite tableur 004 inchangée. Prochain lot 005.
