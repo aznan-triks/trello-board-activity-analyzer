@@ -132,3 +132,7 @@ Les sections 1 à 5 ci-dessus décrivent l’audit initial, conservé historique
 Limites inchangées : aucun appel live, navigateur épinglé/Firefox/Safari non exécutés, aucune validation Pages/publication ; le stockage honnête et les autres contrats restent à implémenter. PLAN-002 est le prochain lot prêt, pas une correction comprise dans ces résultats.
 
 Implémentation poussée : `298da4024ae182546de0fb94ad439f0e6cf9a527`. Après garde explicite excluant le harness local (3 tests) des exécutions `BASE_URL`, revalidation locale complète : **36 passed (46,5 s)**, même commande/environnement. Le chemin distant `BASE_URL` n’a pas été exécuté ici. `node --check tests/app.spec.js`, `node --check tests/delta.spec.js`, contrôle des liens Markdown locaux et `git diff --check` réussis. Pas de PR créée, aucun run CI pour la branche lors du contrôle `gh run list` ; le workflow attend une PR, main ou un déclenchement manuel.
+
+### PLAN-002 — 2026-10-21 · en cours
+
+Prérequis PLAN-001 validé, branche autorisée active, arbre propre. Relecture Store et de tous ses consommateurs ; aucune migration requise. Tests de panne et consentement à ajouter avant correction.

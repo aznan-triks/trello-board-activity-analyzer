@@ -74,3 +74,5 @@ Une exécution n'est terminée qu'avec critères du plan et preuves ; mettre alo
 ### Reprise d’exécution — 2026-10-20
 
 J0 vérifié sur `b164f95`, branche active autorisée et arbre propre ; baseline 19/19 avec Chromium alternatif. PLAN-001 exécuté seul : 36/36 tests passent (19 existants + 17 régressions), sur Chromium alternatif 153. Son prérequis est levé pour PLAN-002, prochain lot prêt ; J1 reste incomplet tant que 002 n’est pas validé. J2 et les autres jalons restent planifiés. Aucun déploiement/release vérifié.
+
+- 2026-10-21 · PLAN-002 : en cours. Prérequis PLAN-001 validé, branche autorisée active, arbre propre. Relecture Store et de tous ses consommateurs ; aucune migration requise. Tests de panne et consentement à ajouter avant correction.

@@ -1,6 +1,6 @@
 # PLAN-002 — Dire la vérité sur la sauvegarde et retirer les secrets sur refus
 
-**Statut : prêt à exécuter — PLAN-001 validé localement le 2026-10-20 ; non démarré · Priorité : P1 — Majeur.** Risque de perte à la fermeture et consentement non effectif, indépendant d'une éventuelle migration de stockage.
+**Statut : en cours (2026-10-21) · Priorité : P1 — Majeur.** Risque de perte à la fermeture et consentement non effectif, indépendant d'une éventuelle migration de stockage.
 
 ## 1. Problème et preuves
 
@@ -64,3 +64,7 @@ Tous consommateurs Store revus, tests normaux/dégradés verts et résultats enr
 ## 13. Sources
 
 F02/F11, R1/R7 et comparaison persistance dans [recherche](../02-recherche-et-options.md), vision C2, roadmap J1, PLAN-001/006.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis PLAN-001 validé, branche autorisée active, arbre propre. Relecture Store et de tous ses consommateurs ; aucune migration requise. Tests de panne et consentement à ajouter avant correction.

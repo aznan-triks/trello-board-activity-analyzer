@@ -83,8 +83,14 @@ localement et mis en cache ; les CDN ne servent que de secours si le bundle
 local est manquant. Aucune police ni ressource graphique distante n’est requise.
 
 Les identifiants ne sont **pas mémorisés par défaut**. La case dédiée permet
-de les conserver sur un appareil de confiance. Les données du tableau restent
-sauvegardées localement indépendamment de ce choix. La démonstration ne remplace
+de les conserver sur un appareil de confiance. La décocher retire immédiatement
+key/token de la copie sauvegardée (sans changer ses actions), ou affiche un
+avertissement si le retrait échoue. Les secrets courants restent en mémoire.
+« Sauvegardé » signifie écriture persistante réussie, sans garantie contre
+l’éviction par le navigateur. Si le stockage est refusé ou plein : consultation
+en mémoire, message « session non sauvegardée — exporter avant de fermer »,
+ancienne copie durable préservée. L’effacement n’est annoncé qu’après succès.
+Le stockage est partagé par origine, pas par chemin de l’application. La démonstration ne remplace
 jamais une sauvegarde existante et ses exports portent « démo » dans le nom du tableau.
 
 ---

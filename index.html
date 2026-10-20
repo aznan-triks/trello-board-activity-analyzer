@@ -1051,7 +1051,6 @@
   /** Intervalle minimum estimé entre deux écritures. */
   const WRITE_INTERVAL_MS = 600;
   /** Payload de sauvegarde max (limite de stockage ~5 Mo, marge 4 %). */
-  const STORAGE_MAX_BYTES = Math.floor(4.8 * 1024 * 1024);
   /** Locale d'affichage. */
   const LS = 'fr-FR';
   /** Nombre max de membres tracés dans les tendances. */
@@ -1380,50 +1379,41 @@
    *   1. window.storage (hôtes type artifacts ; API get/set/delete asynchrone)
    *   2. localStorage    (contexte navigateur autonome)
    *   3. mémoire         (jamais de crash — comme safeGet/safeSet/safeDel v1)
-   * L'adaptateur renvoie toujours `{value:string}` comme window.storage.
+   * Lecture `{value,durable}` ; écriture/suppression `{ok,durable}`.
+   * Aucun probe d’écriture : lecture et suppression restent possibles à quota plein.
    */
   const Store = (function () {
     /** @type {Map<string,string>} */ const mem = new Map();
-    let memOnly = false;
-
     const artifact = () => window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
-    const local = () => {
-      if (memOnly) return false;
-      try { return !!(window.localStorage && typeof localStorage.getItem === 'function'); }
-      catch (_) { return false; }
-    };
-    function lsOk() { // localStorage peut lever (mode privé / cookies bloqués)
-      try { localStorage.setItem(SK + ':probe', '1'); localStorage.removeItem(SK + ':probe'); return true; }
-      catch (_) { memOnly = true; return false; }
-    }
-
     async function get(key) {
       try {
-        if (artifact()) return await window.storage.get(key);
-        if (local() && lsOk()) {
-          const v = localStorage.getItem(key);
-          return v == null ? null : { value: v };
-        }
-      } catch (e) { log.debug('storage.get dégradé :', e); }
-      return mem.has(key) ? { value: mem.get(key) } : null;
+        const r = artifact() ? await window.storage.get(key) :
+          { value: localStorage.getItem(key) };
+        if (r && r.value != null) return { value: r.value, durable: true };
+      } catch (_) { log.debug('Lecture persistante indisponible.'); }
+      return mem.has(key) ? { value: mem.get(key), durable: false } : null;
     }
     async function set(key, value) {
       try {
-        if (artifact()) return await window.storage.set(key, value);
-        if (local() && lsOk()) { localStorage.setItem(key, value); return true; }
-      } catch (e) {
-        log.warn('storage.set impossible :', e);
-      }
-      mem.set(key, value); // filet mémoire (session courante)
-      return true;
+        if (artifact()) {
+          if (await window.storage.set(key, value) === false) throw new Error('Écriture refusée');
+        } else localStorage.setItem(key, value);
+        mem.delete(key);
+        return { ok: true, durable: true };
+      } catch (_) { log.warn('Écriture persistante indisponible.'); }
+      mem.set(key, value);
+      return { ok: true, durable: false };
     }
     async function del(key) {
       try {
-        if (artifact()) return await window.storage.delete(key);
-        if (local() && lsOk()) localStorage.removeItem(key);
-      } catch (_) { /* ignore */ }
+        if (artifact()) {
+          if (typeof window.storage.delete !== 'function' || await window.storage.delete(key) === false) throw new Error('Suppression refusée');
+        } else localStorage.removeItem(key);
+        mem.delete(key);
+        return { ok: true, durable: true };
+      } catch (_) { log.warn('Suppression persistante indisponible.'); }
       mem.delete(key);
-      return true;
+      return { ok: false, durable: false };
     }
     return { get, set, del };
   })();
@@ -2112,7 +2102,7 @@
         const txt = await res.text();
         if (txt && txt.length > 10000) {
           chartJsSrcMemo = txt;
-          try { await Store.set(CHART_CACHE_SK, txt); log.info('Bundle Chart.js mis en cache local (' + Math.round(txt.length / 1024) + ' Ko) — reprise hors-ligne prête.'); }
+          try { const r = await Store.set(CHART_CACHE_SK, txt); log.info(r.durable ? 'Bundle Chart.js en cache persistant.' : 'Bundle Chart.js en mémoire uniquement.'); }
           catch (e) { log.warn('Cache Chart.js non écrit :', e); }
           return txt;
         }
@@ -2181,31 +2171,40 @@
 
   /* ══════════════════════ 11. PERSISTANCE / BANNIÈRE ══════════════════════ */
 
-  /**
-   * Sauvegarde le dataset « slim » au schéma v3 (boardData/actions/creds/
-   * savedAt + `i` additif par action). Garde-fou de taille identique à v1
-   * (4,8 Mo → « Trop volumineux (x.xx MB) »).
-   * @returns {Promise<boolean>} true si écriture réussie
-   */
-  async function persistData() {
-    if (state.demo) return false; // Ne jamais remplacer une vraie sauvegarde par la démo.
-    setSaveStatus('saving');
-    const slim = state.actions.map(slimAction);
-    const credsToSave = state.keepCreds
-      ? state.creds
-      : { key: '', token: '', boardId: state.creds.boardId || '' };
-    const savedAt = new Date().toISOString();
-    const payload = JSON.stringify({ boardData: state.board, actions: slim, creds: credsToSave, savedAt });
-    const mb = (payload.length / 1024 / 1024).toFixed(2);
-    if (payload.length > STORAGE_MAX_BYTES) {
-      setSaveStatus('Trop volumineux (' + mb + ' MB)');
-      log.warn('Sauvegarde annulée : payload de ' + mb + ' Mo > ' + (STORAGE_MAX_BYTES / 1024 / 1024).toFixed(2) + ' Mo.');
-      return false;
-    }
-    const ok = await Store.set(SK, payload);
-    setSaveStatus(ok ? 'saved' : 'Erreur sauvegarde');
-    if (ok) { state.savedAtIso = savedAt; log.info('Sauvegarde : ' + slim.length.toLocaleString() + ' actions, ' + mb + ' Mo.'); }
-    return !!ok;
+  // Sérialiser les écritures de session et la révocation, y compris window.storage asynchrone.
+  let sessionQueue = Promise.resolve();
+  function sessionOperation(fn) {
+    const next = sessionQueue.then(fn);
+    sessionQueue = next.catch(() => {});
+    return next;
+  }
+  /** @returns {Promise<boolean>} true uniquement après écriture persistante. */
+  function persistData() {
+    if (state.demo) return Promise.resolve(false);
+    return sessionOperation(async () => {
+      if (state.demo) return false;
+      setSaveStatus('saving');
+      const creds = state.keepCreds ? state.creds : { key: '', token: '', boardId: state.creds.boardId || '' };
+      const savedAt = new Date().toISOString();
+      const payload = JSON.stringify({ boardData: state.board, actions: state.actions.map(slimAction), creds, savedAt });
+      const result = await Store.set(SK, payload);
+      setSaveStatus(result.durable ? 'saved' : 'Session non sauvegardée — exporter avant de fermer');
+      if (result.durable) state.savedAtIso = savedAt;
+      return result.durable;
+    });
+  }
+
+  function revokeSavedCredentials() {
+    return sessionOperation(async () => {
+      const data = await readPayload();
+      if (!data) return;
+      if (data === 'corrupt') {
+        toast('Sauvegarde corrompue : retrait impossible. Effacez les données du site.', 'error'); return;
+      }
+      const clean = { ...data, creds: { ...(data.creds || {}), key: '', token: '' } };
+      const result = await Store.set(SK, JSON.stringify(clean));
+      if (!result.durable) toast('Retrait des identifiants impossible : effacez les données du site.', 'error');
+    });
   }
 
   /** Lit et valide le payload sauvegardé. @returns {Promise<*|'corrupt'|null>} */
@@ -2215,13 +2214,14 @@
     let data;
     try { data = JSON.parse(result.value); } catch (e) { return 'corrupt'; }
     if (!validPayload(data)) return 'corrupt';
+    Object.defineProperty(data, '_durable', { value: result.durable });
     return data;
   }
 
   /** Bandeau « session sauvegardée trouvée » (v1 verbatim, format inclus). */
   async function checkSaved() {
     const data = await readPayload();
-    if (!data || data === 'corrupt') return;
+    if (!data || data === 'corrupt' || !data._durable) return;
     if (!data.actions.length) return;
     const date = new Date(data.savedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     $('saved-banner-text').textContent =
@@ -2250,16 +2250,21 @@
     $('setup').style.display = 'none';
     $('dashboard').style.display = 'block';
     renderDashboard(state.board && state.board.name != null ? state.board.name : undefined);
-    setSaveStatus('saved');
+    state.savedAtIso = data._durable ? data.savedAt || null : null;
+    setSaveStatus(data._durable ? 'saved' : 'Session non sauvegardée — exporter avant de fermer');
     toast('Session restaurée (' + state.actions.length.toLocaleString() + ' actions).', 'success');
   }
 
   /** Efface la sauvegarde et masque la bannière (v1). */
-  async function clearSaved() {
-    await Store.del(SK);
-    $('saved-banner').style.display = 'none';
-    state.savedAtIso = null;
-    toast('Sauvegarde locale effacée.');
+  function clearSaved() {
+    return sessionOperation(async () => {
+      const result = await Store.del(SK);
+      if (!result.durable) { toast('Impossible d’effacer la sauvegarde : effacez les données du site.', 'error'); return false; }
+      $('saved-banner').style.display = 'none';
+      state.savedAtIso = null;
+      toast('Sauvegarde locale effacée.');
+      return true;
+    });
   }
 
   /* ═════════════════════ 12. FLUX PRINCIPAUX (analyse) ════════════════════ */
@@ -5040,7 +5045,10 @@
       $$('#setup input').forEach(inp => inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); startAnalysis(); }
       }));
-      $('keep-creds').addEventListener('change', e => { state.keepCreds = e.target.checked; });
+      $('keep-creds').addEventListener('change', e => {
+        state.keepCreds = e.target.checked;
+        if (!state.keepCreds) revokeSavedCredentials();
+      });
     } else {
       bootEmbedded();
     }
