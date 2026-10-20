@@ -407,3 +407,15 @@ exactes ou XLSX (cellules typées texte) pour un classeur. BOM UTF-8 et CRLF con
 Cette protection n’est pas une garantie universelle : resauvegarde et réouverture
 par un logiciel tiers peuvent la transformer. Excel/LibreOffice non disponibles
 ici : vérification automatisée des octets et du parseur, pas test manuel tableur.
+
+### Validation des sessions et rapports (PLAN-006)
+
+La restauration valide toutes les actions slim avant de publier le candidat :
+`t/d/m/c` chaînes, date lisible, `i` optionnel chaîne. Les sauvegardes historiques
+sans IDs, credentials, date de sauvegarde ou nom du tableau restent lisibles
+(nom absent : « Tableau »). Les champs optionnels présents doivent avoir un type
+valide. Filtres embarqués, enums et provenance sont contrôlés ; bornes inversées
+ou hors plage Date refusées. Une session invalide affiche « données corrompues »
+et conserve ses octets et l’état précédent sans réparation/effacement automatique.
+Les noms spéciaux (`__proto__`, `constructor`) restent du texte. Cette validation
+ne rend pas sûr un fichier HTML arbitraire d’un tiers : le fichier reste exécutable.

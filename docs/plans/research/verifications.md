@@ -156,3 +156,7 @@ Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants e
 ### PLAN-004 — 2026-10-21 · validé localement, tableur non vérifié
 
 Implémentation 56c2418. 2 régressions rouges avant correction puis 2/2 ciblées (2,3 s) ; suite complète 55/55 (55,2 s). Même commande npm test et Chromium alternatif. Parseur de test RFC multiline, 15 préfixes hostiles et cas français, octets CSV direct/ZIP/offline, JSON/XLSX exacts sans formule vérifiés. Pas de tableur installé (command -v libreoffice/soffice vide) : vérification manuelle et universalité explicitement non revendiquées. Aucun mode raw ajouté. Prochain lot 006.
+
+### PLAN-006 — 2026-10-21 · en cours
+
+Prérequis 002 et provenance 003 intégrés ; lecture des validations, expansion, normalisation, tendances et selfTest. Objectif : rejet entier avant mutation, compatibilité v1/v3 et ancien rapport préservée.

@@ -13,6 +13,7 @@ async function settleMotion(page) {
   // Audit the settled UI, not an intermediate frame of the entrance fade.
   // v7 : les animations décoratives infinies (accroche pulsante, balayage)
   // tournent en arrière-plan : on attend toutes les autres, pas celles-ci.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.evaluate(() => Promise.all(document.getAnimations()
     .filter(animation => {
       const timing = animation.effect && animation.effect.getTiming ? animation.effect.getTiming() : null;
@@ -164,11 +165,13 @@ for (const theme of ['light', 'dark']) {
     // v7 : audits étendus aux surfaces secondaires (menu export, aide, journal).
     await page.locator('#btn-export').click();
     await expect(page.locator('#export-menu')).toBeVisible();
+    await settleMotion(page);
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.keyboard.press('Escape');
     await page.locator('#btn-kbd').click();
     await expect(page.locator('#kbd-overlay')).toBeVisible();
+    await settleMotion(page); // l'audit porte sur le contraste final, pas la transition du dialogue.
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.keyboard.press('Escape');

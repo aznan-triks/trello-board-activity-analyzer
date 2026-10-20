@@ -1574,10 +1574,11 @@
     const arr = await fetchJSON(buildUrl('/boards/' + encodeURIComponent(boardId) + '/members',
       { key, token, fields: 'fullName,username' }), { signal });
     const map = new Map();
+    if (!Array.isArray(arr)) throw new ApiError('Réponse membres inattendue du serveur Trello.', 0);
     if (Array.isArray(arr)) {
       for (const m of arr) {
         if (m && m.id) {
-          const name = m.fullName || m.username;
+          const name = typeof m.fullName === 'string' && m.fullName ? m.fullName : (typeof m.username === 'string' ? m.username : 'Inconnu');
           map.set(m.id, (name == null || name === '') ? 'Inconnu' : name);
         }
       }
@@ -1674,13 +1675,13 @@
     const date = String(a.date || '');
     const ms = Date.parse(date);
     if (!Number.isFinite(ms)) return null;
-    const card = (a.data && a.data.card && a.data.card.name) ? String(a.data.card.name) : '';
+    const card = (a.data && a.data.card && typeof a.data.card.name === 'string') ? a.data.card.name : '';
     return {
-      type: String(a.type || ''),
+      type: typeof a.type === 'string' ? a.type : '',
       date,
       dateMs: ms,
       id: typeof a.id === 'string' ? a.id : '',
-      memberName: a._memberName || 'Inconnu',
+      memberName: typeof a._memberName === 'string' && a._memberName ? a._memberName : 'Inconnu',
       cardName: card
     };
   }
@@ -1727,11 +1728,43 @@
     return r;
   }
 
-  /** Validation stricte d'un payload de sauvegarde (protection v1 « données corrompues »). */
-  function validPayload(d) {
-    return !!d && typeof d === 'object' && !!d.boardData && typeof d.boardData === 'object'
-      && Array.isArray(d.actions);
+  const record = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const has = (v, k) => Object.prototype.hasOwnProperty.call(v, k);
+  const optionalString = (v, k) => !has(v, k) || typeof v[k] === 'string';
+  const validDate = v => typeof v === 'string' && Number.isFinite(Date.parse(v));
+  function validSlim(a) {
+    return record(a) && ['t', 'd', 'm', 'c'].every(k => typeof a[k] === 'string') &&
+      validDate(a.d) && optionalString(a, 'i');
   }
+  function validBoard(b) {
+    return record(b) && optionalString(b, 'name') && optionalString(b, 'id');
+  }
+  function validFilter(f) {
+    if (!record(f)) return false;
+    if (has(f, 'members') && (!Array.isArray(f.members) || !f.members.every(m => typeof m === 'string'))) return false;
+    if (!optionalString(f, 'query')) return false;
+    for (const k of ['fromMs', 'toMs']) {
+      if (has(f, k) && f[k] !== null && (typeof f[k] !== 'number' || !Number.isFinite(new Date(f[k]).getTime()))) return false;
+    }
+    return f.fromMs == null || f.toMs == null || f.fromMs <= f.toMs;
+  }
+  /** Session historique : l'absence d'ID, creds, savedAt et board.name reste valide. */
+  function validPayload(d) {
+    return record(d) && validBoard(d.boardData) && Array.isArray(d.actions) && d.actions.every(validSlim) &&
+      (!has(d, 'creds') || (record(d.creds) && ['key', 'token', 'boardId'].every(k => optionalString(d.creds, k)))) &&
+      (!has(d, 'savedAt') || validDate(d.savedAt));
+  }
+  function validEmbedded(p) {
+    return record(p) && p.kind === 'trello-activity-export-v1' && validBoard(p.board) &&
+      Array.isArray(p.actions) && p.actions.every(validSlim) &&
+      (!has(p, 'filter') || validFilter(p.filter)) &&
+      (!has(p, 'gran') || ['week', 'month'].includes(p.gran)) &&
+      (!has(p, 'heatMetric') || ['count', 'share'].includes(p.heatMetric)) &&
+      (!has(p, 'exportedAt') || validDate(p.exportedAt)) && optionalString(p, 'version') &&
+      (!has(p, 'provenance') || (record(p.provenance) && optionalString(p.provenance, 'label') &&
+        (!has(p.provenance, 'filters') || validFilter(p.provenance.filters))));
+  }
+  const restoredBoard = b => ({ ...b, name: typeof b.name === 'string' ? b.name : 'Tableau' });
 
   /* ════════════════════════════ 7. STATE ══════════════════════════════════ */
 
@@ -1896,12 +1929,12 @@
   /** Équivalent v1 `byMemberPeriod` : nom → {clé de période: nombre}. */
   function byMemberPeriod(actions, gran) {
     /** @type {Record<string,Record<string,number>>} */
-    const m = {};
+    const m = Object.create(null);
     for (const a of actions) {
       const name = a._memberName || a.memberName || 'Inconnu';
       const ms = actionMs(a);
       const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
-      if (!m[name]) m[name] = {};
+      if (!m[name]) m[name] = Object.create(null);
       m[name][k] = (m[name][k] || 0) + 1;
     }
     return m;
@@ -2222,11 +2255,12 @@
   /** Bandeau « session sauvegardée trouvée » (v1 verbatim, format inclus). */
   async function checkSaved() {
     const data = await readPayload();
-    if (!data || data === 'corrupt' || !data._durable) return;
+    if (data === 'corrupt') { showError('Données corrompues : sauvegarde conservée sans modification.'); return; }
+    if (!data || !data._durable) return;
     if (!data.actions.length) return;
     const date = new Date(data.savedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     $('saved-banner-text').textContent =
-      data.boardData.name + ' — ' + data.actions.length.toLocaleString() + ' actions sauvegardées le ' + date;
+      (typeof data.boardData.name === 'string' ? data.boardData.name : 'Tableau') + ' — ' + data.actions.length.toLocaleString() + ' actions sauvegardées le ' + date;
     $('saved-banner').style.display = 'flex';
     if (data.creds) {
       $('api-key').value = data.creds.key || '';
@@ -2242,9 +2276,11 @@
     const data = await readPayload();
     if (!data) { showError('Aucune donnée trouvée.'); return; }
     if (data === 'corrupt') { showError('Données corrompues.'); return; }
-    state.board = data.boardData;
+    const actions = normalizeActions(data.actions.map(expandActionKeepId));
+    const board = restoredBoard(data.boardData);
+    state.board = board;
     state.creds = data.creds || {};
-    state.actions = normalizeActions(data.actions.map(expandActionKeepId));
+    state.actions = actions;
     const hasIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
     log.info('Session restaurée : ' + state.actions.length.toLocaleString() + ' actions' + (hasIds ? '' : ' (format v1 — rafraîchissement delta indisponible)'));
     // Styles d'affichage exacts de la v1 (le chargement n'est jamais masqué ici : il est déjà caché).
@@ -4733,14 +4769,17 @@
       document.documentElement.classList.add('tba-export');
       Theme.ensureNativePalette();
       const p = EMBEDDED;
+      if (!validEmbedded(p)) throw new Error('Données embarquées invalides');
+      const actions = normalizeActions(p.actions.map(expandActionKeepId));
+      const board = restoredBoard(p.board);
       const bannerEl = $('export-banner');
       if (bannerEl) {
         bannerEl.textContent = 'Export hors-ligne — généré le ' +
           (p.exportedAt ? new Date(p.exportedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?') +
-          ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify(p.provenance.filters) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
+          ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify({ members: p.provenance.filters?.members || [], fromMs: p.provenance.filters?.fromMs ?? null, toMs: p.provenance.filters?.toMs ?? null, query: p.provenance.filters?.query || '' }) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
       }
-      state.board = p.board || { name: 'Tableau' };
-      state.actions = normalizeActions((p.actions || []).map(expandActionKeepId));
+      state.board = board;
+      state.actions = actions;
       state.currentGran = p.gran === 'month' ? 'month' : 'week';
       state.heatMetric = p.heatMetric === 'share' ? 'share' : 'count';
       if (p.filter && typeof p.filter === 'object') {
@@ -4774,6 +4813,9 @@
       log.info('Rapport hors-ligne chargé : ' + state.actions.length.toLocaleString() + ' action(s) (v' + (p.version || '?') + ').');
     } catch (e) {
       log.error('Chargement du rapport embarqué :', e);
+      $('dashboard').style.display = 'none';
+      $('setup').style.display = 'block';
+      showError('Rapport illisible : données embarquées invalides.');
       toast('Rapport illisible.', 'error');
     }
   }
@@ -4998,7 +5040,7 @@
       /* — modèle + rapports (sur un état factice) — */
       saved = {
         board: state.board, actions: state.actions, creds: state.creds,
-        filter: { members: new Set(state.filter.members), fromMs: state.filter.fromMs, toMs: state.filter.toMs }
+        filter: state.filter
       };
       state.board = { name: 'SelfTest' };
       state.creds = {};
@@ -5006,7 +5048,7 @@
         { id: 'a1', type: 'commentCard', date: '2024-01-02T10:00:00.000Z', _memberName: 'Zoé', data: { card: { name: 'C1' } } },
         { id: 'a2', type: 'createCard', date: '2024-01-03T11:00:00.000Z', _memberName: 'Ada', data: { card: { name: 'C2' } } }
       ]);
-      state.filter.members.clear(); state.filter.fromMs = state.filter.toMs = null;
+      state.filter = { members: new Set(), fromMs: null, toMs: null, query: '' };
       const model = buildReportModel();
       t('model kpis', model.kpis.length === 8 && model.totals.actions === 2);
       const md = buildMarkdownReport(model);
@@ -5039,9 +5081,7 @@
     } finally {
       if (saved) {
         state.board = saved.board; state.actions = saved.actions; state.creds = saved.creds;
-        state.filter.members = saved.filter.members;
-        state.filter.fromMs = saved.filter.fromMs;
-        state.filter.toMs = saved.filter.toMs;
+        state.filter = saved.filter;
       }
     }
     const passed = results.filter(r => r.ok).length;
