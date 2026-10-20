@@ -1600,7 +1600,7 @@
    * Récupère tout l'historique du board par pagination `before` (curseur =
    * id de la dernière action, exactement comme la v1), avec options :
    *  • `since`    : borne basse (delta refresh) ;
-   *  • `knownIds` : arrêt anticipé quand une page retombe sur des id déjà vus ;
+   *  • `knownIds` : IDs déjà conservés, exclus des ajouts (sans arrêter la fenêtre) ;
    *  • `signal`   : annulation utilisateur.
    * @param {string} key @param {string} token @param {string} boardId
    * @param {{signal?:AbortSignal, since?:string|null, knownIds?:Set<string>|null,
@@ -1615,6 +1615,7 @@
     onProgress(15, 'Chargement de l\'historique...', '');
     /** @type {*[]} */ const actions = [];
     const seen = new Set();
+    const cursors = new Set();
     let before = null, page = 0, latestIso = opts.since || null, stoppedAtKnown = false;
     for (;;) {
       const params = { key, token, limit: PAGE_LIMIT, filter: 'all', fields: 'type,date,idMemberCreator,data' };
@@ -1628,13 +1629,13 @@
         if (e instanceof ApiError) throw new Error('Erreur API page ' + (page + 1) + ' (' + (e.status || '?') + ')');
         throw e;
       }
+      if (signal && signal.aborted) throw new CanceledError();
       if (!Array.isArray(batch)) throw new ApiError('Réponse inattendue du serveur Trello.', 0);
       if (!batch.length) break;
-      let hitKnown = false;
       for (const a of batch) {
         if (!a || typeof a !== 'object') continue;
         const id = typeof a.id === 'string' ? a.id : '';
-        if (id && opts.knownIds && opts.knownIds.has(id)) { hitKnown = true; continue; }
+        if (id && opts.knownIds && opts.knownIds.has(id)) { stoppedAtKnown = true; continue; }
         if (id) { if (seen.has(id)) continue; seen.add(id); }
         if (a.date && (!latestIso || String(a.date) > latestIso)) latestIso = String(a.date);
         a._memberName = memberMap.get(a.idMemberCreator) || 'Inconnu';
@@ -1643,11 +1644,18 @@
       page++;
       onProgress(Math.min(85, 15 + page * 4), 'Chargement...',
         actions.length.toLocaleString() + ' actions (page ' + page + ')');
-      if (hitKnown && opts.knownIds) { stoppedAtKnown = true; break; }
-      before = batch[batch.length - 1] && batch[batch.length - 1].id;
-      if (!before) break;
+      // Un ID connu ne prouve pas la fin : d'autres actions du même instant
+      // peuvent suivre sur la page suivante. Parcourir toute la fenêtre since.
       if (batch.length < PAGE_LIMIT) break;
-      if (page >= MAX_PAGES) { log.warn('Pagination stoppée à ' + MAX_PAGES + ' pages (garde-fou).'); break; }
+      const cursor = batch[batch.length - 1] && batch[batch.length - 1].id;
+      if (typeof cursor !== 'string' || !cursor || cursors.has(cursor)) {
+        throw new Error('Historique incomplet — curseur de pagination absent ou répété.');
+      }
+      if (page >= MAX_PAGES) {
+        throw new Error('Historique incomplet — limite de ' + MAX_PAGES + ' pages atteinte.');
+      }
+      cursors.add(cursor);
+      before = cursor;
       await sleep(PAGE_DELAY_MS);
     }
     return { actions, stoppedAtKnown, latestIso };
@@ -2290,7 +2298,7 @@
       fields.map($).find(el => !el.value.trim()).focus();
       return;
     }
-    state.keepCreds = $('keep-creds').checked;
+    const keepCreds = $('keep-creds').checked;
     const boardId = extractBoardId(boardInput);
     if (!validBoardId(boardId)) {
       $('board-id').setAttribute('aria-invalid', 'true');
@@ -2299,7 +2307,6 @@
       return;
     }
     if (!(await ensureChartLib())) { showError('Impossible de charger la bibliothèque graphique (Chart.js) depuis le CDN.'); return; }
-    state.creds = { key, token, boardId };
     log.info('Démarrage de l\'analyse du board ' + boardId + '.');
     $('setup').style.display = 'none';
     $('loading').style.display = 'block';
@@ -2319,9 +2326,13 @@
       if (!boardData || typeof boardData !== 'object' || boardData.name == null && boardData.id == null) {
         throw new Error('Réponse inattendue lors du chargement du tableau.');
       }
-      state.board = boardData;
       const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal });
-      state.actions = normalizeActions(res.actions);
+      const actions = normalizeActions(res.actions);
+      if (cancel.signal.aborted) throw new CanceledError();
+      state.board = boardData;
+      state.actions = actions;
+      state.creds = { key, token, boardId };
+      state.keepCreds = keepCreds;
       log.info('Analyse terminée : ' + state.actions.length.toLocaleString() + ' actions sur ' + (res.stoppedAtKnown ? 'delta' : 'historique') + ' récupérées.');
       setProgress(90, 'Sauvegarde...', '');
       await persistData();
@@ -2344,8 +2355,8 @@
 
   /**
    * Rafraîchissement depuis le dashboard.
-   * @param {boolean} incremental true = delta (since = dernière action connue,
-   *   arrêt à la première page d'actions déjà connues) ; false = rechargement
+   * @param {boolean} incremental true = delta (since = dernière action connue
+   *   moins une seconde, union par ID) ; false = rechargement
    *   complet exactement comme v1 `refreshData`.
    */
   async function refreshData(incremental) {
@@ -2360,13 +2371,15 @@
     try {
       setProgress(5, 'Mise à jour...', '');
       const haveIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
+      const delta = !!incremental && haveIds;
       let knownIds = null, since = null;
       if (incremental) {
         if (haveIds) {
           knownIds = new Set(state.actions.map(a => a.id));
           let maxMs = -Infinity;
           for (const a of state.actions) if (a.dateMs > maxMs) maxMs = a.dateMs;
-          since = new Date(maxMs).toISOString();
+          // shortcut: delta append-only avec recouvrement d'une seconde, utiliser le rechargement complet pour réconcilier les modifications ou suppressions anciennes
+          since = new Date(maxMs - 1000).toISOString();
         } else {
           log.info('Delta demandé mais sauvegarde au format v1 (sans ids) — repli sur un rechargement complet.');
           toast('Format de sauvegarde ancien — rechargement complet effectué.');
@@ -2374,7 +2387,8 @@
       }
       const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal, knownIds, since });
       const fresh = normalizeActions(res.actions);
-      if (knownIds && res.stoppedAtKnown) {
+      if (cancel.signal.aborted) throw new CanceledError();
+      if (delta) {
         const oldIds = new Set(state.actions.map(a => a.id));
         const additions = fresh.filter(a => !oldIds.has(a.id));
         state.actions = additions.concat(state.actions);
@@ -2382,7 +2396,7 @@
       } else {
         state.actions = fresh;
       }
-      log.info('Rafraîchissement (' + (incremental ? 'delta' : 'complet') + ') : ' + state.actions.length.toLocaleString() + ' actions au total.');
+      log.info('Rafraîchissement (' + (delta ? 'delta' : 'complet') + ') : ' + state.actions.length.toLocaleString() + ' actions au total.');
       setProgress(90, 'Sauvegarde...', '');
       await persistData();
       setProgress(100, 'Terminé !', '');
@@ -2398,7 +2412,7 @@
       $('dashboard').style.display = 'block';
       if (e instanceof CanceledError) { setSaveStatus('Actualisation annulée'); toast('Actualisation annulée.'); }
       else {
-        setSaveStatus('Erreur : ' + redactUrl(String((e && e.message) || e)).slice(0, 30));
+        setSaveStatus('Erreur : ' + redactUrl(String((e && e.message) || e)));
         log.error('Échec du rafraîchissement :', e);
       }
       if (state.board) renderDashboard(state.board.name); // réaffiche l'ancien dashboard (v1 le laissait tel quel)

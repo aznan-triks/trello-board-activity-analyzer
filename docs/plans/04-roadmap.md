@@ -1,6 +1,6 @@
 # Roadmap et règles d'intégration
 
-Date : 2026-10-20. Tout est **planifié**, rien n'est déclaré corrigé. [Plans/statuts](README.md), [contrats cibles](03-vision-cible.md), [preuves](01-etat-des-lieux.md).
+Date : 2026-10-20. **PLAN-001 validé localement** ; autres lots non implémentés. [Plans/statuts](README.md), [contrats cibles](03-vision-cible.md), [preuves](01-etat-des-lieux.md).
 
 ## Ordre motivé
 
@@ -70,3 +70,7 @@ Travaux en parallèle possibles **sans conflit d'édition** : concevoir les fixt
 Chaque lot : régression montrée avant correction → plus petit changement de cause commune → nouveaux tests + suite complète → mise à jour de sa documentation → diff borné. Version/release à gérer au jalon par l'intégrateur avec les emplacements existants (`package.json`, lock, `APP_VERSION`, HTML/README) si une release est effectivement préparée, pas à chaque plan par automatisme. Aucun changement vendor/dépendance sans justification propre.
 
 Une exécution n'est terminée qu'avec critères du plan et preuves ; mettre alors son statut à jour avec date/commit et résultats réels. Ce dossier initial ne coche aucun travail implémenté. Validation de publication : `npm run verify:pages` **après** publication effective du commit sur main uniquement ; ne pas demander à Pages de servir une branche de travail. Suivre les jobs existants plutôt que considérer un hash local comme preuve de déploiement.
+
+### Reprise d’exécution — 2026-10-20
+
+J0 vérifié sur `b164f95`, branche active autorisée et arbre propre ; baseline 19/19 avec Chromium alternatif. PLAN-001 exécuté seul : 36/36 tests passent (19 existants + 17 régressions), sur Chromium alternatif 153. Son prérequis est levé pour PLAN-002, prochain lot prêt ; J1 reste incomplet tant que 002 n’est pas validé. J2 et les autres jalons restent planifiés. Aucun déploiement/release vérifié.

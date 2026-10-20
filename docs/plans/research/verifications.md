@@ -113,3 +113,20 @@ Passe 1 : fichiers suivis et parcours acquisition/reprise/démo/exports → delt
 Dernière relecture des générateurs : le XLSX calcule aussi directement son briefing via buildInsights/computeStats, sans passer uniquement par buildReportModel ; PLAN-008 a été précisé pour couvrir cet appelant. Aucune nouvelle architecture n'en découle.
 
 Contrôles documentaires exécutés : 15 documents dont 9 plans ; aucun lien Markdown local manquant. `git diff --name-only HEAD` vide pour les fichiers préexistants, nouveaux fichiers exclusivement sous `docs/plans/**` ; branche de session inchangée. `git diff --check` n'a remonté aucune erreur sur les fichiers suivis ; un contrôle séparé des espaces finaux dans les nouveaux Markdown est utilisé car ils ne sont pas encore suivis. Dépendances sans cycle, ordre d'édition commun défini dans roadmap. Aucune modification source, style, dépendance, workflow ou interface existante réalisée par cet audit.
+
+## 6. Exécution PLAN-001 — 2026-10-20
+
+Les sections 1 à 5 ci-dessus décrivent l’audit initial, conservé historiquement. Cette section décrit la première implémentation, sur `b164f95` (fusion PR #11), branche active `arena/e47875e6-trello-board-activity-analyzer`, arbre initial propre.
+
+- Installation `npm ci --ignore-scripts --no-audit --no-fund` : réussie, 41 packages, manifestes inchangés.
+- Chromium épinglé indisponible dans ce sandbox : `@sparticuz/chromium@153.0.0` installé **hors dépôt** dans `/home/user/.cache/tba-execution/runtime`. Exécutable extrait dans `/tmp/chromium`. Premier lancement échoué : `libnspr4.so` absente, aucun test applicatif exécuté. L’archive `al2023.tar.br` de cette version extrait ses bibliothèques dans **`/tmp/lib`**, et non `/tmp/al2023/lib` cité lors de l’audit ; chemin effectivement constaté et utilisé ci-dessous. Aucune adaptation du projet à cet environnement.
+- Baseline : `LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test` → **19 passed (33,4 s)**.
+- Avant correction : même environnement, `npx playwright test tests/delta.spec.js` → **10 failed, 4 passed (58,5 s)**. Échecs : delta vide/nouvelles, absence de recouvrement, arrêt au connu prématuré, curseurs/garde-fou, board candidat. Les quatre succès préexistants couvrent annulations page 2, erreur page 2 et repli/vide.
+- Après correction : même commande ciblée → **14 passed (13,6 s)** ; trois tests supplémentaires vérifient les fins normales au garde-fou et l’analyse vide.
+- Suite complète finale : `LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test` → **36 passed (45,1 s)** (19 existants + 17 PLAN-001). Aucun test volontairement rouge conservé.
+- Les mocks inspectent GET, `limit=1000`, `since` et `before` ; données/tokens entièrement synthétiques. Le harness MAX_PAGES=2 remplace le texte servi **uniquement en mémoire**, pas dans le fichier produit. Les vérifications comparent les IDs et la chaîne du snapshot avant/après erreur/annulation ; l’export JSON reste basé sur l’ancien historique.
+- `git diff --check` réussi ; pas de vendor, lock, dépendance, configuration, rapport généré ou vraie donnée Trello ajouté.
+
+Écart motivé au plan initial : ne pas arrêter à un ID connu ; la fixture multi-page au même instant démontre que cela peut omettre des ajouts. Toute la fenêtre delta est désormais paginée ; l’ordre existant et celui des ajouts ne sont pas retriés. Voir journal PLAN-001.
+
+Limites inchangées : aucun appel live, navigateur épinglé/Firefox/Safari non exécutés, aucune validation Pages/publication ; le stockage honnête et les autres contrats restent à implémenter. PLAN-002 est le prochain lot prêt, pas une correction comprise dans ces résultats.

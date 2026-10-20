@@ -45,6 +45,10 @@ Preuves : `index.html:995–1019`, `1385–1439`, `1584–1654`, `1660–1769`, 
 
 Le test `tests/app.spec.js:33–44,197–212` ignore `since/before` et renvoie toujours les 12 anciennes actions ; il exerce précisément le cas qui fonctionne. Autres risques liés à la même frontière : curseur absent et garde-fou MAX_PAGES conduisent à un succès tronqué (`1648–1653`) ; absence de détection de curseur répété. **PLAN-001** : acquisition candidate et fusion gouvernée par le mode demandé, pas par un détail de pagination.
 
+**Suivi 2026-10-20 (PLAN-001, avant correction) :** les régressions confirment F01 et montrent qu’un ID connu en page 1 ne garantit pas l’absence de nouvelles actions au même instant en page 2. Le plan est corrigé pour parcourir toute la fenêtre delta ; le constat historique ci-dessus reste conservé.
+
+**Résultat du lot, 2026-10-20 :** PLAN-001 corrige l’union delta, la publication des candidats et les sorties de pagination tronquées. 36/36 tests passent localement, dont 17 régressions du lot ; preuves et limites dans le plan et le protocole. F02 et les autres constats restent ouverts.
+
 ### F02 — P1 : « Sauvegardé » ne signifie pas durable (V/O)
 
 `Store.set` retourne `true` après son fallback mémoire (`1417–1429`). `persistData` en déduit une sauvegarde réussie et affecte `savedAtIso` (`2182–2200`). Reproduction avec getter localStorage levant SecurityError : `ok:true`, label **Sauvegardé**, timestamp présent. Après fermeture, cette mémoire disparaît. Le seuil `payload.length` est un nombre d'unités UTF-16, pas des octets ni le quota disponible d'origine ; bundle Chart.js/thème/objectif utilisent aussi cette origine. `Store.del` ignore l'échec mais `clearSaved` annonce l'effacement (`2250–2256`).

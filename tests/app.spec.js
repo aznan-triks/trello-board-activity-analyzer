@@ -38,8 +38,12 @@ const actions = Array.from({ length: 12 }, (_, i) => ({
 }));
 async function mockApi(page, status = 200) {
   await page.route('https://api.trello.com/**', route => {
-    const path = new URL(route.request().url()).pathname;
-    const data = path.endsWith('/actions') ? actions : path.endsWith('/members') ? [{ id: 'member-1', fullName: 'Camille Martin' }] : { id: '1234567890abcdef12345678', name: 'Tableau de test' };
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const windowActions = actions.filter(a => !url.searchParams.has('since') || a.date >= url.searchParams.get('since'));
+    const cursor = windowActions.findIndex(a => a.id === url.searchParams.get('before'));
+    const batch = windowActions.slice(cursor + 1, cursor + 1 + Number(url.searchParams.get('limit') || 1000));
+    const data = path.endsWith('/actions') ? batch : path.endsWith('/members') ? [{ id: 'member-1', fullName: 'Camille Martin' }] : { id: '1234567890abcdef12345678', name: 'Tableau de test' };
     return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(status === 200 ? data : { message: 'Invalid token' }) });
   });
 }

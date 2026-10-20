@@ -195,10 +195,19 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
   pagination, dédoublonnage par id.
 - **Annulation** : bouton « ✕ Annuler » pendant le chargement (`AbortController`
   câblé jusqu'au niveau requête) — message dédié, retour au setup propre.
-- **Rafraîchissement Δ (« ⤒ Delta »)** : `since` = dernière action connue + arrêt
-  anticipé dès qu'une page retombe sur des id sauvegardés ; repli automatique
-  sur un rechargement complet pour les sauvegardes v1 sans ids (les payloads
-  écrits depuis la v1 ne contenaient pas `i` — ils restent lisibles à 100 %).
+- **Rafraîchissement Δ (« ⤒ Delta »)** : `since` = dernière action connue moins
+  une seconde ; toutes les pages de cette fenêtre sont parcourues et les ajouts
+  sont fusionnés par ID avec l’historique conservé, même si le delta est vide.
+  L’ordre reçu des ajouts et l’ordre antérieur sont préservés, sans tri global.
+  Le delta est append-only : pour réconcilier les modifications ou suppressions
+  anciennes, utiliser le rechargement complet. Repli automatique sur ce mode
+  pour les sauvegardes v1 sans IDs, toujours lisibles.
+- **Collecte atomique (PLAN-001)** : une page pleine sans curseur valide, un
+  curseur répété ou le garde-fou atteint sans fin de pagination produisent une
+  erreur « Historique incomplet ». Erreur et annulation conservent les données
+  et la sauvegarde précédentes ; un rechargement complet vide réussi peut en
+  revanche remplacer l’historique par zéro action. Cela garantit la terminaison
+  de la pagination reçue, pas l’exhaustivité de l’historique retenu par Trello.
 - **Filtres** : par membres (recherche + chips) et plage de dates — tout le
   dashboard se recalcule sur le sous-ensemble ; la sauvegarde reste les données
   complètes ; état vide = comportement v1 exact.

@@ -1,6 +1,6 @@
 # PLAN-002 — Dire la vérité sur la sauvegarde et retirer les secrets sur refus
 
-**Statut : dépendant d'un autre plan — PLAN-001 · Priorité : P1 — Majeur.** Risque de perte à la fermeture et consentement non effectif, indépendant d'une éventuelle migration de stockage.
+**Statut : prêt à exécuter — PLAN-001 validé localement le 2026-10-20 ; non démarré · Priorité : P1 — Majeur.** Risque de perte à la fermeture et consentement non effectif, indépendant d'une éventuelle migration de stockage.
 
 ## 1. Problème et preuves
 

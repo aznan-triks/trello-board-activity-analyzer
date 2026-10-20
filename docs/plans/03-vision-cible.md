@@ -1,6 +1,6 @@
 # Vision cible : observer et partager sans tromper
 
-Statut : **proposé**, fondé sur [l'audit](01-etat-des-lieux.md) et [les comparaisons](02-recherche-et-options.md). Aucune fonctionnalité n'est annoncée comme livrée.
+Statut : **cible en cours de réalisation** (2026-10-20 : partie acquisition C1 validée localement par PLAN-001 ; régulation/attentes C1 restent PLAN-005 ; autres contrats non implémentés), fondée sur [l'audit](01-etat-des-lieux.md) et [les comparaisons](02-recherche-et-options.md). Le détail des preuves et limites figure dans les plans individuels.
 
 ## Produit recommandé
 
