@@ -21,7 +21,7 @@ Ce dossier conserve les constats initiaux et suit désormais leur exécution. Le
 | [PLAN-004](tasks/PLAN-004-csv.md) | P1 | validé localement, tableur non vérifié (2026-10-21) | CSV destiné au tableur : cellules textuelles hostiles neutralisées |
 | [PLAN-005](tasks/PLAN-005-reseau.md) | P2 | validé localement (2026-10-21) | Débit réellement régulé ; attentes annulables ; Retry-After respecté |
 | [PLAN-006](tasks/PLAN-006-frontieres.md) | P1 | validé localement (2026-10-21) | Sessions et rapports invalides refusés sans mutation ni effacement |
-| [PLAN-007](tasks/PLAN-007-calendrier.md) | P2 | en cours (2026-10-21) | Jours, semaines et heures cohérents dans le fuseau local déclaré |
+| [PLAN-007](tasks/PLAN-007-calendrier.md) | P2 | validé localement (2026-10-21) | Jours, semaines et heures cohérents dans le fuseau local déclaré |
 | [PLAN-008](tasks/PLAN-008-indicateurs.md) | P2 | dépendant d'un autre plan : 007 | Comparaisons et briefing descriptifs, sans surinterprétation du volume |
 | [PLAN-009](tasks/PLAN-009-accessibilite.md) | P2 | dépendant d'un autre plan : 008 | Données des graphiques disponibles sans vision ni survol |
 
