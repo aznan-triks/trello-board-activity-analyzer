@@ -16,7 +16,7 @@ Ce dossier conserve les constats initiaux et suit désormais leur exécution. Le
 | Plan | Priorité | Statut courant | Résultat attendu |
 |---|---|---|---|
 | [PLAN-001](tasks/PLAN-001-delta.md) | P0 | validé localement le 2026-10-20 (`298da40`, 36/36, Chromium alternatif) | Delta sans perte d'historique ; pagination incomplète en échec explicite |
-| [PLAN-002](tasks/PLAN-002-stockage.md) | P1 | en cours (2026-10-21) | Statut de persistance honnête et retrait effectif des secrets mémorisés |
+| [PLAN-002](tasks/PLAN-002-stockage.md) | P1 | validé localement (2026-10-21) | Statut de persistance honnête et retrait effectif des secrets mémorisés |
 | [PLAN-003](tasks/PLAN-003-portee-exports.md) | P1 | dépendant d'un autre plan : 002 | Exports limités à la vue courante, cohérents et réexportables |
 | [PLAN-004](tasks/PLAN-004-csv.md) | P1 | dépendant d'un autre plan : 003 | CSV destiné au tableur : cellules textuelles hostiles neutralisées |
 | [PLAN-005](tasks/PLAN-005-reseau.md) | P2 | prérequis 001 satisfait ; différé après le jalon P1 | Débit réellement régulé ; attentes annulables ; Retry-After respecté |

@@ -136,3 +136,7 @@ Implémentation poussée : `298da4024ae182546de0fb94ad439f0e6cf9a527`. Après ga
 ### PLAN-002 — 2026-10-21 · en cours
 
 Prérequis PLAN-001 validé, branche autorisée active, arbre propre. Relecture Store et de tous ses consommateurs ; aucune migration requise. Tests de panne et consentement à ajouter avant correction.
+
+### PLAN-002 — 2026-10-21 · validé localement
+
+Implémentation 6298d9d. Avant correction : 10/10 tests ciblés échouaient ; après : 10/10 passent (6,5 s), puis test de sérialisation ajouté. Suite complète : 47/47 passent (48,3 s), commande LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Tous consommateurs Store relus (cache, thème, objectif, session), sans changement de leur signature publique ; suppression du faux plafond UTF-16. SecurityError, quota, rechargement ancien snapshot, date, retrait depuis démo, hôte succès/rejet et changements rapides vérifiés. Aucun test live ni navigateur épinglé ; Chromium alternatif 153. PLAN-003 et PLAN-006 ont leur prérequis satisfait ; prochain lot 003.
