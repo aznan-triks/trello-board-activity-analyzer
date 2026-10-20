@@ -98,3 +98,10 @@ Première passe après correction : **14/14 régressions passent (13,6 s)**. Ajo
 - Appelants boutons, `startAnalysis`, API `tba.refreshData` et alias globaux relus, signatures inchangées. Tests normaux couvrent reprise, démo, exports et HTML autonome. `git diff --check` réussi.
 
 **Limites :** validation sur Chromium alternatif 153, pas le Chromium épinglé ; aucune API Trello live, garantie de rétention, publication Pages, Firefox/Safari. Le statut de stockage durable reste le défaut connu de PLAN-002 ; ne pas confondre conservation de la copie persistée lors d’un échec réseau et garantie de durabilité générale. Aucun autre plan implémenté. Le prochain lot est PLAN-002, dont le prérequis est satisfait.
+
+### Commits et point de reprise
+
+- Implémentation et preuves : `298da4024ae182546de0fb94ad439f0e6cf9a527` (2026-10-20), poussé sur la branche autorisée. Aucun merge ni publication.
+- Relecture du workflow : CI déclenchée sur PR/push main/manuellement, pas sur ce push de branche ; `gh run list --branch arena/e47875e6-trello-board-activity-analyzer` retourne `[]`. Aucune CI annoncée verte.
+- Ajustement final des tests : les trois tests du harness MAX_PAGES local sont explicitement ignorés lorsque `BASE_URL` est fourni, pour ne jamais substituer un HTML local à un site publié. Les autres tests restent applicables. Revalidation locale finale : **36/36 passent (46,5 s)** ; `git diff --check` et syntaxe des tests valides.
+- **Reprise : PLAN-002 uniquement**, prêt mais non démarré. Relire son plan et tous les consommateurs Store ; reproduire SecurityError/QuotaExceededError, suppression refusée et retrait des faux secrets, puis corriger le résultat durable/volatile sans migration de stockage. PLAN-005 attend toujours après le jalon P1 selon l’ordre recommandé. Pas de travail partiel caché dans ce lot.

@@ -12,6 +12,7 @@ const fullPage = prefix => Array.from({ length: 1000 }, (_, i) => action(prefix 
 
 async function setup(page, maxPages) {
   if (maxPages) {
+    test.skip(!!process.env.BASE_URL, 'Harness du code local uniquement : ne pas substituer le HTML d’un site distant.');
     // Harness uniquement en mémoire : aucun réglage produit ni fichier généré.
     const html = await fs.readFile(path.join(__dirname, '../index.html'), 'utf8');
     expect(html).toContain('const MAX_PAGES = 1000;');
