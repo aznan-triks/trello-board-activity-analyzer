@@ -152,3 +152,7 @@ Implémentation 76b1857. Avant correction : 4/4 régressions échouaient. Après
 ### PLAN-004 — 2026-10-21 · en cours
 
 Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants et SELF_SRC relus ; neutralisation tableur uniquement, JSON/XLSX exacts.
+
+### PLAN-004 — 2026-10-21 · validé localement, tableur non vérifié
+
+Implémentation 56c2418. 2 régressions rouges avant correction puis 2/2 ciblées (2,3 s) ; suite complète 55/55 (55,2 s). Même commande npm test et Chromium alternatif. Parseur de test RFC multiline, 15 préfixes hostiles et cas français, octets CSV direct/ZIP/offline, JSON/XLSX exacts sans formule vérifiés. Pas de tableur installé (command -v libreoffice/soffice vide) : vérification manuelle et universalité explicitement non revendiquées. Aucun mode raw ajouté. Prochain lot 006.

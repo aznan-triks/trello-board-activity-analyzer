@@ -1,6 +1,6 @@
 # PLAN-004 — Neutraliser les cellules dangereuses du CSV tableur
 
-**Statut : en cours (2026-10-21) · Priorité : P1 — Majeur.** Une carte ou un membre peut fournir du texte interprété par un tableur ; correction locale partagée et sans dépendance.
+**Statut : validé localement, tableur non vérifié (2026-10-21) · Priorité : P1 — Majeur.** Une carte ou un membre peut fournir du texte interprété par un tableur ; correction locale partagée et sans dépendance.
 
 ## 1. Problème et preuves
 
@@ -65,3 +65,7 @@ F04/F12, [R2 et comparaison CSV](../02-recherche-et-options.md), vision C3, road
 ## Exécution — 2026-10-21 · en cours
 
 Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants et SELF_SRC relus ; neutralisation tableur uniquement, JSON/XLSX exacts.
+
+## Exécution — 2026-10-21 · validé localement, tableur non vérifié
+
+Implémentation 56c2418. 2 régressions rouges avant correction puis 2/2 ciblées (2,3 s) ; suite complète 55/55 (55,2 s). Même commande npm test et Chromium alternatif. Parseur de test RFC multiline, 15 préfixes hostiles et cas français, octets CSV direct/ZIP/offline, JSON/XLSX exacts sans formule vérifiés. Pas de tableur installé (command -v libreoffice/soffice vide) : vérification manuelle et universalité explicitement non revendiquées. Aucun mode raw ajouté. Prochain lot 006.
