@@ -1,6 +1,6 @@
 # PLAN-003 — Un périmètre de données identique dans tous les exports
 
-**Statut : dépendant d'un autre plan — PLAN-002 · Priorité : P1 — Majeur.** Risque de diffusion de données exclues par les filtres et JSON contradictoire, démontrés. Rupture de comportement HTML décidée et à annoncer.
+**Statut : en cours (2026-10-21) · Priorité : P1 — Majeur.** Risque de diffusion de données exclues par les filtres et JSON contradictoire, démontrés. Rupture de comportement HTML décidée et à annoncer.
 
 ## 1. Problème / preuves
 
@@ -62,3 +62,7 @@ Tests précis des données et pas seulement magic bytes, suite complète verte, 
 ## 13. Sources
 
 F03/F12, [comparaison portée](../02-recherche-et-options.md), vision C3, roadmap J2, PLAN-004/006.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 002 satisfait (47 tests verts). Relecture de tous les constructeurs, capture, ZIP, briefing et bootEmbedded ; changement de portée HTML intentionnel, pas de nouveau format.

@@ -691,7 +691,7 @@
           <button class="dash-btn" id="btn-export" aria-haspopup="true" aria-expanded="false">⤓ Export ▾</button>
           <span class="menu-pop" id="export-menu" role="menu">
             <span class="muted">Rapports</span>
-            <button id="exp-html" role="menuitem" title="Page HTML autonome : interactive et utilisable hors-ligne (filtres, tris, graphiques, re-exports)">Rapport HTML interactif (hors-ligne)</button>
+            <button id="exp-html" role="menuitem" title="Sous-ensemble visible uniquement ; pour tout exporter, effacer les filtres avant l’export">Rapport HTML interactif (hors-ligne)</button>
             <button id="exp-pdf" role="menuitem" title="Document A4 multi-pages : indicateurs, graphiques, heatmap vectorielle, détail membres">Rapport PDF (A4)</button>
             <button id="exp-md" role="menuitem" title="Synthèse et tableaux au format Markdown (wiki, dépôt)">Rapport Markdown</button>
             <button id="exp-zip" role="menuitem" title="HTML + PDF + JSON + CSV + Excel + Markdown + toutes les PNG">Archive ZIP complète</button>
@@ -1050,7 +1050,6 @@
   const RATE_WRITE_RESERVE_MS = 18000;
   /** Intervalle minimum estimé entre deux écritures. */
   const WRITE_INTERVAL_MS = 600;
-  /** Payload de sauvegarde max (limite de stockage ~5 Mo, marge 4 %). */
   /** Locale d'affichage. */
   const LS = 'fr-FR';
   /** Nombre max de membres tracés dans les tendances. */
@@ -1776,7 +1775,9 @@
   function validBoardId(id) { return /^(?:[0-9a-fA-F]{24}|[a-zA-Z0-9]{8})$/.test(id); }
 
   /** Liste des actions visibles après filtres membres/période (identique à la liste complète si aucun filtre). */
+  let exportSnapshot = null;
   function getVisible() {
+    if (exportSnapshot) return exportSnapshot.actions;
     const f = state.filter;
     const noMembers = f.members.size === 0, noRange = !f.fromMs && !f.toMs;
     const q = String(f.query || '').trim().toLowerCase();
@@ -3344,12 +3345,15 @@
 
   /** Construit le paquet JSON d'analyse (stats + données brutes, sans identifiants). */
   function buildAnalysisJson() {
-    const st = state.lastStats;
+    const list = getVisible();
+    const st = computeStats(list);
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     return JSON.stringify({
       app: 'trello-board-activity-analyzer', version: APP_VERSION,
       exportedAt: new Date().toISOString(),
-      board: state.board,
-      filters: { members: Array.from(state.filter.members), from: st ? new Date(st.oldest).toISOString() : null, to: st ? new Date(st.newest).toISOString() : null },
+      board: exportBoard(),
+      filters: { members: Array.from(f.members), from: f.fromMs == null ? null : new Date(f.fromMs).toISOString(), to: f.toMs == null ? null : new Date(f.toMs).toISOString(), fromMs: f.fromMs, toMs: f.toMs, query: String(f.query || '') },
+      observedRange: { from: st.total ? new Date(st.oldest).toISOString() : null, to: st.total ? new Date(st.newest).toISOString() : null },
       stats: st ? {
         total: st.total, activeMembers: st.memberCounts.size, comments: st.comments,
         cardCreations: st.creates, weekendShare: st.total ? +(st.weekend / st.total * 100).toFixed(1) : 0,
@@ -3357,24 +3361,29 @@
         byGroup: Object.fromEntries(st.typeCounts),
         timelineByWeek: periodSeries(st.weekCounts), timelineByMonth: periodSeries(st.monthCounts)
       } : null,
-      actions: state.actions.map(a => ({ id: a.id, type: a.type, date: a.date, member: a.memberName, card: a.cardName }))
+      actions: list.map(a => ({ id: a.id, type: a.type, date: a.date, member: a.memberName, card: a.cardName }))
     }, null, 2);
   }
 
   function exportCsv() {
+    return withExport(async () => {
     const list = getVisible();
     download(buildActionsCsv(list), 'text/csv;charset=utf-8',
       fileSlug(state.board && state.board.name) + '-actions-' + todayStamp() + '.csv');
     toast(list.length.toLocaleString() + ' actions exportées (CSV).', 'success');
+    });
   }
 
   function exportJson() {
+    return withExport(async () => {
     download(buildAnalysisJson(), 'application/json',
       fileSlug(state.board && state.board.name) + '-analyse-' + todayStamp() + '.json');
-    toast('Analyse complète exportée (JSON).', 'success');
+    toast('Vue courante exportée (JSON).', 'success');
+    });
   }
 
   function exportPng() {
+    return withExport(async () => {
     const c = state.charts.timeline;
     if (!c || !c.toBase64Image) { toast('Timeline indisponible pour l\'export PNG.', 'error'); return; }
     let url;
@@ -3383,6 +3392,7 @@
     catch (e) { log.error('toBase64Image :', e); toast('Export PNG impossible : canvas non exportable.', 'error'); return; }
     download(url, 'image/png', fileSlug(state.board && state.board.name) + '-timeline-' + todayStamp() + '.png', true);
     toast('PNG de la timeline exporté.', 'success');
+    });
   }
 
   /* ═══════════════════ 15b. MODÈLE DE RAPPORT (partagé) ═══════════════════ */
@@ -3427,14 +3437,14 @@
       .map(e => ({ name: e[0], count: e[1] }))
       .sort((a, b) => b.count - a.count).slice(0, 10);
 
-    const f = state.filter;
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     const q = String(f.query || '').trim();
     const filterActive = f.members.size > 0 || f.fromMs || f.toMs || !!q;
 
     const model = {
       app: 'trello-board-activity-analyzer',
       version: APP_VERSION,
-      boardName: state.board && state.board.name != null ? String(state.board.name) : 'Tableau',
+      boardName: model0BoardName(),
       boardId: (state.creds && state.creds.boardId) || (state.board && state.board.id) || '',
       exportedAt: new Date().toISOString(),
       generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -3448,7 +3458,7 @@
       filters: {
         active: !!filterActive,
         members: Array.from(f.members),
-        fromMs: f.fromMs, toMs: f.toMs,
+        fromMs: f.fromMs, toMs: f.toMs, query: q,
         label: filterActive
           ? [
               f.members.size ? 'membres : ' + Array.from(f.members).join(', ') : '',
@@ -4360,25 +4370,26 @@
   }
 
   /**
-   * Payload embarqué dans l'export HTML — TOUTES les actions (format slim v3),
-   * l'état des filtres et des toggles. Jamais d'identifiants API.
+   * Payload embarqué : sous-ensemble visible uniquement, provenance inerte,
+   * filtres initiaux vides. Jamais d'identifiants API.
    */
   function embeddedPayload() {
-    const f = state.filter;
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     return {
       kind: 'trello-activity-export-v1',
       app: 'trello-board-activity-analyzer',
       version: APP_VERSION,
-      board: state.board ? { name: state.board.name, id: state.board.id || (state.creds && state.creds.boardId) || '' } : null,
+      board: exportBoard(),
       exportedAt: new Date().toISOString(),
       gran: state.currentGran,
       heatMetric: state.heatMetric,
-      filter: {
+      filter: { members: [], fromMs: null, toMs: null, query: '' },
+      provenance: { label: 'Sous-ensemble exporté', filters: {
         members: Array.from(f.members),
         fromMs: f.fromMs, toMs: f.toMs,
         query: String(f.query || '')
-      },
-      actions: state.actions.map(slimAction)
+      } },
+      actions: getVisible().map(slimAction)
     };
   }
 
@@ -4395,7 +4406,7 @@
     const name = model0BoardName();
     const banner = 'Export hors-ligne — généré le ' + new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
       ' · Trello Board Activity Analyzer v' + APP_VERSION +
-      ' · données figées : filtres, tris, granularité et re-exports restent interactifs.';
+      ' · sous-ensemble exporté de la vue courante ; effacer les filtres ne peut pas retrouver les actions exclues.';
     return '<!DOCTYPE html>\n<html lang="fr">\n<head>\n' +
       '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
       '<meta name="color-scheme" content="light dark">\n' +
@@ -4411,8 +4422,13 @@
   }
 
   /** Nom du tableau pour les titres d'export (sans état mutable). */
+  function exportBoard() {
+    const b = exportSnapshot ? exportSnapshot.board : state.board;
+    return b ? { name: String(b.name || 'Tableau'), id: typeof b.id === 'string' ? b.id : '' } : null;
+  }
   function model0BoardName() {
-    return state.board && state.board.name != null ? String(state.board.name) : 'Tableau';
+    const b = exportBoard();
+    return b ? b.name : 'Tableau';
   }
 
   /** Heatmap HTML statique (volume, tooltips) — copie fidèle du rendu live. */
@@ -4535,11 +4551,28 @@
   async function withExport(fn) {
     if (exportBusy) { toast('Export déjà en cours…'); return; }
     exportBusy = true;
-    try { await fn(); }
+    const controls = $$('button,input,select,textarea').map(el => [el, el.disabled]);
+    const dash = $('dashboard'), wasInert = dash.inert, wasCapture = captureMode;
+    try {
+      const f = state.filter;
+      exportSnapshot = { actions: getVisible().map(a => ({ ...a })), board: exportBoard(),
+        filter: { ...f, members: new Set(f.members) } };
+      controls.forEach(([el]) => { el.disabled = true; });
+      dash.inert = true;
+      captureMode = true;
+      flushRerender(); // annule le debounce et reconstruit les canvas sans animation.
+      await fn();
+    }
     catch (e) {
       log.error('Échec de l’export :', e);
       toast('Export impossible : ' + String((e && e.message) || e).slice(0, 90), 'error');
-    } finally { exportBusy = false; }
+    } finally {
+      exportSnapshot = null;
+      captureMode = wasCapture;
+      controls.forEach(([el, disabled]) => { el.disabled = disabled; });
+      dash.inert = wasInert;
+      exportBusy = false;
+    }
   }
 
   /** Nom de fichier d'export : {slug}-{kind}-{date}.{ext}. */
@@ -4660,7 +4693,7 @@
           'Contenu :\r\n' +
           '  rapport.html    rapport interactif autonome (ouvrir dans un navigateur, hors-ligne)\r\n' +
           '  rapport.pdf     rapport A4 (indicateurs, graphiques, heatmap, membres)\r\n' +
-          '  analyse.json    analyse complète (machine)\r\n' +
+          '  analyse.json    analyse de la vue exportée (machine)\r\n' +
           '  actions.csv     actions exportées (CSV UTF-8, Excel)\r\n' +
           '  synthese.md     synthèse et tableaux (Markdown)\r\n' +
           '  membres.xlsx    classeur 3 feuilles (Synthèse / Membres / Actions)\r\n' +
@@ -4697,7 +4730,7 @@
       if (bannerEl) {
         bannerEl.textContent = 'Export hors-ligne — généré le ' +
           (p.exportedAt ? new Date(p.exportedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?') +
-          ' · v' + (p.version || APP_VERSION) + ' · données figées : filtres, tris, graphiques et re-exports restent interactifs.';
+          ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify(p.provenance.filters) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
       }
       state.board = p.board || { name: 'Tableau' };
       state.actions = normalizeActions((p.actions || []).map(expandActionKeepId));
@@ -4814,6 +4847,7 @@
   /** Raccourcis du dashboard : E export · P PDF · H HTML · G granularité · T thème · / filtre · ? aide. */
   function wireShortcuts() {
     document.addEventListener('keydown', e => {
+      if (exportBusy) return;
       if (isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const dash = $('dashboard');
@@ -4833,6 +4867,7 @@
       }
     });
     document.addEventListener('keydown', e => {
+      if (exportBusy) return;
       if (!(e.ctrlKey || e.metaKey) || (e.key !== 'k' && e.key !== 'K')) return;
       const dash = $('dashboard');
       if (!dash || getComputedStyle(dash).display === 'none') return;

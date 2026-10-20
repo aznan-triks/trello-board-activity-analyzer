@@ -98,9 +98,13 @@ jamais une sauvegarde existante et ses exports portent « démo » dans le nom d
 ## Exports (v5) — menu « ⤓ Export »
 
 Les exports respectent la **vue courante** (filtres membres/dates inclus) ; le
-rapport HTML embarque en plus **toutes** les actions avec l'état des filtres —
-on peut donc les desserrer dans le rapport. Aucun export n'inclut jamais vos
-identifiants API.
+rapport HTML embarque désormais **uniquement ce sous-ensemble**, avec filtres
+initiaux vides et provenance des filtres source affichée. **Rupture de comportement
+(PLAN-003)** : effacer les filtres dans un rapport ne retrouve plus les actions
+exclues. Pour tout exporter, effacer les filtres **dans l’application source**.
+Les anciens rapports déjà partagés conservent leur ancien périmètre ; ce changement
+ne peut pas le retirer rétroactivement. Les noms de tableau/membres/cartes restants
+ne sont pas anonymisés. Aucun export n’inclut les identifiants API.
 
 | Format | Fichier | Contenu |
 |---|---|---|

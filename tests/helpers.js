@@ -12,3 +12,18 @@ async function seed(page) {
   });
 }
 module.exports = { open, seed, expect };
+function unzip(buffer) {
+  const entries = {};
+  let p = 0;
+  while (p + 30 <= buffer.length && buffer.readUInt32LE(p) === 0x04034b50) {
+    const method = buffer.readUInt16LE(p+8), size = buffer.readUInt32LE(p+18);
+    const nl = buffer.readUInt16LE(p+26), extra = buffer.readUInt16LE(p+28);
+    const name = buffer.subarray(p+30,p+30+nl).toString();
+    const start = p+30+nl+extra;
+    const raw = buffer.subarray(start,start+size);
+    entries[name] = method === 0 ? raw : require('node:zlib').inflateRawSync(raw);
+    p = start+size;
+  }
+  return entries;
+}
+module.exports.unzip = unzip;
