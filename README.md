@@ -396,3 +396,14 @@ BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm test
 En cas de régression, révoquer le changement par une pull request de revert
 vers `main`, puis attendre la nouvelle publication Pages et sa vérification
 automatique.
+
+### CSV destiné au tableur (PLAN-004)
+
+Les cellules textuelles à préfixe dangereux (=, +, -, @, variantes pleine largeur,
+contrôles et espaces initiaux) sont citées et préfixées d’une tabulation **dans**
+le champ CSV. Le texte original suit sans suppression. Cela change volontairement
+la représentation CSV, pas les données sources. Utiliser JSON pour les chaînes
+exactes ou XLSX (cellules typées texte) pour un classeur. BOM UTF-8 et CRLF conservés.
+Cette protection n’est pas une garantie universelle : resauvegarde et réouverture
+par un logiciel tiers peuvent la transformer. Excel/LibreOffice non disponibles
+ici : vérification automatisée des octets et du parseur, pas test manuel tableur.

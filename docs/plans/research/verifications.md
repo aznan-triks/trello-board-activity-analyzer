@@ -148,3 +148,7 @@ Prérequis 002 satisfait (47 tests verts). Relecture de tous les constructeurs, 
 ### PLAN-003 — 2026-10-21 · validé localement
 
 Implémentation 76b1857. Avant correction : 4/4 régressions échouaient. Après : 6 tests ciblés, répétés trois fois (18/18, 17,4 s), et suite complète 53/53 (59,8 s). Commande standard de session : LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Contrôles JSON/CSV/XLSX/ZIP STORE décodés, HTML offline puis reset/réexport, vue vide, debounce, verrouillage/restitution disabled, snapshot pendant attente et repli statique forcé. Tests d’attente stabilisés en neutralisant le préchauffage idle uniquement dans leurs pages de test ; une assertion de texte de carte dans le rapport statique (cartes rendues en images) remplacée par total/membre réellement présents. API publiques conservées. Aucun live/Pages/navigateur épinglé. Prochain lot 004.
+
+### PLAN-004 — 2026-10-21 · en cours
+
+Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants et SELF_SRC relus ; neutralisation tableur uniquement, JSON/XLSX exacts.

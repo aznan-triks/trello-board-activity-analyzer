@@ -1,6 +1,6 @@
 # PLAN-004 — Neutraliser les cellules dangereuses du CSV tableur
 
-**Statut : dépendant d'un autre plan — PLAN-003 · Priorité : P1 — Majeur.** Une carte ou un membre peut fournir du texte interprété par un tableur ; correction locale partagée et sans dépendance.
+**Statut : en cours (2026-10-21) · Priorité : P1 — Majeur.** Une carte ou un membre peut fournir du texte interprété par un tableur ; correction locale partagée et sans dépendance.
 
 ## 1. Problème et preuves
 
@@ -61,3 +61,7 @@ Cause corrigée une seule fois, fixtures/auto-test et suite verts ; compatibilit
 ## 13. Sources
 
 F04/F12, [R2 et comparaison CSV](../02-recherche-et-options.md), vision C3, roadmap J2, PLAN-003.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants et SELF_SRC relus ; neutralisation tableur uniquement, JSON/XLSX exacts.

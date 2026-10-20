@@ -18,7 +18,7 @@ Ce dossier conserve les constats initiaux et suit désormais leur exécution. Le
 | [PLAN-001](tasks/PLAN-001-delta.md) | P0 | validé localement le 2026-10-20 (`298da40`, 36/36, Chromium alternatif) | Delta sans perte d'historique ; pagination incomplète en échec explicite |
 | [PLAN-002](tasks/PLAN-002-stockage.md) | P1 | validé localement (2026-10-21) | Statut de persistance honnête et retrait effectif des secrets mémorisés |
 | [PLAN-003](tasks/PLAN-003-portee-exports.md) | P1 | validé localement (2026-10-21) | Exports limités à la vue courante, cohérents et réexportables |
-| [PLAN-004](tasks/PLAN-004-csv.md) | P1 | dépendant d'un autre plan : 003 | CSV destiné au tableur : cellules textuelles hostiles neutralisées |
+| [PLAN-004](tasks/PLAN-004-csv.md) | P1 | en cours (2026-10-21) | CSV destiné au tableur : cellules textuelles hostiles neutralisées |
 | [PLAN-005](tasks/PLAN-005-reseau.md) | P2 | prérequis 001 satisfait ; différé après le jalon P1 | Débit réellement régulé ; attentes annulables ; Retry-After respecté |
 | [PLAN-006](tasks/PLAN-006-frontieres.md) | P1 | dépendant d'un autre plan : 002 | Sessions et rapports invalides refusés sans mutation ni effacement |
 | [PLAN-007](tasks/PLAN-007-calendrier.md) | P2 | dépendant d'un autre plan : 003, 006 | Jours, semaines et heures cohérents dans le fuseau local déclaré |

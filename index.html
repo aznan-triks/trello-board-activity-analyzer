@@ -3297,10 +3297,17 @@
 
   /* ═══════════════════════════ 15. EXPORTS ════════════════════════════════ */
 
-  /** CSV RFC 4180 (pluri-ligne ok, quotes échappées). */
+  /** CSV tableur : neutralisation conservatrice puis échappement RFC 4180. */
   function csvCell(v) {
-    const s = String(v == null ? '' : v);
-    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    const original = String(v == null ? '' : v);
+    // Espaces Unicode/BOM et contrôles initiaux peuvent être ignorés par un tableur.
+    const leading = original.match(/^[\s\u0000-\u001f\u007f]*/)[0];
+    const first = original.charAt(leading.length);
+    // U+FF1D/FF0B/FF0D/FF20 : égal, plus, moins, arobase pleine largeur.
+    const dangerous = /[\u0000-\u001f\u007f]/.test(leading) ||
+      (first !== '' && '=+-@＝＋－＠'.includes(first));
+    const s = dangerous ? '\t' + original : original;
+    return dangerous || /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
   /** Déclenche un téléchargement Blob (ou data-URL) avec nettoyage différé. */
@@ -4694,7 +4701,7 @@
           '  rapport.html    rapport interactif autonome (ouvrir dans un navigateur, hors-ligne)\r\n' +
           '  rapport.pdf     rapport A4 (indicateurs, graphiques, heatmap, membres)\r\n' +
           '  analyse.json    analyse de la vue exportée (machine)\r\n' +
-          '  actions.csv     actions exportées (CSV UTF-8, Excel)\r\n' +
+          '  actions.csv     actions pour tableur (CSV UTF-8, préfixe tabulation de protection)\r\n' +
           '  synthese.md     synthèse et tableaux (Markdown)\r\n' +
           '  membres.xlsx    classeur 3 feuilles (Synthèse / Membres / Actions)\r\n' +
           '  graphiques/     chaque graphique en PNG + planche.png (vue d’ensemble)\r\n'
@@ -4970,6 +4977,7 @@
         _memberName: 'Zoé', data: { card: { name: 'Carte « X »' } }
       }]);
       t('normalizeAction', recs.length === 1 && recs[0].memberName === 'Zoé');
+      t('CSV formule neutralisée', csvCell('=1+1') === '"\t=1+1"');
       const csv = buildActionsCsv(recs);
       t('csv BOM+header', csv.charAt(0) === '\uFEFF' && csv.indexOf('id,date,type,membre,carte') === 1);
       const slim = slimAction(recs[0]), back = expandActionKeepId(slim);
