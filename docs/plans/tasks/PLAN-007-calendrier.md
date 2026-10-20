@@ -1,6 +1,6 @@
 # PLAN-007 — Un calendrier local cohérent pour tous les compteurs
 
-**Statut : dépendant d'un autre plan — PLAN-003 et PLAN-006 · Priorité : P2 — Important.** Mélange UTC/local démontré, mais sans perte de la source ; correction après le jalon de confiance.
+**Statut : en cours (2026-10-21) · Priorité : P2 — Important.** Mélange UTC/local démontré, mais sans perte de la source ; correction après le jalon de confiance.
 
 ## 1. Problème / preuves
 
@@ -64,3 +64,7 @@ Inventaire des usages temps clos, tests de frontières stables et suite verts, l
 ## 13. Sources
 
 F07/F08, [comparaison calendrier](../02-recherche-et-options.md), vision C4, roadmap J4, PLAN-003/006/008.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 003/006 validés ; inventaire des usages Date, clés, ordinaux, bornes et fenêtres effectué. Durée écoulée des moyennes conservée pour 008 ; calendrier local/dimanche déclaré, pas de sélecteur de fuseau.

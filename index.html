@@ -682,7 +682,7 @@
     <div class="demo-notice" id="demo-notice" hidden><span><strong>Mode découverte</strong> · Données fictives, aucune connexion à Trello.</span><button class="dash-btn" id="btn-demo-exit">Connecter mon tableau →</button></div>
     <div class="dash-header">
       <span class="board-name" id="d-name">—</span>
-      <span class="date-range" id="d-range">—</span>
+      <span class="date-range" id="d-range">—</span><p id="calendar-note" class="chart-sub"></p>
       <div class="dash-actions">
         <span class="save-status"><span class="save-dot" id="save-dot"></span><span id="save-label" role="status" aria-live="polite">Sauvegardé</span></span>
         <button class="dash-btn refresh" id="btn-refresh" title="Recharger toutes les actions depuis Trello">↻ Mettre à jour</button>
@@ -1227,7 +1227,7 @@
 
   /** @param {Date|number} d @returns {string} "5 janv. 2024" (format d'origine) */
   function fmtDate(d) {
-    return new Date(d).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric' });
+    return (typeof d === 'string' && /^-?\d{4,}-\d{2}-\d{2}$/.test(d) ? localDateFromKey(d) : new Date(d)).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   /** Prénom d'un nom complet (« Jean Dupont » → « Jean »), comme la v1. */
@@ -1238,7 +1238,7 @@
 
   /**
    * Clé de période — calcul identique à la v1 (semaine locale démarrant
-   * dimanche, rendue en ISO UTC ; mois en heures locales).
+   * dimanche, rendue en date civile locale ; mois local).
    * @param {Date} d date locale déjà parseée
    * @param {'week'|'month'} gran
    * @returns {string}
@@ -1248,7 +1248,7 @@
       const t = new Date(d);
       t.setDate(t.getDate() - t.getDay());
       t.setHours(0, 0, 0, 0);
-      return t.toISOString().slice(0, 10);
+      return localDateKey(t);
     }
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
@@ -1288,18 +1288,45 @@
   /** Horodatage d'une action normalisée (secours : parse de la date ISO). */
   const actionMs = a => (a.dateMs != null ? a.dateMs : Date.parse(a.date));
 
-  /** @type {Map<number,string>} jour UTC (ordinal) → 'AAAA-MM-JJ' */
   const dayKeyCache = new Map();
-  /** Date de calcul réutilisée (évite une allocation par action). */
   const _statDate = new Date();
-
-  /** Jour UTC au format ISO court, mémoïsé (toISOString coûte une allocation
-   *  + un formatage complet : une fois par jour civil, pas par action). */
+  const _civilDate = new Date();
+  const _civilUTC = new Date(0);
+  function localDateKey(d) {
+    const y = d.getFullYear();
+    return (y < 0 ? '-' + String(-y).padStart(4, '0') : String(y).padStart(4, '0')) + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function localDateFromKey(key) {
+    const parts = String(key).match(/^(-?\d+)-(\d{2})-(\d{2})$/);
+    const d = new Date(0);
+    if (!parts) return new Date(NaN);
+    d.setFullYear(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  /** Ordinal uniforme du jour CIVIL local, indépendant des journées DST de 23/25h. */
+  function civilOrdinal(ms) {
+    _civilDate.setTime(ms);
+    _civilUTC.setUTCFullYear(_civilDate.getFullYear(), _civilDate.getMonth(), _civilDate.getDate());
+    return _civilUTC.getTime() / 864e5;
+  }
   function dayKeyMs(ms) {
-    const ord = Math.floor(ms / 864e5);
+    const ord = civilOrdinal(ms);
     let k = dayKeyCache.get(ord);
-    if (k === undefined) { k = new Date(ord * 864e5).toISOString().slice(0, 10); dayKeyCache.set(ord, k); }
+    if (k === undefined) { k = localDateKey(_civilDate); dayKeyCache.set(ord, k); }
     return k;
+  }
+  function localTimezone() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'heure locale'; }
+    catch (_) { return 'heure locale'; }
+  }
+  let reportSourceTimezone = null;
+  function calendarLabel() {
+    const tz = localTimezone();
+    // shortcut: les agrégations suivent le fuseau local du lecteur, fixer un fuseau lorsque la comparaison interpostes devient une exigence
+    return 'Calendrier local : ' + tz + ' · semaine dimanche' +
+      (reportSourceTimezone && reportSourceTimezone !== tz ? ' · fuseau source : ' + reportSourceTimezone + ' ; recalcul selon le lecteur' : '');
   }
 
   /** #RRGGBB → #RRGGBBAA (alpha 0..1) pour les aires empilées. */
@@ -1758,7 +1785,8 @@
       (!has(p, 'filter') || validFilter(p.filter)) &&
       (!has(p, 'gran') || ['week', 'month'].includes(p.gran)) &&
       (!has(p, 'heatMetric') || ['count', 'share'].includes(p.heatMetric)) &&
-      (!has(p, 'exportedAt') || validDate(p.exportedAt)) && optionalString(p, 'version') &&
+      (!has(p, 'exportedAt') || validDate(p.exportedAt)) && optionalString(p, 'version') && optionalString(p, 'timezone') &&
+      (!has(p, 'weekStart') || p.weekStart === 'sunday') &&
       (!has(p, 'provenance') || (record(p.provenance) && optionalString(p.provenance, 'label') &&
         (!has(p.provenance, 'filters') || validFilter(p.provenance.filters))));
   }
@@ -1810,13 +1838,13 @@
   function getVisible() {
     if (exportSnapshot) return exportSnapshot.actions;
     const f = state.filter;
-    const noMembers = f.members.size === 0, noRange = !f.fromMs && !f.toMs;
+    const noMembers = f.members.size === 0, noRange = f.fromMs == null && f.toMs == null;
     const q = String(f.query || '').trim().toLowerCase();
     if (noMembers && noRange && !q) return state.actions;
     return state.actions.filter(a =>
       (noMembers || f.members.has(a.memberName)) &&
-      (!f.fromMs || a.dateMs >= f.fromMs) &&
-      (!f.toMs || a.dateMs <= f.toMs) &&
+      (f.fromMs == null || a.dateMs >= f.fromMs) &&
+      (f.toMs == null || a.dateMs <= f.toMs) &&
       (!q || actionHaystack(a).indexOf(q) >= 0)
     );
   }
@@ -1843,7 +1871,7 @@
       /** @type {Map<string,number>} */ cardCounts: new Map(),
       /** @type {Map<string,{comments:number,creates:number,cards:Set<string>,days:Set<number>,lastMs:number}>} */
       memberExtras: new Map(),
-      /** @type {Set<number>} */ dayOrdinals: new Set(),      // jours UTC actifs (global)
+      /** @type {Set<number>} */ dayOrdinals: new Set(),      // jours civils locaux actifs (global)
       comments: 0, creates: 0,
       weekend: 0, weekdays: 0, jour: 0, nuit: 0,
       heatMax: 0
@@ -1886,7 +1914,7 @@
       if (a.type === 'commentCard') ex.comments++;
       if (a.type === 'createCard') ex.creates++;
       if (a.cardName) ex.cards.add(a.cardName);
-      const ord = Math.floor(ms / 864e5);
+      const ord = civilOrdinal(ms);
       ex.days.add(ord);
       st.dayOrdinals.add(ord);
       if (ms > ex.lastMs) ex.lastMs = ms;
@@ -1900,7 +1928,7 @@
     return st;
   }
 
-  /** Plus longue série de jours consécutifs avec ≥1 action (à partir d'un Set d'ordinaux UTC). */
+  /** Plus longue série de jours consécutifs avec ≥1 action (à partir d'un Set d'ordinaux civils locaux). */
   function longestStreak(ordSet) {
     if (!ordSet.size) return 0;
     const arr = Array.from(ordSet).sort((a, b) => a - b);
@@ -2572,7 +2600,7 @@
     for (let d = 1; d < 7; d++) if (dow[d] < dow[qi]) qi = d;
     const quietDay = total ? DAYS[qi] : '—';
     const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const peakLabel = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    const peakLabel = ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
     const bullets = [];
     if (top) bullets.push(firstWord(top[0]) + ' porte ' + topShare + ' % des actions' + (topShare >= 55 ? ' — concentration élevée' : ''));
     if (weekDelta) bullets.push('Dernière semaine observée : ' + weekDelta.cur + ' actions' + (weekDelta.pct == null ? '' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' % vs la précédente)'));
@@ -2594,7 +2622,7 @@
     const ins = state.lastInsights;
     if (!ins) return '';
     const name = state.board && state.board.name ? state.board.name : 'Tableau';
-    return [name, ins.briefing, ''].concat(ins.bullets.map(b => '• ' + b)).concat(['', 'Trello Analyzer v' + APP_VERSION + ' — généré localement, sans identifiant.']).join('\n');
+    return [name, calendarLabel(), ins.briefing, ''].concat(ins.bullets.map(b => '• ' + b)).concat(['', 'Trello Analyzer v' + APP_VERSION + ' — généré localement, sans identifiant.']).join('\n');
   }
 
   function renderNexus(list, st) {
@@ -2613,7 +2641,7 @@
     const anom = $('nx-anomalies');
     if (anom) {
       anom.innerHTML = '<span class="nx-k">Jours atypiques</span>' + (ins.anomalies.length
-        ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(new Date(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
+        ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(localDateFromKey(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
         : '<span class="nx-quiet">Aucun pic statistique marqué</span>');
     }
     fillCompareSelects();
@@ -2666,7 +2694,7 @@
       if (a.type === 'commentCard') comments++;
       if (a.dateMs > last) last = a.dateMs;
       hours[new Date(a.dateMs).getHours()]++;
-      days.add(Math.floor(a.dateMs / 864e5));
+      days.add(civilOrdinal(a.dateMs));
     }
     let peak = 0;
     for (let h = 1; h < 24; h++) if (hours[h] > hours[peak]) peak = h;
@@ -2770,7 +2798,9 @@
       let newest = -Infinity;
       for (const a of state.actions) if (a.dateMs > newest) newest = a.dateMs;
       if (!Number.isFinite(newest) || newest < 0) return;
-      $('fl-from').value = msToLocalInput(newest - days * 864e5, false);
+      const from = new Date(newest);
+      from.setDate(from.getDate() - days);
+      $('fl-from').value = msToLocalInput(from.getTime(), false);
       $('fl-to').value = msToLocalInput(newest, true);
     }
     applyDateFilter();
@@ -2951,6 +2981,7 @@
     const oldest = st.total ? new Date(st.oldest) : new Date();
     const newest = st.total ? new Date(st.newest) : new Date();
     $('d-range').textContent = fmtDate(oldest) + ' → ' + fmtDate(newest);
+    $('calendar-note').textContent = calendarLabel();
   }
 
   /** Les 4 cartes de stats d'origine (mêmes valeurs, mêmes strings, mêmes ties). */
@@ -2962,7 +2993,7 @@
     $('s-days').textContent = 'sur ' + Math.round(days) + ' jours';
     $('s-members').textContent = String(ms.length);
     $('s-top-member').textContent = ms[0] ? '↑ ' + firstWord(ms[0][0]) : '';
-    $('s-peak-day').textContent = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    $('s-peak-day').textContent = ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
     $('s-peak-count').textContent = ds[0] ? ds[0][1] + ' actions' : '';
     $('s-avg').textContent = String(Math.round(st.total / Math.max(1, days / 7)));
   }
@@ -3255,7 +3286,7 @@
       '<span class="chip">' + esc(n) + '<button type="button" data-rm="' + esc(n) + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'
     ).join('');
     const q = String(f.query || '').trim();
-    const active = f.members.size > 0 || f.fromMs || f.toMs || !!q;
+    const active = f.members.size > 0 || f.fromMs != null || f.toMs != null || !!q;
     $('filters').style.display = state.actions.length ? 'flex' : 'none';
     $('fl-count').textContent = active
       ? state.lastList.length.toLocaleString() + ' / ' + state.actions.length.toLocaleString() + ' actions · ' +
@@ -3313,8 +3344,13 @@
   }
 
   function applyDateFilter() {
-    state.filter.fromMs = parseFilterDate('fl-from', false);
-    state.filter.toMs = parseFilterDate('fl-to', true);
+    const fromMs = parseFilterDate('fl-from', false);
+    const toMs = parseFilterDate('fl-to', true);
+    if (fromMs != null && toMs != null && fromMs > toMs) {
+      toast('Bornes de dates inversées : filtre précédent conservé.', 'error'); return;
+    }
+    state.filter.fromMs = fromMs;
+    state.filter.toMs = toMs;
     markWindow(null);
     flushRerender();
   }
@@ -3392,7 +3428,7 @@
     return JSON.stringify({
       app: 'trello-board-activity-analyzer', version: APP_VERSION,
       exportedAt: new Date().toISOString(),
-      board: exportBoard(),
+      board: exportBoard(), timezone: localTimezone(), weekStart: 'sunday',
       filters: { members: Array.from(f.members), from: f.fromMs == null ? null : new Date(f.fromMs).toISOString(), to: f.toMs == null ? null : new Date(f.toMs).toISOString(), fromMs: f.fromMs, toMs: f.toMs, query: String(f.query || '') },
       observedRange: { from: st.total ? new Date(st.oldest).toISOString() : null, to: st.total ? new Date(st.newest).toISOString() : null },
       stats: st ? {
@@ -3480,7 +3516,7 @@
 
     const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     const q = String(f.query || '').trim();
-    const filterActive = f.members.size > 0 || f.fromMs || f.toMs || !!q;
+    const filterActive = f.members.size > 0 || f.fromMs != null || f.toMs != null || !!q;
 
     const model = {
       app: 'trello-board-activity-analyzer',
@@ -3488,7 +3524,8 @@
       boardName: model0BoardName(),
       boardId: (state.creds && state.creds.boardId) || (state.board && state.board.id) || '',
       exportedAt: new Date().toISOString(),
-      generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      timezone: localTimezone(), weekStart: 'sunday',
+      generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' · ' + calendarLabel(),
       gran: state.currentGran,
       range: {
         oldestMs: st.total ? st.oldest : Date.now(),
@@ -3503,8 +3540,8 @@
         label: filterActive
           ? [
               f.members.size ? 'membres : ' + Array.from(f.members).join(', ') : '',
-              f.fromMs ? 'du ' + fmtDate(f.fromMs) : '',
-              f.toMs ? 'au ' + fmtDate(f.toMs) : '',
+              f.fromMs != null ? 'du ' + fmtDate(f.fromMs) : '',
+              f.toMs != null ? 'au ' + fmtDate(f.toMs) : '',
               q ? 'recherche : ' + q : ''
             ].filter(Boolean).join(' · ')
           : 'aucun'
@@ -3522,7 +3559,7 @@
         topMemberCount: ms[0] ? ms[0][1] : 0,
         activeDays: st.dayCounts.size,
         peakDayKey: ds[0] ? ds[0][0] : null,
-        peakDayLabel: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—',
+        peakDayLabel: ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—',
         peakDayCount: ds[0] ? ds[0][1] : 0,
         peakHour: st.peakHour, peakHourCount: st.total ? st.hours[st.peakHour] : 0,
         comments: st.comments,
@@ -3538,7 +3575,7 @@
       kpis: [
         { label: 'Total actions', value: st.total.toLocaleString(), sub: 'sur ' + Math.round(days) + ' jours' },
         { label: 'Membres actifs', value: String(ms.length), sub: ms[0] ? '↑ ' + firstWord(ms[0][0]) : '' },
-        { label: 'Jour le + actif', value: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
+        { label: 'Jour le + actif', value: ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
         { label: 'Moy. / semaine', value: String(Math.round(st.total / Math.max(1, days / 7))), sub: 'actions/semaine' },
         { label: 'Commentaires', value: st.comments.toLocaleString(), sub: st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action' },
         { label: 'Moyenne / jour', value: (st.total / Math.max(1, st.spanDays)).toFixed(1), sub: 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)' },
@@ -4422,6 +4459,7 @@
       version: APP_VERSION,
       board: exportBoard(),
       exportedAt: new Date().toISOString(),
+      timezone: localTimezone(), weekStart: 'sunday',
       gran: state.currentGran,
       heatMetric: state.heatMetric,
       filter: { members: [], fromMs: null, toMs: null, query: '' },
@@ -4776,6 +4814,7 @@
           (p.exportedAt ? new Date(p.exportedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?') +
           ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify({ members: p.provenance.filters?.members || [], fromMs: p.provenance.filters?.fromMs ?? null, toMs: p.provenance.filters?.toMs ?? null, query: p.provenance.filters?.query || '' }) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
       }
+      reportSourceTimezone = p.timezone || null;
       state.board = board;
       state.actions = actions;
       state.currentGran = p.gran === 'month' ? 'month' : 'week';

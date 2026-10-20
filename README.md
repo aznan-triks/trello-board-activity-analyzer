@@ -422,3 +422,17 @@ ou hors plage Date refusées. Une session invalide affiche « données corrompue
 et conserve ses octets et l’état précédent sans réparation/effacement automatique.
 Les noms spéciaux (`__proto__`, `constructor`) restent du texte. Cette validation
 ne rend pas sûr un fichier HTML arbitraire d’un tiers : le fichier reste exécutable.
+
+### Calendrier local (PLAN-007)
+
+Jours actifs, séries, jours de semaine, semaines et heures suivent le fuseau local
+IANA affiché ; les semaines commencent le **dimanche**. Les clés jour/semaine JSON
+sont désormais des dates civiles locales (changement intentionnel hors UTC).
+Les timestamps d’actions restent inchangés. Les fenêtres 7/30/90 jours sont des
+jours civils glissants, ancrés sur **la dernière action**, heure locale conservée,
+pas sur aujourd’hui ni sur une durée fixe de 24 h par jour au passage DST.
+Les bornes datetime-local sont inclusives à la minute ; un intervalle inversé
+conserve l’ancien filtre avec erreur explicite. Les exports déclarent le fuseau.
+Un rapport garde le fuseau source en provenance, mais recalcule selon le poste
+lecteur : si les fuseaux diffèrent, les agrégats peuvent différer ; avertissement
+affiché. Aucun sélecteur ni promesse de reproductibilité inter-fuseaux.
