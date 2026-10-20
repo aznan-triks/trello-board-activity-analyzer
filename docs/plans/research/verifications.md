@@ -168,3 +168,7 @@ Implémentation a124b1d. 7 tests ciblés échouaient avant puis passent (7,0 s),
 ### PLAN-005 — 2026-10-21 · en cours
 
 Après le jalon P1, prérequis 001 satisfait. fetchJSON privé, tous appels internes GET ; réserve écritures inactive, suppression prévue. Tests à horloge virtuelle, sans attente longue réelle.
+
+### PLAN-005 — 2026-10-21 · validé localement
+
+Implémentation 1ca6d64. 8 tests rouges avant correction puis 8 verts, 2 contrôles ajoutés ; 30/30 ciblés à répétition (18,3 s), suite complète 74/74 (1,2 min). Commande npm test sous Chromium alternatif. Harness réseau privé injecté uniquement dans la réponse HTML locale et ignoré sur BASE_URL ; horloge virtuelle pour 90/10s retries inclus (header zéro et attente explicitement observée avant avancement pour supprimer une course du test), 120s/date HTTP, auth sans retry, JSON invalide, 4 tentatives réseau/timeout, délais au-delà de setTimeout, pré-aborted sans timer/fetch. Annulations isolées <500ms réelles, parcours UI <1000ms avec tolérance justifiée (519,5ms observé sous charge), ancien snapshot intact. Export sleep sans signal toujours couvert. Aucune réserve écriture restante, aucune requête non GET, politique locale non garantie officielle. Prochain lot 007.
