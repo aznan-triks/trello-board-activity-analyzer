@@ -1,6 +1,6 @@
 # PLAN-005 — Réguler les tentatives GET et annuler les attentes
 
-**Statut : dépendant d'un autre plan — PLAN-001 · Priorité : P2 — Important.** Fiabilité importante sur gros historiques, mais aucune perte directe supérieure au P0/P1 déjà planifiés.
+**Statut : en cours (2026-10-21) · Priorité : P2 — Important.** Fiabilité importante sur gros historiques, mais aucune perte directe supérieure au P0/P1 déjà planifiés.
 
 ## 1. Problème et preuves
 
@@ -62,3 +62,17 @@ Appelants sleep/fetch revus, tests déterministes sans attente longue réelle, R
 ## 13. Sources
 
 F05, [R3/R6/R8 et comparaison réseau](../02-recherche-et-options.md), vision C1, roadmap J3, PLAN-001.
+
+## Exécution — 2026-10-21 · en cours
+
+Après le jalon P1, prérequis 001 satisfait. fetchJSON privé, tous appels internes GET ; réserve écritures inactive, suppression prévue. Tests à horloge virtuelle, sans attente longue réelle.
+
+### Mesure d’annulation et tolérance explicite
+
+Les trois tests d’attentes isolées (backoff, limiteur, pause page) gardent la
+contrainte <500 ms réelle. Le parcours UI ajoute la reconstruction synchrone de
+huit graphiques : une première suite à quatre workers a mesuré 519,5 ms, contre
+<500 ms en ciblé. Tolérance de charge de 1 000 ms retenue **pour ce seul parcours
+UI**, pas pour la résolution des attentes. Aucune attente réseau intentionnelle
+n’est ajoutée après annulation. L’horloge virtuelle ne sert pas à mesurer cette
+latence réelle (chronomètre Node).

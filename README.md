@@ -200,8 +200,11 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 ### v4 — robustesse, analyses, sécurité (toutes conservées)
 
 - **Fiabilité réseau** : timeout par requête (30 s), retries avec backoff
-  exponentiel + jitter et respect de `Retry-After` (429/5xx/réseau), fenêtre
-  glissante 90 req/10 s, réserve anti-rate-limit après écritures, garde-fou de
+  exponentiel + jitter ; `Retry-After` entier de secondes ou date HTTP future
+  respecté sans plafonnement à 30 s (429/5xx). Chaque tentative GET, retries
+  inclus, passe par une fenêtre locale de 90 requêtes/10 s **par onglet**.
+  Politique prudente, pas certification des quotas officiels ni coordination
+  inter-onglets. Attentes réseau/backoff/pagination annulables ; garde-fou de
   pagination, dédoublonnage par id.
 - **Annulation** : bouton « ✕ Annuler » pendant le chargement (`AbortController`
   câblé jusqu'au niveau requête) — message dédié, retour au setup propre.
@@ -252,7 +255,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
                   + caches de clés de période/jour et de jetons CSS
 3  LOGGER          anneau 400 entrées, redaction des secrets, never-throw
 4  STORAGE         adapter window.storage / localStorage / mémoire
-5  TRELLO CLIENT   fetchJSON (timeout, retries, limiter), pagination, since/before
+5  TRELLO CLIENT   fetchJSON GET (timeout, retries, limiter par tentative), pagination, since/before
 6  DATA STORE      normalisation, dédoublonnage, slim/expand (contrat v1)
 7  STATE           état unique + styles d'affichage d'origine
 8  STATS ENGINE    computeStats mono-passage + byPeriod/byMemberPeriod (v1)

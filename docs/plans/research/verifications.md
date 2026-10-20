@@ -164,3 +164,7 @@ Prérequis 002 et provenance 003 intégrés ; lecture des validations, expansion
 ### PLAN-006 — 2026-10-21 · validé localement
 
 Implémentation a124b1d. 7 tests ciblés échouaient avant puis passent (7,0 s), 2 contrôles complémentaires ajoutés. Suite complète finale : 64/64 (1,1 min), npm test avec Chromium alternatif 153. Sessions invalides sans mutation/suppression, legacy sans ID/nom/creds/date, noms spéciaux/prototypes, raw objets, selfTest avec query et références restaurées, 10 rapports invalides et ancien rapport, membres non array, révocation sur snapshot corrompu vérifiés. Bornes finies hors plage Date refusées car non réexportables. Mesure axe stabilisée sur toutes les surfaces animées et après deux frames ; seconde série 6/6 audits répétés (32,2 s), sans règle désactivée. Pas de lecteur d’écran manuel ni publication. Jalon prioritaire implémenté, limite tableur 004 inchangée. Prochain lot 005.
+
+### PLAN-005 — 2026-10-21 · en cours
+
+Après le jalon P1, prérequis 001 satisfait. fetchJSON privé, tous appels internes GET ; réserve écritures inactive, suppression prévue. Tests à horloge virtuelle, sans attente longue réelle.

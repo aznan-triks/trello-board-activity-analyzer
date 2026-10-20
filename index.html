@@ -1042,14 +1042,10 @@
   const RETRY_BASE_MS = 500;
   /** Plafond du backoff. */
   const RETRY_CAP_MS = 8000;
-  /** Fenêtre glissante publique Trello : 100 req / 10 s / clé+token. */
+  /** Politique locale prudente par onglet ; pas une certification des quotas Trello. */
   const RATE_WINDOW_MS = 10000;
-  /** Auto-limitation (marge sous la limite officielle). */
+  /** Auto-limitation conservée : 90 tentatives GET par fenêtre. */
   const RATE_MAX_PER_WINDOW = 90;
-  /** Réserve de débit après une écriture : l'API impose ~1/2 s pendant 18 s. */
-  const RATE_WRITE_RESERVE_MS = 18000;
-  /** Intervalle minimum estimé entre deux écritures. */
-  const WRITE_INTERVAL_MS = 600;
   /** Locale d'affichage. */
   const LS = 'fr-FR';
   /** Nombre max de membres tracés dans les tendances. */
@@ -1200,7 +1196,20 @@
   /** @param {string} sel @param {ParentNode} [root] @returns {Element[]} */
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   /** @param {number} ms @returns {Promise<void>} */
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function sleep(ms, signal) {
+    if (signal && signal.aborted) throw new CanceledError();
+    let remaining = Math.max(0, ms);
+    while (remaining > 0) {
+      const chunk = Math.min(remaining, 2147483647); // limite setTimeout, sans raccourcir Retry-After.
+      await new Promise((resolve, reject) => {
+        const cleanup = () => { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); };
+        const abort = () => { cleanup(); reject(new CanceledError()); };
+        const timer = setTimeout(() => { cleanup(); resolve(); }, chunk);
+        if (signal) { signal.addEventListener('abort', abort, { once: true }); if (signal.aborted) abort(); }
+      });
+      remaining -= chunk;
+    }
+  }
   /** @param {number} n @param {number} min @param {number} max */
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
@@ -1429,40 +1438,19 @@
     constructor() { super('Annulé'); this.name = 'CanceledError'; }
   }
 
-  /**
-   * Régulateur de débit Trello :
-   *  • fenêtre glissante 90 requêtes / 10 s ;
-   *  • réserve « écritures » : après un PUT/POST, l'API impose ≈1 requête/2 s
-   *    pendant 18 s — on évite d'y toucher en espaçant les lectures qui
-   *    suivent une écriture connue, et on signale si l'appelant écrit (réservé ici pour des extensions futures).
-   */
+  /** Régulation locale GET, fenêtre glissante par onglet (retries inclus). */
   const Limiter = (function () {
-    /** @type {number[]} */ const times = [];
-    /** @type {number} */ let lastWrite = 0;
-    /** @type {number} */ let lastWriteTs = 0;
-
-    function noteWrite() {
-      lastWrite += WRITE_INTERVAL_MS;
-      lastWriteTs = Date.now();
-    }
-
-    async function wait() {
-      // fenêtre 10 s
+    const times = [];
+    async function wait(signal) {
       for (;;) {
+        if (signal && signal.aborted) throw new CanceledError();
         const now = Date.now();
-        while (times.length && now - times[0] > RATE_WINDOW_MS) times.shift();
-        if (times.length < RATE_MAX_PER_WINDOW) break;
-        await sleep(120);
+        while (times.length && now - times[0] >= RATE_WINDOW_MS) times.shift();
+        if (times.length < RATE_MAX_PER_WINDOW) { times.push(now); return; }
+        await sleep(Math.max(1, RATE_WINDOW_MS - (now - times[0])), signal);
       }
-      times.push(Date.now());
-      if (times.length > 400) times.splice(0, times.length - 400);
-      // réserve d'écriture
-      const reserveEnd = lastWrite + RATE_WRITE_RESERVE_MS;
-      const waitMs = reserveEnd - Date.now();
-      if (waitMs > 0) { log.debug('Limiter : pause anti-rate-limit de ' + waitMs + ' ms'); await sleep(waitMs); }
     }
-
-    return { wait, noteWrite };
+    return { wait };
   })();
 
   /**
@@ -1484,7 +1472,16 @@
   function retryDelay(res, attempt) {
     try {
       const h = res && res.headers && res.headers.get && res.headers.get('retry-after');
-      if (h) { const s = parseFloat(h); if (Number.isFinite(s)) return clamp(s * 1000, 500, 30000); }
+      if (h) {
+        const text = h.trim();
+        if (/^\d+$/.test(text)) {
+          const ms = Number(text) * 1000;
+          if (Number.isFinite(ms)) return ms;
+        } else {
+          const delay = Date.parse(text) - Date.now();
+          if (Number.isFinite(delay) && delay > 0) return delay;
+        }
+      }
     } catch (_) { /* headers absentes (mocks) */ }
     const base = Math.min(RETRY_CAP_MS, RETRY_BASE_MS * Math.pow(2, attempt - 1));
     return base / 2 + Math.random() * base / 2;
@@ -1493,15 +1490,15 @@
   /**
    * GET JSON résilient : timeout, retries (429/5xx/réseau), annulation.
    * @param {string} url
-   * @param {{signal?:AbortSignal, method?:string, body?:*}} [opts]
+   * @param {{signal?:AbortSignal}} [opts]
    * @returns {Promise<*>} JSON décodé
    */
   async function fetchJSON(url, opts) {
     opts = opts || {};
-    const method = opts.method || 'GET';
-    if (method !== 'GET') Limiter.noteWrite();
+    const method = 'GET';
     let attempt = 0;
     for (;;) {
+      await Limiter.wait(opts.signal);
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
       const outer = opts.signal;
@@ -1512,8 +1509,7 @@
         const res = await fetch(url, {
           method,
           signal: ctrl.signal,
-          headers: method === 'GET' ? { 'Accept': 'application/json' } : { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-          body: opts.body != null ? JSON.stringify(opts.body) : undefined
+          headers: { 'Accept': 'application/json' }
         });
         if (res.ok) {
           const text = await res.text();
@@ -1529,7 +1525,8 @@
           attempt++;
           const d = retryDelay(res, attempt);
           log.warn('HTTP ' + res.status + ' — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
-          await sleep(d);
+          clearTimeout(timer); // le timeout borne la requête, pas le backoff.
+          await sleep(d, outer);
           continue;
         }
         let msg;
@@ -1549,7 +1546,8 @@
           attempt++;
           const d = retryDelay(null, attempt);
           log.warn('Réseau/timeout — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
-          await sleep(d);
+          clearTimeout(timer); // le timeout borne la requête, pas le backoff.
+          await sleep(d, outer);
           continue;
         }
         throw e;
@@ -1646,7 +1644,7 @@
       }
       cursors.add(cursor);
       before = cursor;
-      await sleep(PAGE_DELAY_MS);
+      await sleep(PAGE_DELAY_MS, signal);
     }
     return { actions, stoppedAtKnown, latestIso };
   }
