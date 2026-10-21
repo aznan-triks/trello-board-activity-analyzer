@@ -71,3 +71,14 @@ Ces lignes sont des **sujets non autorisés à implémenter implicitement dans l
 ## Architecture cible minimale
 
 Même sections et même distribution. `fetchJSON` est la frontière HTTP ; les entrées restaurées passent par la validation ; `state.actions` reste la liste complète locale ; `getVisible` produit la vue ; `buildReportModel` reste la base des rapports. Pas de couche repository/service/adapter supplémentaire. Ne factoriser que la connaissance réellement commune : encodage slim, validation d'action, définition de jour civil et neutralisation CSV. Ne pas extraire tous les exports parce qu'ils se ressemblent.
+
+### Réalisation C5 — PLAN-009 (2026-10-21)
+
+Les sept tables de graphiques reprennent les arrays exacts reçus par le factory,
+le huitième graphique renvoie au tableau membres complet ; la heatmap utilise
+`heatMatrix` et les totaux horaires, sans lire les couleurs. Le repli statique
+réutilise les agrégateurs existants et le même sérialiseur tabulaire, sans cache
+Chart global ni formule analytique parallèle. Deux champs additifs du modèle
+figent les séries tendances/types de la vue. Les conteneurs initiaux survivent au
+rendu ; seuls leurs tableaux changent. PNG/PDF restent visuels et axe ne vaut pas
+certification ni essai de lecteur d’écran.

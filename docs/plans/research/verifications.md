@@ -188,3 +188,7 @@ Prérequis 007 validé. Inventaire des séries, moyennes UI/modèle, briefing Ma
 ### PLAN-008 — 2026-10-21 · validé localement
 
 Implémentation febbdaf. 5 régressions rouges puis 5 ciblées vertes ; 2 contrôles de parité/coverage ajoutés, 7/7 ciblés (5,8 s). Suite complète 91/91 (1,3 min), npm test sous Chromium alternatif. Vérifiés : score null y compris vide, 1 action/jour et équivalent7, aucun ratio vide, zéros semaine/mois et domaines communs timeline/tendances/types/sparks, couverture14j complète, base0/pourcentage100, borne partielle insuffisante, jours civils inclusifs bornés, cohérence UI/Markdown/XLSX/briefing/HTML offline et selfTest. Métadonnée observation additive validée pour conserver les ratios lors du reset initial des filtres ; modèle fige ses insights. Cadence/score/anneau/marketing retirés ; top3 jours descriptifs et limite homonymes visibles ; objectif local préservé. Aucun modèle prédictif ni migration IDs. Prochain lot 009.
+
+### PLAN-009 — 2026-10-21 · en cours
+
+Prérequis 008 validé. Factory chart, tableaux membres, heatmap, captures SELF_MARKUP et HTML statique relus. Tables natives depuis datasets et helpers existants, pas de bibliothèque ni grille interactive.

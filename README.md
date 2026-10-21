@@ -461,3 +461,24 @@ sans test d’anomalie. L’objectif compte les actions de la vue cette semaine.
 restent regroupés par libellé : homonymes et renommages ne sont pas réconciliés.
 Aucune migration d’identités ni classement de productivité n’est ajouté.
 Les anciens rapports autonomes gardent leur ancienne logique.
+
+### Accès aux valeurs sans canvas ni survol (PLAN-009)
+
+- Chaque graphique propose « Voir les données » : table HTML native repliée par
+  défaut, avec caption, en-têtes de colonnes/lignes et noms complets échappés.
+  Les valeurs viennent des datasets du graphique, avant construction de Chart.js :
+  son échec n’enlève pas les nombres. Le graphique membres renvoie au tableau
+  détaillé complet, avec lien de retour, plutôt que le dupliquer.
+- La heatmap fournit 7 × 24 nombres ; « Répartition % » ajoute la part de chaque
+  heure, avec 0 % quand cette heure ne contient aucune action. Aucune case ne crée
+  de focus individuel ; la table large défile localement au clavier.
+- Tab atteint les résumés, Entrée/Espace les ouvre ; filtres et granularité
+  mettent les tables à jour sans remplacer le résumé ni son état ouvert.
+  Les séries de tendances ne conservent plus des noms exclus par un filtre.
+- HTML autonome, réexport HTML et HTML du ZIP conservent ces alternatives ; le
+  repli statique les propose même sans capture d’image. Elles sont imprimables
+  depuis le HTML lorsqu’elles sont ouvertes. PDF et PNG restent des formats
+  visuels, sans promesse d’équivalence accessible.
+- Les contrôles automatisés (dont axe avec tables ouvertes) ne constituent pas
+  une certification WCAG ou un audit avec lecteur d’écran. Aucun lecteur d’écran
+  n’a été vérifié dans cet environnement.

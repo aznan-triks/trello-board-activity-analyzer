@@ -1,6 +1,6 @@
 # PLAN-009 — Lire toutes les données sans canvas ni survol
 
-**Statut : dépendant d'un autre plan — PLAN-008 · Priorité : P2 — Important.** Les noms accessibles actuels ne donnent pas toutes les valeurs ; accès essentiel, mais ne doit pas dupliquer des séries encore erronées.
+**Statut : en cours (2026-10-21) · Priorité : P2 — Important.** Les noms accessibles actuels ne donnent pas toutes les valeurs ; accès essentiel, mais ne doit pas dupliquer des séries encore erronées.
 
 ## 1. Problème / preuves
 
@@ -66,3 +66,14 @@ Accès clavier démontré, tests valeurs/rapports et baseline verts, aucune doub
 ## 13. Sources
 
 F09/F12, [R5 et comparaison accessibilité](../02-recherche-et-options.md), vision C5, roadmap J5, PLAN-003/007/008.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 008 validé. Factory chart, tableaux membres, heatmap, captures SELF_MARKUP et HTML statique relus. Tables natives depuis datasets et helpers existants, pas de bibliothèque ni grille interactive.
+
+### Preuve complémentaire de portée
+
+Avant correction, les cinq tests du lot échouent. Celui des tendances prouve un
+nom exclu conservé dans `charts.trends.data.datasets` après filtrage ; le suivi
+PLAN-003 est corrigé avant poursuite. La sélection top-membres sera recalculée
+avec les compteurs de la vue, et partagée avec le modèle du rapport statique.
