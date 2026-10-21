@@ -180,3 +180,7 @@ Prérequis 003/006 validés ; inventaire des usages Date, clés, ordinaux, borne
 ### PLAN-007 — 2026-10-21 · validé localement
 
 Implémentation 56b3e4c. 7 régressions rouges avant correction puis 7/7 ciblées (5,9 s), 3 tests de frontières complémentaires ajoutés. Suite complète 84/84 (1,2 min), Chromium alternatif, commande npm test de session. Contextes UTC/Paris/New_York, minuit, dimanche, année, DST printemps/automne et heures répétées, séries/jours membres, fenêtre civile 167h, epoch zéro, minute inclusive et borne inversée sans mutation, rapport inter-fuseaux et réexport timezone lecteur vérifiés. Ordinaux via composantes locales, affichage des clés par composantes et non parsing UTC. Durées écoulées conservées pour moyennes jusqu’à 008 ; todayStamp des noms de fichiers reste délibérément UTC (pas un agrégat). Fuseau déclaré via modèle partagé dans PDF/PNG/MD/XLSX/HTML/ZIP/briefing et JSON explicite ; aucune invariance inter-fuseaux revendiquée. API signatures inchangées, clés semaine changées intentionnellement hors UTC et annoncées. Prochain lot 008.
+
+### PLAN-008 — 2026-10-21 · en cours
+
+Prérequis 007 validé. Inventaire des séries, moyennes UI/modèle, briefing Markdown et XLSX et textes score effectué. Contrat : score null, observation civile bornée, semaines closes consécutives avec zéros ; aucune migration d’identités.

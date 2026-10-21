@@ -307,7 +307,8 @@ test('nexus : briefing, recherche, fenêtre, comparateur et commandes', async ({
   const errors = await openApp(page);
   await demo(page);
   await expect(page.locator('#nexus')).toBeVisible();
-  await expect(page.locator('#nx-score')).toHaveText(/^\d{1,3}$/);
+  await expect(page.locator('#nx-score')).toHaveCount(0);
+  expect(await page.evaluate(() => tba.state.lastInsights.score)).toBeNull();
   await expect(page.locator('#nx-brief')).toContainText(/actions/);
   await expect(page.locator('#nx-insights li').first()).toBeVisible();
   await page.locator('#fl-query').fill('accueil');

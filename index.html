@@ -529,22 +529,8 @@
   .nexus-head, .nexus-tools, .goal-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .nexus-head { justify-content: space-between; margin-bottom: 16px; }
   .nexus-head h2 { margin: 4px 0 0; font-size: 20px; letter-spacing: -.4px; color: var(--color-text-primary); }
-  .nexus-grid { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 18px; align-items: center; }
-  .ring {
-    --p: 0; width: 128px; height: 128px; border-radius: 50%; margin: 0 auto;
-    background: conic-gradient(from 220deg, var(--neon-cyan), var(--neon-violet) calc(var(--p) * 1%), var(--color-border-tertiary) 0);
-    display: grid; place-items: center;
-  }
-  .ring-core {
-    width: 96px; height: 96px; border-radius: 50%; background: var(--color-background-secondary);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border: 1px solid var(--glass-border);
-  }
-  .ring-core strong { font-family: var(--font-data); font-size: 32px; line-height: 1; letter-spacing: -1px; color: var(--color-text-primary); }
-  .ring-core span, .ring-caption, .nx-k {
-    font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-secondary);
-  }
-  .ring-caption { text-align: center; margin: 10px 0 0; }
+  .nexus-grid { display: block; }
+  .nx-k { font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-secondary); }
   .nx-brief { margin: 0; font-size: 14px; line-height: 1.65; color: var(--color-text-primary); overflow-wrap: anywhere; }
   .nx-insights { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
   .nx-insights li { position: relative; padding-left: 14px; font-size: 12px; line-height: 1.5; color: var(--color-text-secondary); overflow-wrap: anywhere; }
@@ -598,7 +584,6 @@
     .setup-card, .stat-card, .chart-card, .filters, .preview-card, .nexus, .nx-panel {
       background: #fff !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
     }
-    .ring { box-shadow: none !important; }
   }
 
 
@@ -664,7 +649,7 @@
     </div>
     </div>
     <section class="feature-row" aria-label="Les points forts">
-      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, heatmap, score et briefing<br>calculés dans votre navigateur.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, heatmap et briefing descriptif<br>calculés dans votre navigateur.</p></div></article>
       <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3>Privé, par conception</h3><p>Vos analyses restent dans votre navigateur.<br>Pas de compte supplémentaire à créer.</p></div></article>
       <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Des insights à partager</h3><p>PDF, Excel, HTML hors-ligne ou briefing texte.<br>Comparez deux membres, fixez un objectif.</p></div></article>
     </section>
@@ -741,7 +726,7 @@
       <div class="stat-card"><div class="stat-label">Total actions</div><div class="stat-val" id="s-total">—</div><div class="stat-sub" id="s-days">—</div></div>
       <div class="stat-card"><div class="stat-label">Membres actifs</div><div class="stat-val" id="s-members">—</div><div class="stat-sub" id="s-top-member">—</div></div>
       <div class="stat-card"><div class="stat-label">Jour le + actif</div><div class="stat-val" id="s-peak-day">—</div><div class="stat-sub" id="s-peak-count">—</div></div>
-      <div class="stat-card"><div class="stat-label">Moy. / semaine</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
+      <div class="stat-card"><div class="stat-label">Équiv. hebdomadaire</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
     </div>
 
     <section class="nexus" id="nexus" aria-labelledby="nexus-title">
@@ -756,19 +741,10 @@
         </div>
       </div>
       <div class="nexus-grid">
-        <div class="ring-wrap">
-          <div class="ring" id="nx-ring" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score d’activité de la vue courante">
-            <div class="ring-core"><strong id="nx-score">—</strong><span>score</span></div>
-          </div>
-          <p class="ring-caption" id="nx-rhythm">En attente de données</p>
-        </div>
         <div>
           <p class="nx-brief" id="nx-brief">Le briefing se calcule localement, sans modèle distant.</p>
           <ul class="nx-insights" id="nx-insights"></ul>
-          <details class="nx-help">
-            <summary>Comment le score est calculé</summary>
-            <p>Cadence (jusqu’à 6 actions par jour), part des jours couverts, régularité de la série et répartition entre membres. 100 décrit un rythme soutenu, continu et partagé. Aucune donnée ne quitte l’appareil.</p>
-          </details>
+          <p class="nx-help">Les actions ne mesurent ni effort, ni qualité, ni livraison ; membres et cartes regroupés par libellé dans cette version.</p>
         </div>
       </div>
       <div class="nx-meta" id="nx-anomalies"></div>
@@ -790,7 +766,7 @@
         <div class="nx-panel">
           <h3>Objectif hebdomadaire</h3>
           <div class="goal-row">
-            <label for="goal-input">Actions visées cette semaine</label>
+            <label for="goal-input">Actions de la vue visées cette semaine</label>
             <input type="number" id="goal-input" min="1" max="9999" step="1" inputmode="numeric" placeholder="ex. 40">
           </div>
           <div id="nx-goal" class="goal-out">Définissez un objectif local — il reste sur cet appareil.</div>
@@ -1237,8 +1213,8 @@
   const truncate = (s, over, keep) => (s.length > over ? s.slice(0, keep) + '…' : s);
 
   /**
-   * Clé de période — calcul identique à la v1 (semaine locale démarrant
-   * dimanche, rendue en date civile locale ; mois local).
+   * Clé de période — semaine locale démarrant
+   * dimanche, rendue en date civile locale ; mois local.
    * @param {Date} d date locale déjà parseée
    * @param {'week'|'month'} gran
    * @returns {string}
@@ -1258,7 +1234,7 @@
      reconstruisait une chaîne pour CHAQUE action et CHAQUE appelant. Les clés
      ne dépendent que du jour local (semaine) ou du mois local : on les met en
      cache par jour/mois civil (quelques centaines d'entrées), et on lit
-     `dateMs` au lieu de reparser la chaîne ISO. Sémantique identique. */
+     `dateMs` au lieu de reparser la chaîne ISO. Convention locale commune. */
   const _pkDay = new Date();
   /** @type {Map<number,string>} minuit local (ms) → clé de semaine */
   const weekKeyCache = new Map();
@@ -1783,6 +1759,7 @@
     return record(p) && p.kind === 'trello-activity-export-v1' && validBoard(p.board) &&
       Array.isArray(p.actions) && p.actions.every(validSlim) &&
       (!has(p, 'filter') || validFilter(p.filter)) &&
+      (!has(p, 'observation') || (validFilter(p.observation) && has(p.observation, 'fromMs') && has(p.observation, 'toMs'))) &&
       (!has(p, 'gran') || ['week', 'month'].includes(p.gran)) &&
       (!has(p, 'heatMetric') || ['count', 'share'].includes(p.heatMetric)) &&
       (!has(p, 'exportedAt') || validDate(p.exportedAt)) && optionalString(p, 'version') && optionalString(p, 'timezone') &&
@@ -1948,8 +1925,7 @@
       const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
       c.set(k, (c.get(k) || 0) + 1);
     }
-    const keys = Array.from(c.keys()).sort();
-    return { labels: keys, data: keys.map(k => c.get(k)) };
+    return periodSeries(c);
   }
 
   /** Équivalent v1 `byMemberPeriod` : nom → {clé de période: nombre}. */
@@ -1968,8 +1944,20 @@
 
   /** Liste ordonnée {labels,data} depuis un Map de compteurs (timeline etc.). */
   function periodSeries(map) {
-    const keys = Array.from(map.keys()).sort();
-    return { labels: keys, data: keys.map(k => map.get(k)) };
+    const sparse = Array.from(map.keys()).sort();
+    if (!sparse.length) return { labels: [], data: [] };
+    const month = /^-?\d{4,}-\d{2}$/.test(sparse[0]);
+    if (!sparse.every(k => month ? /^-?\d{4,}-\d{2}$/.test(k) : /^-?\d{4,}-\d{2}-\d{2}$/.test(k))) {
+      return { labels: sparse, data: sparse.map(k => map.get(k)) };
+    }
+    const current = localDateFromKey(month ? sparse[0] + '-01' : sparse[0]);
+    const last = localDateFromKey(month ? sparse[sparse.length - 1] + '-01' : sparse[sparse.length - 1]);
+    const labels = [];
+    while (current <= last) {
+      labels.push(month ? periodKey(current, 'month') : localDateKey(current));
+      if (month) current.setMonth(current.getMonth() + 1); else current.setDate(current.getDate() + 7);
+    }
+    return { labels, data: labels.map(k => map.get(k) || 0) };
   }
 
   /** Convertit un Map memberPeriod en datasets triés (chart types-par-période). */
@@ -2550,72 +2538,67 @@
     return (String(a.cardName || '') + ' ' + String(a.memberName || '') + ' ' + String(a.type || '') + ' ' + classify(a.type)).toLowerCase();
   }
 
+  let reportObservedRange = null;
+  function sourceBounds() {
+    if (exportSnapshot) return exportSnapshot.bounds;
+    if (reportObservedRange) return reportObservedRange;
+    let fromMs = Infinity, toMs = -Infinity;
+    for (const a of state.actions) { fromMs = Math.min(fromMs, a.dateMs); toMs = Math.max(toMs, a.dateMs); }
+    return { fromMs, toMs };
+  }
+  /** Bornes explicites limitées à l'observation ; jours civils inclusifs, pas durée/24h. */
+  function observedPeriod(st) {
+    if (!st.total) return { fromMs: null, toMs: null, days: 0 };
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
+    const source = sourceBounds();
+    const lower = Number.isFinite(source.fromMs) ? source.fromMs : st.oldest;
+    const upper = Number.isFinite(source.toMs) ? source.toMs : st.newest;
+    const fromMs = f.fromMs == null ? (reportObservedRange?.fromMs ?? st.oldest) : Math.max(lower, f.fromMs);
+    const toMs = f.toMs == null ? (reportObservedRange?.toMs ?? st.newest) : Math.min(upper, f.toMs);
+    return { fromMs, toMs, days: Math.max(1, civilOrdinal(toMs) - civilOrdinal(fromMs) + 1) };
+  }
+  const observationLabel = days => 'sur ' + days + ' jours civils observés';
+  const measurementLimit = 'Les actions ne mesurent ni effort, ni qualité, ni livraison ; membres et cartes regroupés par libellé dans cette version.';
   function buildInsights(list, st) {
     const total = st.total || 0;
-    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const top = ms[0] || null;
+    const period = observedPeriod(st);
+    const days = period.days;
+    const dayAvg = total / Math.max(1, days);
+    const members = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const top = members[0];
     const topShare = top && total ? Math.round(top[1] / total * 100) : 0;
     let hhi = 0;
-    if (total) st.memberCounts.forEach(c => { const p = c / total; hhi += p * p; });
-    const concentration = Math.round(hhi * 100);
-    const days = Math.max(1, st.spanDays || 1);
-    const dayAvg = total / days;
-    const coverage = total ? Math.min(1, st.dayCounts.size / days) : 0;
-    const cadence = clamp(dayAvg / 6, 0, 1);
-    const consistency = total ? clamp(st.longestStreak / Math.max(5, Math.min(21, days)), 0, 1) : 0;
-    const teamwork = st.memberCounts.size <= 1 ? 0.55 : clamp(1 - hhi, 0, 1);
-    const score = total ? Math.round(clamp(cadence * 34 + coverage * 28 + consistency * 22 + teamwork * 16, 0, 100)) : 0;
-    const nuit = total ? st.nuit / total : 0;
-    const wknd = total ? st.weekend / total : 0;
-    const vals = Array.from(st.dayCounts.values());
-    let mean = 0, sd = 0;
-    if (vals.length) {
-      mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-      sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) * (b - mean), 0) / vals.length);
-    }
-    const burst = mean > 0 && sd / mean > 0.85;
-    let rhythm = 'Rythme régulier';
-    if (!total) rhythm = 'Aucune activité';
-    else if (nuit >= 0.4) rhythm = 'Rythme nocturne';
-    else if (wknd >= 0.34) rhythm = 'Charge week-end';
-    else if (burst) rhythm = 'Activité en rafales';
-    const weeks = periodSeries(st.weekCounts);
+    if (total) st.memberCounts.forEach(c => { hhi += (c / total) ** 2; });
     let weekDelta = null;
-    if (weeks.labels.length >= 2) {
-      const cur = weeks.data[weeks.data.length - 1];
-      const prev = weeks.data[weeks.data.length - 2];
-      weekDelta = { cur: cur, prev: prev, pct: prev ? Math.round((cur - prev) / prev * 100) : null };
+    if (total) {
+      const anchor = localDateFromKey(periodKeyMs(st.newest, 'week'));
+      const cur = new Date(anchor); cur.setDate(cur.getDate() - 7);
+      const prev = new Date(anchor); prev.setDate(prev.getDate() - 14);
+      if (period.fromMs <= +prev && period.toMs >= +anchor - 1) {
+        const prevStart = localDateKey(prev), curStart = localDateKey(cur);
+        const prevCount = st.weekCounts.get(prevStart) || 0, curCount = st.weekCounts.get(curStart) || 0;
+        weekDelta = { prev: prevCount, cur: curCount, pct: prevCount ? Math.round((curCount - prevCount) / prevCount * 100) : null,
+          prevStart, prevEnd: dayKeyMs(+cur - 1), curStart, curEnd: dayKeyMs(+anchor - 1) };
+      }
     }
-    const forecast = total ? Math.max(0, Math.round(dayAvg * 7)) : 0;
-    const anomalies = [];
-    if (vals.length >= 5 && sd > 0) {
-      const thr = mean + Math.max(sd * 1.5, 1);
-      st.dayCounts.forEach((count, day) => { if (count >= thr && count >= 3) anomalies.push({ day: day, count: count }); });
-      anomalies.sort((a, b) => b.count - a.count);
-      anomalies.splice(5);
-    }
-    const dow = [0, 0, 0, 0, 0, 0, 0];
-    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) dow[d] += st.dayHour.get(d * 24 + h) || 0;
-    let qi = 0;
-    for (let d = 1; d < 7; d++) if (dow[d] < dow[qi]) qi = d;
-    const quietDay = total ? DAYS[qi] : '—';
-    const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const peakLabel = ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    const forecast = total ? Math.round(dayAvg * 7) : 0; // champ public historique : équivalent, jamais prévision.
+    const anomalies = Array.from(st.dayCounts, ([day, count]) => ({ day, count })).sort((a, b) => b.count - a.count || a.day.localeCompare(b.day)).slice(0, 3);
     const bullets = [];
-    if (top) bullets.push(firstWord(top[0]) + ' porte ' + topShare + ' % des actions' + (topShare >= 55 ? ' — concentration élevée' : ''));
-    if (weekDelta) bullets.push('Dernière semaine observée : ' + weekDelta.cur + ' actions' + (weekDelta.pct == null ? '' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' % vs la précédente)'));
-    bullets.push('Projection 7 jours : environ ' + forecast.toLocaleString(LS) + ' actions au rythme actuel');
-    if (total) bullets.push('Jour le plus calme : ' + quietDay + ' · série max ' + st.longestStreak + ' j');
-    if (total && st.comments / total < 0.08) bullets.push('Peu de commentaires (' + Math.round(st.comments / total * 100) + ' %) — activité surtout opérationnelle');
-    if (wknd >= 0.3) bullets.push('Week-end : ' + Math.round(wknd * 100) + ' % du volume');
-    if (nuit >= 0.35) bullets.push('Nuit (18 h–6 h) : ' + Math.round(nuit * 100) + ' % du volume');
-    const briefing = !total
-      ? 'Aucune action dans la vue courante. Élargissez les filtres pour relancer la lecture.'
-      : total.toLocaleString(LS) + ' actions sur ' + Math.round(days) + ' jours, soit ' + dayAvg.toFixed(1) + ' par jour. ' +
-        (top ? firstWord(top[0]) + ' concentre ' + topShare + ' %. ' : '') +
-        'Le jour le plus chargé est le ' + peakLabel + (ds[0] ? ' (' + ds[0][1] + ' actions)' : '') + ', autour de ' + st.peakHour + ' h. ' +
-        rhythm + '. Projection : environ ' + forecast.toLocaleString(LS) + ' actions sur 7 jours si le rythme tient.';
-    return { score: score, rhythm: rhythm, concentration: concentration, topShare: topShare, briefing: briefing, bullets: bullets, anomalies: anomalies, weekDelta: weekDelta, forecast: forecast, quietDay: quietDay };
+    if (top) bullets.push(top[0] + ' : ' + topShare + ' % du volume d’actions');
+    if (weekDelta) bullets.push('Semaines closes ' + weekDelta.prevStart + ' → ' + weekDelta.prevEnd + ' : ' + weekDelta.prev +
+      ' actions ; ' + weekDelta.curStart + ' → ' + weekDelta.curEnd + ' : ' + weekDelta.cur +
+      ' actions' + (weekDelta.pct == null ? ' (base précédente nulle, pas de pourcentage)' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' %)'));
+    else bullets.push('comparaison indisponible : période insuffisante pour deux semaines closes consécutives');
+    if (total) {
+      bullets.push('Équivalent hebdomadaire du rythme observé : ' + forecast.toLocaleString(LS) + ' actions — pas une prévision');
+      bullets.push('Commentaires : ' + Math.round(st.comments / total * 100) + ' % ; week-end : ' + Math.round(st.weekend / total * 100) + ' % ; 18 h–6 h : ' + Math.round(st.nuit / total * 100) + ' % du volume');
+    }
+    bullets.push(measurementLimit);
+    const briefing = !total ? 'Aucune action dans la vue courante ; aucun ratio ni équivalent chiffré.' :
+      total.toLocaleString(LS) + ' actions ' + observationLabel(days) + ', soit ' + dayAvg.toFixed(1) + ' par jour. ' +
+      'Équivalent hebdomadaire du rythme observé : ' + forecast.toLocaleString(LS) + ' actions — pas une prévision.';
+    return { score: null, rhythm: total ? 'Volume observé' : 'Aucune activité', concentration: Math.round(hhi * 100), topShare,
+      briefing, bullets, anomalies, weekDelta, forecast, quietDay: null };
   }
 
   function briefingPlain() {
@@ -2629,20 +2612,13 @@
     if (!$('nexus')) return;
     const ins = buildInsights(list, st);
     state.lastInsights = ins;
-    $('nx-score').textContent = st.total ? String(ins.score) : '—';
-    const ring = $('nx-ring');
-    if (ring) {
-      ring.style.setProperty('--p', String(ins.score));
-      ring.setAttribute('aria-valuenow', String(ins.score));
-    }
-    $('nx-rhythm').textContent = st.total ? ins.rhythm + ' · concentration ' + ins.concentration : ins.rhythm;
     $('nx-brief').textContent = ins.briefing;
     $('nx-insights').innerHTML = ins.bullets.map(b => '<li>' + esc(b) + '</li>').join('');
     const anom = $('nx-anomalies');
     if (anom) {
-      anom.innerHTML = '<span class="nx-k">Jours atypiques</span>' + (ins.anomalies.length
+      anom.innerHTML = '<span class="nx-k">Jours les plus actifs</span>' + (ins.anomalies.length
         ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(localDateFromKey(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
-        : '<span class="nx-quiet">Aucun pic statistique marqué</span>');
+        : '<span class="nx-quiet">Aucun jour actif dans la vue</span>');
     }
     fillCompareSelects();
     renderCompare();
@@ -2738,7 +2714,7 @@
       return;
     }
     const pct = Math.min(100, Math.round(count / goal * 100));
-    el.innerHTML = '<div class="goal-track" role="meter" aria-valuemin="0" aria-valuemax="' + goal + '" aria-valuenow="' + count + '" aria-label="Progression de l’objectif hebdomadaire"><span style="width:' + pct + '%"></span></div><p>' + count + ' / ' + goal + ' actions cette semaine · ' + pct + ' %</p>';
+    el.innerHTML = '<div class="goal-track" role="meter" aria-valuemin="0" aria-valuemax="' + goal + '" aria-valuenow="' + count + '" aria-label="Progression de l’objectif hebdomadaire"><span style="width:' + pct + '%"></span></div><p>' + count + ' / ' + goal + ' actions de la vue cette semaine · ' + pct + ' %</p>';
   }
 
   function saveGoal() {
@@ -2769,6 +2745,8 @@
       const k = periodKeyMs(a.dateMs, 'week');
       m.set(k, (m.get(k) || 0) + 1);
     }
+    const domain = byPeriod(list || [], 'week').labels;
+    by.forEach(m => domain.forEach(k => { if (!m.has(k)) m.set(k, 0); }));
     return by;
   }
 
@@ -2797,7 +2775,7 @@
     } else {
       let newest = -Infinity;
       for (const a of state.actions) if (a.dateMs > newest) newest = a.dateMs;
-      if (!Number.isFinite(newest) || newest < 0) return;
+      if (!Number.isFinite(newest)) return;
       const from = new Date(newest);
       from.setDate(from.getDate() - days);
       $('fl-from').value = msToLocalInput(from.getTime(), false);
@@ -2971,7 +2949,7 @@
     warmChartJsCache();
     $('dash-footer').textContent =
       list.length.toLocaleString() + ' action(s) affichée(s) · ' + st.dayCounts.size + ' jour(s) actif(s) · ' +
-      'série la + longue : ' + st.longestStreak + ' j · score ' + (state.lastInsights ? state.lastInsights.score : '—') +
+      'série la + longue : ' + st.longestStreak + ' j' +
       ' · rendu en ' + (Date.now() - t0) + ' ms · v' + APP_VERSION;
   }
 
@@ -2988,14 +2966,14 @@
   function renderStats(st) {
     const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
     const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const days = Math.max(1, st.spanMs / 864e5);
+    const days = observedPeriod(st).days;
     $('s-total').textContent = st.total.toLocaleString();
-    $('s-days').textContent = 'sur ' + Math.round(days) + ' jours';
+    $('s-days').textContent = observationLabel(days);
     $('s-members').textContent = String(ms.length);
     $('s-top-member').textContent = ms[0] ? '↑ ' + firstWord(ms[0][0]) : '';
     $('s-peak-day').textContent = ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
     $('s-peak-count').textContent = ds[0] ? ds[0][1] + ' actions' : '';
-    $('s-avg').textContent = String(Math.round(st.total / Math.max(1, days / 7)));
+    $('s-avg').textContent = st.total ? String(Math.round(st.total / Math.max(1, days) * 7)) : '—';
   }
 
   /** Timeline (ligne remplit la largeur) — config d'origine verbatim. */
@@ -3115,9 +3093,7 @@
     if (top) state.trendMembers = top;
     const members = state.trendMembers || [];
     const map = byMemberPeriod(state.lastList, state.currentGran);
-    const allKeys = new Set();
-    members.forEach(m => { if (map[m]) Object.keys(map[m]).forEach(k => allKeys.add(k)); });
-    const labels = Array.from(allKeys).sort();
+    const labels = byPeriod(state.lastList, state.currentGran).labels;
     const trendPalette = memberColors(members.length);
     $('leg-trends').innerHTML = members.map((m, i) =>
       '<span class="leg-item"><span class="leg-dot" style="background:' + trendPalette[i] + '"></span>' +
@@ -3191,8 +3167,9 @@
   function renderExtStats(st) {
     $('s-comments').textContent = st.comments.toLocaleString();
     $('s-comments-sub').textContent = st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action';
-    $('s-dayavg').textContent = (st.total / Math.max(1, st.spanDays)).toFixed(1);
-    $('s-dayavg-sub').textContent = 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)';
+    const days = observedPeriod(st).days;
+    $('s-dayavg').textContent = st.total ? (st.total / Math.max(1, days)).toFixed(1) : '—';
+    $('s-dayavg-sub').textContent = observationLabel(days);
     $('s-peak-hour').textContent = st.total ? st.peakHour + 'h' : '—';
     $('s-peak-hour-sub').textContent = st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '';
     $('s-weekend').textContent = st.total ? Math.round(st.weekend / st.total * 100) + '%' : '—';
@@ -3202,9 +3179,7 @@
   function renderTypeTimeline(list) {
     const byGroup = groupPeriodCounts(list, state.currentGran);
     const groups = Object.keys(ACTION_GROUPS).filter(g => byGroup.has(g));
-    const allKeys = new Set();
-    groups.forEach(g => byGroup.get(g).forEach((count, key) => allKeys.add(key)));
-    const labels = Array.from(allKeys).sort();
+    const labels = byPeriod(list, state.currentGran).labels;
     $('leg-typetl').innerHTML = groups.map(g =>
       '<span class="leg-item"><span class="leg-dot" style="background:' + groupColor(Object.keys(ACTION_GROUPS).indexOf(g)) + '"></span>' +
       esc(g) + '</span>').join('');
@@ -3496,7 +3471,7 @@
     const st = computeStats(list);
     const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
     const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const days = Math.max(1, st.spanMs / 864e5);
+    const days = observedPeriod(st).days;
     const tl = Array.from(st.typeCounts.keys()).sort((a, b) => st.typeCounts.get(b) - st.typeCounts.get(a));
 
     const members = [];
@@ -3550,9 +3525,9 @@
         actions: st.total,
         actionCountAll: state.actions.length,
         spanDaysRounded: Math.round(days),
-        spanDaysExact: st.total ? st.spanDays : 0,
-        dayAvg: st.total / Math.max(1, st.spanDays),
-        weekAvg: Math.round(st.total / Math.max(1, days / 7)),
+        spanDaysExact: days,
+        dayAvg: st.total ? st.total / Math.max(1, days) : null,
+        weekAvg: st.total ? Math.round(st.total / Math.max(1, days) * 7) : null,
         members: ms.length,
         topMember: ms[0] ? ms[0][0] : null,
         topMemberShort: ms[0] ? firstWord(ms[0][0]) : null,
@@ -3573,12 +3548,12 @@
       },
       /* Mêmes libellés/valeurs que les cartes du dashboard (parité v1). */
       kpis: [
-        { label: 'Total actions', value: st.total.toLocaleString(), sub: 'sur ' + Math.round(days) + ' jours' },
+        { label: 'Total actions', value: st.total.toLocaleString(), sub: observationLabel(days) },
         { label: 'Membres actifs', value: String(ms.length), sub: ms[0] ? '↑ ' + firstWord(ms[0][0]) : '' },
         { label: 'Jour le + actif', value: ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
-        { label: 'Moy. / semaine', value: String(Math.round(st.total / Math.max(1, days / 7))), sub: 'actions/semaine' },
+        { label: 'Équiv. hebdomadaire', value: st.total ? String(Math.round(st.total / Math.max(1, days) * 7)) : '—', sub: 'rythme observé, pas une prévision' },
         { label: 'Commentaires', value: st.comments.toLocaleString(), sub: st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action' },
-        { label: 'Moyenne / jour', value: (st.total / Math.max(1, st.spanDays)).toFixed(1), sub: 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)' },
+        { label: 'Moyenne / jour', value: st.total ? (st.total / Math.max(1, days)).toFixed(1) : '—', sub: observationLabel(days) },
         { label: 'Heure de pointe', value: st.total ? st.peakHour + 'h' : '—', sub: st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '' },
         {
           label: 'Part week-end',
@@ -3598,6 +3573,7 @@
       timeline: { week: byPeriod(list, 'week'), month: byPeriod(list, 'month') },
       list
     };
+    model.insights = buildInsights(list, st);
     return model;
   }
 
@@ -3652,7 +3628,7 @@
     model.types.forEach(ty => md.push('| ' + mdCell(ty.group) + ' | ' + ty.count.toLocaleString() + ' | ' + ty.share + '% |'));
     if (!model.types.length) md.push('| — | 0 | 0% |');
     md.push('');
-    const brief = buildInsights(model.list, computeStats(model.list));
+    const brief = (model.insights || buildInsights(model.list, computeStats(model.list)));
     md.push('## Briefing');
     md.push('');
     md.push(brief.briefing);
@@ -4209,7 +4185,7 @@
     synthRows.push([s('Filtres'), s(model.filters.label)]);
     synthRows.push([s('Généré le'), s(model.generatedLabel)]);
     synthRows.push([s('Application'), s('trello-board-activity-analyzer v' + model.version)]);
-    synthRows.push([s('Briefing'), s(buildInsights(model.list, computeStats(model.list)).briefing)]);
+    synthRows.push([s('Briefing'), s((model.insights || buildInsights(model.list, computeStats(model.list))).briefing)]);
 
     const memRows = [[s('Membre'), s('Actions'), s('Commentaires'), s('Créations'), s('Cartes touchées'), s('Jours actifs'), s('Dernière activité')]];
     model.members.forEach(m => memRows.push([
@@ -4462,6 +4438,7 @@
       timezone: localTimezone(), weekStart: 'sunday',
       gran: state.currentGran,
       heatMetric: state.heatMetric,
+      observation: (() => { const r = observedPeriod(computeStats(getVisible())); return { fromMs: r.fromMs, toMs: r.toMs }; })(),
       filter: { members: [], fromMs: null, toMs: null, query: '' },
       provenance: { label: 'Sous-ensemble exporté', filters: {
         members: Array.from(f.members),
@@ -4635,7 +4612,7 @@
     try {
       const f = state.filter;
       exportSnapshot = { actions: getVisible().map(a => ({ ...a })), board: exportBoard(),
-        filter: { ...f, members: new Set(f.members) } };
+        filter: { ...f, members: new Set(f.members) }, bounds: sourceBounds() };
       controls.forEach(([el]) => { el.disabled = true; });
       dash.inert = true;
       captureMode = true;
@@ -4815,6 +4792,7 @@
           ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify({ members: p.provenance.filters?.members || [], fromMs: p.provenance.filters?.fromMs ?? null, toMs: p.provenance.filters?.toMs ?? null, query: p.provenance.filters?.query || '' }) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
       }
       reportSourceTimezone = p.timezone || null;
+      reportObservedRange = p.observation || null;
       state.board = board;
       state.actions = actions;
       state.currentGran = p.gran === 'month' ? 'month' : 'week';
@@ -5077,8 +5055,9 @@
       /* — modèle + rapports (sur un état factice) — */
       saved = {
         board: state.board, actions: state.actions, creds: state.creds,
-        filter: state.filter
+        filter: state.filter, reportObservedRange
       };
+      reportObservedRange = null;
       state.board = { name: 'SelfTest' };
       state.creds = {};
       state.actions = normalizeActions([
@@ -5112,13 +5091,14 @@
       const htmlS = buildHtmlStatic(model, {});
       t('html statique', htmlS.indexOf('stat-card') > 0 && htmlS.indexOf('hm-cell') > 0);
       t('jetons v7', /^#[0-9a-f]{6}$/i.test(cssHex('--chart-1', '#6d28d9')) && memberColors(4).length === 4 && /^#[0-9a-f]{6}$/i.test(heatColor(3, 3)));
-      t('insights vides', buildInsights([], computeStats([])).score === 0);
+      t('insights vides', buildInsights([], computeStats([])).score === null);
     } catch (e) {
       t('exception', false, String((e && e.message) || e));
     } finally {
       if (saved) {
         state.board = saved.board; state.actions = saved.actions; state.creds = saved.creds;
         state.filter = saved.filter;
+        reportObservedRange = saved.reportObservedRange;
       }
     }
     const passed = results.filter(r => r.ok).length;

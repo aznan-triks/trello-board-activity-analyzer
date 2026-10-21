@@ -1,6 +1,6 @@
 # PLAN-008 — Un briefing descriptif, pas une note de productivité
 
-**Statut : dépendant d'un autre plan — PLAN-007 · Priorité : P2 — Important.** Interprétation potentiellement trompeuse du volume ; pas de demande validée d'un modèle prédictif.
+**Statut : en cours (2026-10-21) · Priorité : P2 — Important.** Interprétation potentiellement trompeuse du volume ; pas de demande validée d'un modèle prédictif.
 
 ## 1. Problème et preuves
 
@@ -67,3 +67,17 @@ Formules et libellés alignés sur contrat unique, fixtures vérifiables, retrai
 ## 13. Sources
 
 F07/F08/F10, [R4 et comparaison briefing](../02-recherche-et-options.md), vision C4, roadmap J4, PLAN-007/009.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 007 validé. Inventaire des séries, moyennes UI/modèle, briefing Markdown et XLSX et textes score effectué. Contrat : score null, observation civile bornée, semaines closes consécutives avec zéros ; aucune migration d’identités.
+
+### Métadonnée d’observation nécessaire à la parité des rapports
+
+003 réinitialise volontairement les filtres actifs du HTML. Une vue contenant
+une seule action dans six jours explicitement observés passerait sinon de 1/6
+à 1/j à l’ouverture. Ajout borné `observation:{fromMs,toMs}` au kind existant,
+validé avant boot par les contrôles de 006 ; aucun événement exclu embarqué.
+Les bornes sont des timestamps et les jours restent recalculés dans le fuseau
+lecteur annoncé en 007. Le modèle fige son briefing pour que Markdown/XLSX ne
+recalculent pas à partir d’une autre période après sa création.

@@ -20,8 +20,8 @@ Les rapports HTML exportés restent des fichiers uniques autonomes.
 > **v8.0.0** — console **Nexus** : le thème technologique v7 est poussé
 > (cadres instrumentaux, rail de statut, typographie de données) **sans retirer**
 > les thèmes clair / sombre / auto ni les exports. Ajouts locaux, toujours
-> sans serveur : **briefing tactique** (score, rythme, concentration, projection,
-> jours atypiques), **recherche** carte / type / membre, **fenêtres** 7 / 30 / 90 jours,
+> sans serveur : **briefing tactique** (score/projection historiques, remplacés depuis par
+> le briefing descriptif PLAN-008), **recherche** carte / type / membre, **fenêtres** 7 / 30 / 90 jours,
 > **comparateur** de deux membres, **objectif hebdomadaire** mémorisé à part de la
 > session, **sparklines** dans le tableau, **palette de commandes** (`K` ou `Ctrl+K`)
 > et export **briefing texte**. Le filtre par dates seul fonctionne à nouveau
@@ -436,3 +436,28 @@ conserve l’ancien filtre avec erreur explicite. Les exports déclarent le fuse
 Un rapport garde le fuseau source en provenance, mais recalcule selon le poste
 lecteur : si les fuseaux diffèrent, les agrégats peuvent différer ; avertissement
 affiché. Aucun sélecteur ni promesse de reproductibilité inter-fuseaux.
+
+### Indicateurs descriptifs (PLAN-008)
+
+Le score composite et son anneau sont retirés. L’API publique
+`buildInsights(list, stats).score` vaut désormais **null**, même dans le vide.
+Le champ historique `forecast` reste numérique pour la compatibilité de forme,
+mais représente seulement l’**équivalent hebdomadaire du rythme observé**
+(moyenne quotidienne ×7), **pas une prévision** ; aucun chiffre suggéré dans le vide.
+La moyenne quotidienne utilise les jours civils inclusifs de la période retenue :
+bornes explicites limitées à l’historique observé, sinon premières/dernières actions.
+Les rapports gardent cette période déclarée comme métadonnée additive validée,
+afin de conserver les ratios à l’ouverture malgré les filtres initiaux vides.
+
+La comparaison porte sur deux semaines closes **consécutives**, avant la semaine
+de la dernière action visible, et seulement si leurs 14 jours sont couverts par
+la période observée/filtrée. Les dates et comptes sont affichés ; base précédente
+zéro : pas de pourcentage. Couverture insuffisante : comparaison indisponible.
+Les séries semaine/mois et sparklines incluent les périodes sans actions à zéro.
+Les « jours atypiques » sont remplacés par les trois jours les plus actifs,
+sans test d’anomalie. L’objectif compte les actions de la vue cette semaine.
+
+**Les actions ne mesurent ni effort, ni qualité, ni livraison.** Membres et cartes
+restent regroupés par libellé : homonymes et renommages ne sont pas réconciliés.
+Aucune migration d’identités ni classement de productivité n’est ajouté.
+Les anciens rapports autonomes gardent leur ancienne logique.
