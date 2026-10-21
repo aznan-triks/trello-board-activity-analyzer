@@ -1,6 +1,6 @@
 # PLAN-007 — Un calendrier local cohérent pour tous les compteurs
 
-**Statut : dépendant d'un autre plan — PLAN-003 et PLAN-006 · Priorité : P2 — Important.** Mélange UTC/local démontré, mais sans perte de la source ; correction après le jalon de confiance.
+**Statut : validé localement (2026-10-21) · Priorité : P2 — Important.** Mélange UTC/local démontré, mais sans perte de la source ; correction après le jalon de confiance.
 
 ## 1. Problème / preuves
 
@@ -64,3 +64,11 @@ Inventaire des usages temps clos, tests de frontières stables et suite verts, l
 ## 13. Sources
 
 F07/F08, [comparaison calendrier](../02-recherche-et-options.md), vision C4, roadmap J4, PLAN-003/006/008.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 003/006 validés ; inventaire des usages Date, clés, ordinaux, bornes et fenêtres effectué. Durée écoulée des moyennes conservée pour 008 ; calendrier local/dimanche déclaré, pas de sélecteur de fuseau.
+
+## Exécution — 2026-10-21 · validé localement
+
+Implémentation 56b3e4c. 7 régressions rouges avant correction puis 7/7 ciblées (5,9 s), 3 tests de frontières complémentaires ajoutés. Suite complète 84/84 (1,2 min), Chromium alternatif, commande npm test de session. Contextes UTC/Paris/New_York, minuit, dimanche, année, DST printemps/automne et heures répétées, séries/jours membres, fenêtre civile 167h, epoch zéro, minute inclusive et borne inversée sans mutation, rapport inter-fuseaux et réexport timezone lecteur vérifiés. Ordinaux via composantes locales, affichage des clés par composantes et non parsing UTC. Durées écoulées conservées pour moyennes jusqu’à 008 ; todayStamp des noms de fichiers reste délibérément UTC (pas un agrégat). Fuseau déclaré via modèle partagé dans PDF/PNG/MD/XLSX/HTML/ZIP/briefing et JSON explicite ; aucune invariance inter-fuseaux revendiquée. API signatures inchangées, clés semaine changées intentionnellement hors UTC et annoncées. Prochain lot 008.

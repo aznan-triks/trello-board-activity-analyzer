@@ -529,22 +529,8 @@
   .nexus-head, .nexus-tools, .goal-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .nexus-head { justify-content: space-between; margin-bottom: 16px; }
   .nexus-head h2 { margin: 4px 0 0; font-size: 20px; letter-spacing: -.4px; color: var(--color-text-primary); }
-  .nexus-grid { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 18px; align-items: center; }
-  .ring {
-    --p: 0; width: 128px; height: 128px; border-radius: 50%; margin: 0 auto;
-    background: conic-gradient(from 220deg, var(--neon-cyan), var(--neon-violet) calc(var(--p) * 1%), var(--color-border-tertiary) 0);
-    display: grid; place-items: center;
-  }
-  .ring-core {
-    width: 96px; height: 96px; border-radius: 50%; background: var(--color-background-secondary);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border: 1px solid var(--glass-border);
-  }
-  .ring-core strong { font-family: var(--font-data); font-size: 32px; line-height: 1; letter-spacing: -1px; color: var(--color-text-primary); }
-  .ring-core span, .ring-caption, .nx-k {
-    font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-secondary);
-  }
-  .ring-caption { text-align: center; margin: 10px 0 0; }
+  .nexus-grid { display: block; }
+  .nx-k { font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-secondary); }
   .nx-brief { margin: 0; font-size: 14px; line-height: 1.65; color: var(--color-text-primary); overflow-wrap: anywhere; }
   .nx-insights { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
   .nx-insights li { position: relative; padding-left: 14px; font-size: 12px; line-height: 1.5; color: var(--color-text-secondary); overflow-wrap: anywhere; }
@@ -598,9 +584,17 @@
     .setup-card, .stat-card, .chart-card, .filters, .preview-card, .nexus, .nx-panel {
       background: #fff !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
     }
-    .ring { box-shadow: none !important; }
   }
 
+
+  .chart-data { min-width: 0; max-width: 100%; margin-top: 12px; }
+  .chart-data summary, .chart-data-link { color: var(--color-text-primary); cursor: pointer; font-size: 12px; }
+  .data-table-wrap { max-width: 100%; overflow: auto; margin-top: 8px; }
+  .data-table-wrap table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table-wrap th, .data-table-wrap td { padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border-tertiary); overflow-wrap: anywhere; }
+  .data-table-wrap td { white-space: nowrap; }
+  .data-table-wrap caption { text-align: left; padding: 6px; color: var(--color-text-primary); }
+  .chart-data summary:focus-visible, .data-table-wrap:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 </style>
 </head>
@@ -664,7 +658,7 @@
     </div>
     </div>
     <section class="feature-row" aria-label="Les points forts">
-      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, heatmap, score et briefing<br>calculés dans votre navigateur.</p></div></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6" stroke-linecap="round"/></svg></span><div><h3>Toute l’activité, en un regard</h3><p>Graphiques, heatmap et briefing descriptif<br>calculés dans votre navigateur.</p></div></article>
       <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3>Privé, par conception</h3><p>Vos analyses restent dans votre navigateur.<br>Pas de compte supplémentaire à créer.</p></div></article>
       <article class="feature"><span class="feature-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Des insights à partager</h3><p>PDF, Excel, HTML hors-ligne ou briefing texte.<br>Comparez deux membres, fixez un objectif.</p></div></article>
     </section>
@@ -682,7 +676,7 @@
     <div class="demo-notice" id="demo-notice" hidden><span><strong>Mode découverte</strong> · Données fictives, aucune connexion à Trello.</span><button class="dash-btn" id="btn-demo-exit">Connecter mon tableau →</button></div>
     <div class="dash-header">
       <span class="board-name" id="d-name">—</span>
-      <span class="date-range" id="d-range">—</span>
+      <span class="date-range" id="d-range">—</span><p id="calendar-note" class="chart-sub"></p>
       <div class="dash-actions">
         <span class="save-status"><span class="save-dot" id="save-dot"></span><span id="save-label" role="status" aria-live="polite">Sauvegardé</span></span>
         <button class="dash-btn refresh" id="btn-refresh" title="Recharger toutes les actions depuis Trello">↻ Mettre à jour</button>
@@ -691,7 +685,7 @@
           <button class="dash-btn" id="btn-export" aria-haspopup="true" aria-expanded="false">⤓ Export ▾</button>
           <span class="menu-pop" id="export-menu" role="menu">
             <span class="muted">Rapports</span>
-            <button id="exp-html" role="menuitem" title="Page HTML autonome : interactive et utilisable hors-ligne (filtres, tris, graphiques, re-exports)">Rapport HTML interactif (hors-ligne)</button>
+            <button id="exp-html" role="menuitem" title="Sous-ensemble visible uniquement ; pour tout exporter, effacer les filtres avant l’export">Rapport HTML interactif (hors-ligne)</button>
             <button id="exp-pdf" role="menuitem" title="Document A4 multi-pages : indicateurs, graphiques, heatmap vectorielle, détail membres">Rapport PDF (A4)</button>
             <button id="exp-md" role="menuitem" title="Synthèse et tableaux au format Markdown (wiki, dépôt)">Rapport Markdown</button>
             <button id="exp-zip" role="menuitem" title="HTML + PDF + JSON + CSV + Excel + Markdown + toutes les PNG">Archive ZIP complète</button>
@@ -741,7 +735,7 @@
       <div class="stat-card"><div class="stat-label">Total actions</div><div class="stat-val" id="s-total">—</div><div class="stat-sub" id="s-days">—</div></div>
       <div class="stat-card"><div class="stat-label">Membres actifs</div><div class="stat-val" id="s-members">—</div><div class="stat-sub" id="s-top-member">—</div></div>
       <div class="stat-card"><div class="stat-label">Jour le + actif</div><div class="stat-val" id="s-peak-day">—</div><div class="stat-sub" id="s-peak-count">—</div></div>
-      <div class="stat-card"><div class="stat-label">Moy. / semaine</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
+      <div class="stat-card"><div class="stat-label">Équiv. hebdomadaire</div><div class="stat-val" id="s-avg">—</div><div class="stat-sub">actions/semaine</div></div>
     </div>
 
     <section class="nexus" id="nexus" aria-labelledby="nexus-title">
@@ -756,19 +750,10 @@
         </div>
       </div>
       <div class="nexus-grid">
-        <div class="ring-wrap">
-          <div class="ring" id="nx-ring" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score d’activité de la vue courante">
-            <div class="ring-core"><strong id="nx-score">—</strong><span>score</span></div>
-          </div>
-          <p class="ring-caption" id="nx-rhythm">En attente de données</p>
-        </div>
         <div>
           <p class="nx-brief" id="nx-brief">Le briefing se calcule localement, sans modèle distant.</p>
           <ul class="nx-insights" id="nx-insights"></ul>
-          <details class="nx-help">
-            <summary>Comment le score est calculé</summary>
-            <p>Cadence (jusqu’à 6 actions par jour), part des jours couverts, régularité de la série et répartition entre membres. 100 décrit un rythme soutenu, continu et partagé. Aucune donnée ne quitte l’appareil.</p>
-          </details>
+          <p class="nx-help">Les actions ne mesurent ni effort, ni qualité, ni livraison ; membres et cartes regroupés par libellé dans cette version.</p>
         </div>
       </div>
       <div class="nx-meta" id="nx-anomalies"></div>
@@ -790,7 +775,7 @@
         <div class="nx-panel">
           <h3>Objectif hebdomadaire</h3>
           <div class="goal-row">
-            <label for="goal-input">Actions visées cette semaine</label>
+            <label for="goal-input">Actions de la vue visées cette semaine</label>
             <input type="number" id="goal-input" min="1" max="9999" step="1" inputmode="numeric" placeholder="ex. 40">
           </div>
           <div id="nx-goal" class="goal-out">Définissez un objectif local — il reste sur cet appareil.</div>
@@ -804,17 +789,26 @@
         <button class="tgl" data-gran="month">Mois</button>
       </div>
       <div style="position:relative;height:200px;"><canvas id="c-timeline"></canvas></div>
+      <details class="chart-data" id="data-timeline">
+        <summary id="data-timeline-summary">Voir les données : Activité dans le temps</summary>
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Activité dans le temps"></div>
+      </details>
     </div>
     <div class="chart-row">
-      <div class="chart-card" id="sec-members">
+      <div class="chart-card" id="sec-members" tabindex="-1">
         <h3>Actions par membre</h3>
         <div class="legend" id="leg-members"></div>
         <div id="c-members-wrap" style="position:relative;"><canvas id="c-members"></canvas></div>
+        <a class="chart-data-link" id="data-members" href="#sec-detail">Voir les données complètes des membres</a>
       </div>
       <div class="chart-card">
         <h3>Types d'actions</h3>
         <div class="legend" id="leg-types"></div>
         <div style="position:relative;height:220px;"><canvas id="c-types"></canvas></div>
+        <details class="chart-data" id="data-types">
+          <summary id="data-types-summary">Voir les données : Types d’actions</summary>
+          <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Types d’actions"></div>
+        </details>
       </div>
     </div>
     <div class="chart-card" id="sec-heat">
@@ -824,22 +818,38 @@
         <button class="tgl-hm" data-hm="share" title="Part relative des actions de chaque heure">Répartition %</button>
       </div>
       <div class="hm-hour-labels" id="hm-hour-labels"></div>
-      <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid" role="img" aria-label="Heatmap de l'activité par jour de semaine et heure"></div></div>
+      <div style="overflow-x:auto"><div class="heatmap-grid" id="hm-grid" aria-describedby="data-heat-summary" role="img" aria-label="Heatmap de l'activité par jour de semaine et heure"></div></div>
       <div class="hm-scale" id="hm-scale"></div>
+      <details class="chart-data" id="data-heat">
+        <summary id="data-heat-summary">Voir les données : Heatmap jour et heure</summary>
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Heatmap jour et heure"></div>
+      </details>
     </div>
     <div class="chart-card" id="sec-trends">
       <h3>Tendances membres dans le temps</h3>
       <div class="legend" id="leg-trends"></div>
       <div style="position:relative;height:220px;"><canvas id="c-trends"></canvas></div>
+      <details class="chart-data" id="data-trends">
+        <summary id="data-trends-summary">Voir les données : Tendances par membre</summary>
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Tendances par membre"></div>
+      </details>
     </div>
     <div class="chart-row">
       <div class="chart-card">
         <h3>Cartes les + actives</h3>
         <div id="c-topcards-wrap" style="position:relative;"><canvas id="c-topcards"></canvas></div>
+        <details class="chart-data" id="data-topcards">
+          <summary id="data-topcards-summary">Voir les données : Cartes les plus actives</summary>
+          <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Cartes les plus actives"></div>
+        </details>
       </div>
       <div class="chart-card">
         <h3>Activité par heure</h3>
         <div style="position:relative;height:200px;"><canvas id="c-hours"></canvas></div>
+        <details class="chart-data" id="data-hours">
+          <summary id="data-hours-summary">Voir les données : Activité par heure</summary>
+          <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Activité par heure"></div>
+        </details>
       </div>
     </div>
 
@@ -856,29 +866,38 @@
         <h3>Types d'actions par période</h3>
         <div class="legend" id="leg-typetl"></div>
         <div style="position:relative;height:200px;"><canvas id="c-typetl"></canvas></div>
+        <details class="chart-data" id="data-typetl">
+          <summary id="data-typetl-summary">Voir les données : Types d’actions par période</summary>
+          <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Types d’actions par période"></div>
+        </details>
       </div>
       <div class="chart-card">
         <h3>Semaine vs Week-end</h3>
         <div style="position:relative;height:200px;"><canvas id="c-weekend"></canvas></div>
+        <details class="chart-data" id="data-weekend">
+          <summary id="data-weekend-summary">Voir les données : Semaine vs Week-end</summary>
+          <div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : Semaine vs Week-end"></div>
+        </details>
       </div>
     </div>
-    <div class="chart-card" id="sec-detail">
+    <div class="chart-card" id="sec-detail" tabindex="-1">
       <h3>Détail par membre</h3>
       <div class="tbl-wrap">
-        <table class="mtable" id="mtable">
+        <table class="mtable" id="mtable"><caption>Données complètes par membre de la vue courante</caption>
           <thead>
             <tr>
-              <th data-k="name">Membre <span class="ar"></span></th>
-              <th data-k="count" class="num">Actions <span class="ar">▼</span></th>
-              <th data-k="comments" class="num">Comment. <span class="ar"></span></th>
-              <th data-k="cards" class="num">Cartes <span class="ar"></span></th>
-              <th data-k="days" class="num">Jours actifs <span class="ar"></span></th>
-              <th data-k="last" class="num">Dern. activité <span class="ar"></span></th>
+              <th scope="col" data-k="name">Membre <span class="ar"></span></th>
+              <th scope="col" data-k="count" class="num">Actions <span class="ar">▼</span></th>
+              <th scope="col" data-k="comments" class="num">Comment. <span class="ar"></span></th>
+              <th scope="col" data-k="cards" class="num">Cartes <span class="ar"></span></th>
+              <th scope="col" data-k="days" class="num">Jours actifs <span class="ar"></span></th>
+              <th scope="col" data-k="last" class="num">Dern. activité <span class="ar"></span></th>
             </tr>
           </thead>
           <tbody id="mt-body"></tbody>
         </table>
       </div>
+      <a href="#sec-members">Retour au graphique des membres</a>
     </div>
     <div class="foot-bar">
       <p class="app-footer" id="dash-footer">—</p>
@@ -1042,16 +1061,10 @@
   const RETRY_BASE_MS = 500;
   /** Plafond du backoff. */
   const RETRY_CAP_MS = 8000;
-  /** Fenêtre glissante publique Trello : 100 req / 10 s / clé+token. */
+  /** Politique locale prudente par onglet ; pas une certification des quotas Trello. */
   const RATE_WINDOW_MS = 10000;
-  /** Auto-limitation (marge sous la limite officielle). */
+  /** Auto-limitation conservée : 90 tentatives GET par fenêtre. */
   const RATE_MAX_PER_WINDOW = 90;
-  /** Réserve de débit après une écriture : l'API impose ~1/2 s pendant 18 s. */
-  const RATE_WRITE_RESERVE_MS = 18000;
-  /** Intervalle minimum estimé entre deux écritures. */
-  const WRITE_INTERVAL_MS = 600;
-  /** Payload de sauvegarde max (limite de stockage ~5 Mo, marge 4 %). */
-  const STORAGE_MAX_BYTES = Math.floor(4.8 * 1024 * 1024);
   /** Locale d'affichage. */
   const LS = 'fr-FR';
   /** Nombre max de membres tracés dans les tendances. */
@@ -1202,7 +1215,20 @@
   /** @param {string} sel @param {ParentNode} [root] @returns {Element[]} */
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   /** @param {number} ms @returns {Promise<void>} */
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function sleep(ms, signal) {
+    if (signal && signal.aborted) throw new CanceledError();
+    let remaining = Math.max(0, ms);
+    while (remaining > 0) {
+      const chunk = Math.min(remaining, 2147483647); // limite setTimeout, sans raccourcir Retry-After.
+      await new Promise((resolve, reject) => {
+        const cleanup = () => { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); };
+        const abort = () => { cleanup(); reject(new CanceledError()); };
+        const timer = setTimeout(() => { cleanup(); resolve(); }, chunk);
+        if (signal) { signal.addEventListener('abort', abort, { once: true }); if (signal.aborted) abort(); }
+      });
+      remaining -= chunk;
+    }
+  }
   /** @param {number} n @param {number} min @param {number} max */
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
@@ -1220,7 +1246,7 @@
 
   /** @param {Date|number} d @returns {string} "5 janv. 2024" (format d'origine) */
   function fmtDate(d) {
-    return new Date(d).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric' });
+    return (typeof d === 'string' && /^-?\d{4,}-\d{2}-\d{2}$/.test(d) ? localDateFromKey(d) : new Date(d)).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   /** Prénom d'un nom complet (« Jean Dupont » → « Jean »), comme la v1. */
@@ -1230,8 +1256,8 @@
   const truncate = (s, over, keep) => (s.length > over ? s.slice(0, keep) + '…' : s);
 
   /**
-   * Clé de période — calcul identique à la v1 (semaine locale démarrant
-   * dimanche, rendue en ISO UTC ; mois en heures locales).
+   * Clé de période — semaine locale démarrant
+   * dimanche, rendue en date civile locale ; mois local.
    * @param {Date} d date locale déjà parseée
    * @param {'week'|'month'} gran
    * @returns {string}
@@ -1241,7 +1267,7 @@
       const t = new Date(d);
       t.setDate(t.getDate() - t.getDay());
       t.setHours(0, 0, 0, 0);
-      return t.toISOString().slice(0, 10);
+      return localDateKey(t);
     }
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
@@ -1251,7 +1277,7 @@
      reconstruisait une chaîne pour CHAQUE action et CHAQUE appelant. Les clés
      ne dépendent que du jour local (semaine) ou du mois local : on les met en
      cache par jour/mois civil (quelques centaines d'entrées), et on lit
-     `dateMs` au lieu de reparser la chaîne ISO. Sémantique identique. */
+     `dateMs` au lieu de reparser la chaîne ISO. Convention locale commune. */
   const _pkDay = new Date();
   /** @type {Map<number,string>} minuit local (ms) → clé de semaine */
   const weekKeyCache = new Map();
@@ -1281,18 +1307,45 @@
   /** Horodatage d'une action normalisée (secours : parse de la date ISO). */
   const actionMs = a => (a.dateMs != null ? a.dateMs : Date.parse(a.date));
 
-  /** @type {Map<number,string>} jour UTC (ordinal) → 'AAAA-MM-JJ' */
   const dayKeyCache = new Map();
-  /** Date de calcul réutilisée (évite une allocation par action). */
   const _statDate = new Date();
-
-  /** Jour UTC au format ISO court, mémoïsé (toISOString coûte une allocation
-   *  + un formatage complet : une fois par jour civil, pas par action). */
+  const _civilDate = new Date();
+  const _civilUTC = new Date(0);
+  function localDateKey(d) {
+    const y = d.getFullYear();
+    return (y < 0 ? '-' + String(-y).padStart(4, '0') : String(y).padStart(4, '0')) + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function localDateFromKey(key) {
+    const parts = String(key).match(/^(-?\d+)-(\d{2})-(\d{2})$/);
+    const d = new Date(0);
+    if (!parts) return new Date(NaN);
+    d.setFullYear(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  /** Ordinal uniforme du jour CIVIL local, indépendant des journées DST de 23/25h. */
+  function civilOrdinal(ms) {
+    _civilDate.setTime(ms);
+    _civilUTC.setUTCFullYear(_civilDate.getFullYear(), _civilDate.getMonth(), _civilDate.getDate());
+    return _civilUTC.getTime() / 864e5;
+  }
   function dayKeyMs(ms) {
-    const ord = Math.floor(ms / 864e5);
+    const ord = civilOrdinal(ms);
     let k = dayKeyCache.get(ord);
-    if (k === undefined) { k = new Date(ord * 864e5).toISOString().slice(0, 10); dayKeyCache.set(ord, k); }
+    if (k === undefined) { k = localDateKey(_civilDate); dayKeyCache.set(ord, k); }
     return k;
+  }
+  function localTimezone() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'heure locale'; }
+    catch (_) { return 'heure locale'; }
+  }
+  let reportSourceTimezone = null;
+  function calendarLabel() {
+    const tz = localTimezone();
+    // shortcut: les agrégations suivent le fuseau local du lecteur, fixer un fuseau lorsque la comparaison interpostes devient une exigence
+    return 'Calendrier local : ' + tz + ' · semaine dimanche' +
+      (reportSourceTimezone && reportSourceTimezone !== tz ? ' · fuseau source : ' + reportSourceTimezone + ' ; recalcul selon le lecteur' : '');
   }
 
   /** #RRGGBB → #RRGGBBAA (alpha 0..1) pour les aires empilées. */
@@ -1380,50 +1433,41 @@
    *   1. window.storage (hôtes type artifacts ; API get/set/delete asynchrone)
    *   2. localStorage    (contexte navigateur autonome)
    *   3. mémoire         (jamais de crash — comme safeGet/safeSet/safeDel v1)
-   * L'adaptateur renvoie toujours `{value:string}` comme window.storage.
+   * Lecture `{value,durable}` ; écriture/suppression `{ok,durable}`.
+   * Aucun probe d’écriture : lecture et suppression restent possibles à quota plein.
    */
   const Store = (function () {
     /** @type {Map<string,string>} */ const mem = new Map();
-    let memOnly = false;
-
     const artifact = () => window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
-    const local = () => {
-      if (memOnly) return false;
-      try { return !!(window.localStorage && typeof localStorage.getItem === 'function'); }
-      catch (_) { return false; }
-    };
-    function lsOk() { // localStorage peut lever (mode privé / cookies bloqués)
-      try { localStorage.setItem(SK + ':probe', '1'); localStorage.removeItem(SK + ':probe'); return true; }
-      catch (_) { memOnly = true; return false; }
-    }
-
     async function get(key) {
       try {
-        if (artifact()) return await window.storage.get(key);
-        if (local() && lsOk()) {
-          const v = localStorage.getItem(key);
-          return v == null ? null : { value: v };
-        }
-      } catch (e) { log.debug('storage.get dégradé :', e); }
-      return mem.has(key) ? { value: mem.get(key) } : null;
+        const r = artifact() ? await window.storage.get(key) :
+          { value: localStorage.getItem(key) };
+        if (r && r.value != null) return { value: r.value, durable: true };
+      } catch (_) { log.debug('Lecture persistante indisponible.'); }
+      return mem.has(key) ? { value: mem.get(key), durable: false } : null;
     }
     async function set(key, value) {
       try {
-        if (artifact()) return await window.storage.set(key, value);
-        if (local() && lsOk()) { localStorage.setItem(key, value); return true; }
-      } catch (e) {
-        log.warn('storage.set impossible :', e);
-      }
-      mem.set(key, value); // filet mémoire (session courante)
-      return true;
+        if (artifact()) {
+          if (await window.storage.set(key, value) === false) throw new Error('Écriture refusée');
+        } else localStorage.setItem(key, value);
+        mem.delete(key);
+        return { ok: true, durable: true };
+      } catch (_) { log.warn('Écriture persistante indisponible.'); }
+      mem.set(key, value);
+      return { ok: true, durable: false };
     }
     async function del(key) {
       try {
-        if (artifact()) return await window.storage.delete(key);
-        if (local() && lsOk()) localStorage.removeItem(key);
-      } catch (_) { /* ignore */ }
+        if (artifact()) {
+          if (typeof window.storage.delete !== 'function' || await window.storage.delete(key) === false) throw new Error('Suppression refusée');
+        } else localStorage.removeItem(key);
+        mem.delete(key);
+        return { ok: true, durable: true };
+      } catch (_) { log.warn('Suppression persistante indisponible.'); }
       mem.delete(key);
-      return true;
+      return { ok: false, durable: false };
     }
     return { get, set, del };
   })();
@@ -1440,40 +1484,19 @@
     constructor() { super('Annulé'); this.name = 'CanceledError'; }
   }
 
-  /**
-   * Régulateur de débit Trello :
-   *  • fenêtre glissante 90 requêtes / 10 s ;
-   *  • réserve « écritures » : après un PUT/POST, l'API impose ≈1 requête/2 s
-   *    pendant 18 s — on évite d'y toucher en espaçant les lectures qui
-   *    suivent une écriture connue, et on signale si l'appelant écrit (réservé ici pour des extensions futures).
-   */
+  /** Régulation locale GET, fenêtre glissante par onglet (retries inclus). */
   const Limiter = (function () {
-    /** @type {number[]} */ const times = [];
-    /** @type {number} */ let lastWrite = 0;
-    /** @type {number} */ let lastWriteTs = 0;
-
-    function noteWrite() {
-      lastWrite += WRITE_INTERVAL_MS;
-      lastWriteTs = Date.now();
-    }
-
-    async function wait() {
-      // fenêtre 10 s
+    const times = [];
+    async function wait(signal) {
       for (;;) {
+        if (signal && signal.aborted) throw new CanceledError();
         const now = Date.now();
-        while (times.length && now - times[0] > RATE_WINDOW_MS) times.shift();
-        if (times.length < RATE_MAX_PER_WINDOW) break;
-        await sleep(120);
+        while (times.length && now - times[0] >= RATE_WINDOW_MS) times.shift();
+        if (times.length < RATE_MAX_PER_WINDOW) { times.push(now); return; }
+        await sleep(Math.max(1, RATE_WINDOW_MS - (now - times[0])), signal);
       }
-      times.push(Date.now());
-      if (times.length > 400) times.splice(0, times.length - 400);
-      // réserve d'écriture
-      const reserveEnd = lastWrite + RATE_WRITE_RESERVE_MS;
-      const waitMs = reserveEnd - Date.now();
-      if (waitMs > 0) { log.debug('Limiter : pause anti-rate-limit de ' + waitMs + ' ms'); await sleep(waitMs); }
     }
-
-    return { wait, noteWrite };
+    return { wait };
   })();
 
   /**
@@ -1495,7 +1518,16 @@
   function retryDelay(res, attempt) {
     try {
       const h = res && res.headers && res.headers.get && res.headers.get('retry-after');
-      if (h) { const s = parseFloat(h); if (Number.isFinite(s)) return clamp(s * 1000, 500, 30000); }
+      if (h) {
+        const text = h.trim();
+        if (/^\d+$/.test(text)) {
+          const ms = Number(text) * 1000;
+          if (Number.isFinite(ms)) return ms;
+        } else {
+          const delay = Date.parse(text) - Date.now();
+          if (Number.isFinite(delay) && delay > 0) return delay;
+        }
+      }
     } catch (_) { /* headers absentes (mocks) */ }
     const base = Math.min(RETRY_CAP_MS, RETRY_BASE_MS * Math.pow(2, attempt - 1));
     return base / 2 + Math.random() * base / 2;
@@ -1504,15 +1536,15 @@
   /**
    * GET JSON résilient : timeout, retries (429/5xx/réseau), annulation.
    * @param {string} url
-   * @param {{signal?:AbortSignal, method?:string, body?:*}} [opts]
+   * @param {{signal?:AbortSignal}} [opts]
    * @returns {Promise<*>} JSON décodé
    */
   async function fetchJSON(url, opts) {
     opts = opts || {};
-    const method = opts.method || 'GET';
-    if (method !== 'GET') Limiter.noteWrite();
+    const method = 'GET';
     let attempt = 0;
     for (;;) {
+      await Limiter.wait(opts.signal);
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
       const outer = opts.signal;
@@ -1523,8 +1555,7 @@
         const res = await fetch(url, {
           method,
           signal: ctrl.signal,
-          headers: method === 'GET' ? { 'Accept': 'application/json' } : { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-          body: opts.body != null ? JSON.stringify(opts.body) : undefined
+          headers: { 'Accept': 'application/json' }
         });
         if (res.ok) {
           const text = await res.text();
@@ -1540,7 +1571,8 @@
           attempt++;
           const d = retryDelay(res, attempt);
           log.warn('HTTP ' + res.status + ' — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
-          await sleep(d);
+          clearTimeout(timer); // le timeout borne la requête, pas le backoff.
+          await sleep(d, outer);
           continue;
         }
         let msg;
@@ -1560,7 +1592,8 @@
           attempt++;
           const d = retryDelay(null, attempt);
           log.warn('Réseau/timeout — nouvelle tentative ' + attempt + '/' + RETRY_MAX + ' dans ' + Math.round(d) + ' ms');
-          await sleep(d);
+          clearTimeout(timer); // le timeout borne la requête, pas le backoff.
+          await sleep(d, outer);
           continue;
         }
         throw e;
@@ -1585,10 +1618,11 @@
     const arr = await fetchJSON(buildUrl('/boards/' + encodeURIComponent(boardId) + '/members',
       { key, token, fields: 'fullName,username' }), { signal });
     const map = new Map();
+    if (!Array.isArray(arr)) throw new ApiError('Réponse membres inattendue du serveur Trello.', 0);
     if (Array.isArray(arr)) {
       for (const m of arr) {
         if (m && m.id) {
-          const name = m.fullName || m.username;
+          const name = typeof m.fullName === 'string' && m.fullName ? m.fullName : (typeof m.username === 'string' ? m.username : 'Inconnu');
           map.set(m.id, (name == null || name === '') ? 'Inconnu' : name);
         }
       }
@@ -1600,7 +1634,7 @@
    * Récupère tout l'historique du board par pagination `before` (curseur =
    * id de la dernière action, exactement comme la v1), avec options :
    *  • `since`    : borne basse (delta refresh) ;
-   *  • `knownIds` : arrêt anticipé quand une page retombe sur des id déjà vus ;
+   *  • `knownIds` : IDs déjà conservés, exclus des ajouts (sans arrêter la fenêtre) ;
    *  • `signal`   : annulation utilisateur.
    * @param {string} key @param {string} token @param {string} boardId
    * @param {{signal?:AbortSignal, since?:string|null, knownIds?:Set<string>|null,
@@ -1615,6 +1649,7 @@
     onProgress(15, 'Chargement de l\'historique...', '');
     /** @type {*[]} */ const actions = [];
     const seen = new Set();
+    const cursors = new Set();
     let before = null, page = 0, latestIso = opts.since || null, stoppedAtKnown = false;
     for (;;) {
       const params = { key, token, limit: PAGE_LIMIT, filter: 'all', fields: 'type,date,idMemberCreator,data' };
@@ -1628,13 +1663,13 @@
         if (e instanceof ApiError) throw new Error('Erreur API page ' + (page + 1) + ' (' + (e.status || '?') + ')');
         throw e;
       }
+      if (signal && signal.aborted) throw new CanceledError();
       if (!Array.isArray(batch)) throw new ApiError('Réponse inattendue du serveur Trello.', 0);
       if (!batch.length) break;
-      let hitKnown = false;
       for (const a of batch) {
         if (!a || typeof a !== 'object') continue;
         const id = typeof a.id === 'string' ? a.id : '';
-        if (id && opts.knownIds && opts.knownIds.has(id)) { hitKnown = true; continue; }
+        if (id && opts.knownIds && opts.knownIds.has(id)) { stoppedAtKnown = true; continue; }
         if (id) { if (seen.has(id)) continue; seen.add(id); }
         if (a.date && (!latestIso || String(a.date) > latestIso)) latestIso = String(a.date);
         a._memberName = memberMap.get(a.idMemberCreator) || 'Inconnu';
@@ -1643,12 +1678,19 @@
       page++;
       onProgress(Math.min(85, 15 + page * 4), 'Chargement...',
         actions.length.toLocaleString() + ' actions (page ' + page + ')');
-      if (hitKnown && opts.knownIds) { stoppedAtKnown = true; break; }
-      before = batch[batch.length - 1] && batch[batch.length - 1].id;
-      if (!before) break;
+      // Un ID connu ne prouve pas la fin : d'autres actions du même instant
+      // peuvent suivre sur la page suivante. Parcourir toute la fenêtre since.
       if (batch.length < PAGE_LIMIT) break;
-      if (page >= MAX_PAGES) { log.warn('Pagination stoppée à ' + MAX_PAGES + ' pages (garde-fou).'); break; }
-      await sleep(PAGE_DELAY_MS);
+      const cursor = batch[batch.length - 1] && batch[batch.length - 1].id;
+      if (typeof cursor !== 'string' || !cursor || cursors.has(cursor)) {
+        throw new Error('Historique incomplet — curseur de pagination absent ou répété.');
+      }
+      if (page >= MAX_PAGES) {
+        throw new Error('Historique incomplet — limite de ' + MAX_PAGES + ' pages atteinte.');
+      }
+      cursors.add(cursor);
+      before = cursor;
+      await sleep(PAGE_DELAY_MS, signal);
     }
     return { actions, stoppedAtKnown, latestIso };
   }
@@ -1677,13 +1719,13 @@
     const date = String(a.date || '');
     const ms = Date.parse(date);
     if (!Number.isFinite(ms)) return null;
-    const card = (a.data && a.data.card && a.data.card.name) ? String(a.data.card.name) : '';
+    const card = (a.data && a.data.card && typeof a.data.card.name === 'string') ? a.data.card.name : '';
     return {
-      type: String(a.type || ''),
+      type: typeof a.type === 'string' ? a.type : '',
       date,
       dateMs: ms,
       id: typeof a.id === 'string' ? a.id : '',
-      memberName: a._memberName || 'Inconnu',
+      memberName: typeof a._memberName === 'string' && a._memberName ? a._memberName : 'Inconnu',
       cardName: card
     };
   }
@@ -1730,11 +1772,45 @@
     return r;
   }
 
-  /** Validation stricte d'un payload de sauvegarde (protection v1 « données corrompues »). */
-  function validPayload(d) {
-    return !!d && typeof d === 'object' && !!d.boardData && typeof d.boardData === 'object'
-      && Array.isArray(d.actions);
+  const record = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const has = (v, k) => Object.prototype.hasOwnProperty.call(v, k);
+  const optionalString = (v, k) => !has(v, k) || typeof v[k] === 'string';
+  const validDate = v => typeof v === 'string' && Number.isFinite(Date.parse(v));
+  function validSlim(a) {
+    return record(a) && ['t', 'd', 'm', 'c'].every(k => typeof a[k] === 'string') &&
+      validDate(a.d) && optionalString(a, 'i');
   }
+  function validBoard(b) {
+    return record(b) && optionalString(b, 'name') && optionalString(b, 'id');
+  }
+  function validFilter(f) {
+    if (!record(f)) return false;
+    if (has(f, 'members') && (!Array.isArray(f.members) || !f.members.every(m => typeof m === 'string'))) return false;
+    if (!optionalString(f, 'query')) return false;
+    for (const k of ['fromMs', 'toMs']) {
+      if (has(f, k) && f[k] !== null && (typeof f[k] !== 'number' || !Number.isFinite(new Date(f[k]).getTime()))) return false;
+    }
+    return f.fromMs == null || f.toMs == null || f.fromMs <= f.toMs;
+  }
+  /** Session historique : l'absence d'ID, creds, savedAt et board.name reste valide. */
+  function validPayload(d) {
+    return record(d) && validBoard(d.boardData) && Array.isArray(d.actions) && d.actions.every(validSlim) &&
+      (!has(d, 'creds') || (record(d.creds) && ['key', 'token', 'boardId'].every(k => optionalString(d.creds, k)))) &&
+      (!has(d, 'savedAt') || validDate(d.savedAt));
+  }
+  function validEmbedded(p) {
+    return record(p) && p.kind === 'trello-activity-export-v1' && validBoard(p.board) &&
+      Array.isArray(p.actions) && p.actions.every(validSlim) &&
+      (!has(p, 'filter') || validFilter(p.filter)) &&
+      (!has(p, 'observation') || (validFilter(p.observation) && has(p.observation, 'fromMs') && has(p.observation, 'toMs'))) &&
+      (!has(p, 'gran') || ['week', 'month'].includes(p.gran)) &&
+      (!has(p, 'heatMetric') || ['count', 'share'].includes(p.heatMetric)) &&
+      (!has(p, 'exportedAt') || validDate(p.exportedAt)) && optionalString(p, 'version') && optionalString(p, 'timezone') &&
+      (!has(p, 'weekStart') || p.weekStart === 'sunday') &&
+      (!has(p, 'provenance') || (record(p.provenance) && optionalString(p.provenance, 'label') &&
+        (!has(p.provenance, 'filters') || validFilter(p.provenance.filters))));
+  }
+  const restoredBoard = b => ({ ...b, name: typeof b.name === 'string' ? b.name : 'Tableau' });
 
   /* ════════════════════════════ 7. STATE ══════════════════════════════════ */
 
@@ -1778,15 +1854,17 @@
   function validBoardId(id) { return /^(?:[0-9a-fA-F]{24}|[a-zA-Z0-9]{8})$/.test(id); }
 
   /** Liste des actions visibles après filtres membres/période (identique à la liste complète si aucun filtre). */
+  let exportSnapshot = null;
   function getVisible() {
+    if (exportSnapshot) return exportSnapshot.actions;
     const f = state.filter;
-    const noMembers = f.members.size === 0, noRange = !f.fromMs && !f.toMs;
+    const noMembers = f.members.size === 0, noRange = f.fromMs == null && f.toMs == null;
     const q = String(f.query || '').trim().toLowerCase();
     if (noMembers && noRange && !q) return state.actions;
     return state.actions.filter(a =>
       (noMembers || f.members.has(a.memberName)) &&
-      (!f.fromMs || a.dateMs >= f.fromMs) &&
-      (!f.toMs || a.dateMs <= f.toMs) &&
+      (f.fromMs == null || a.dateMs >= f.fromMs) &&
+      (f.toMs == null || a.dateMs <= f.toMs) &&
       (!q || actionHaystack(a).indexOf(q) >= 0)
     );
   }
@@ -1813,7 +1891,7 @@
       /** @type {Map<string,number>} */ cardCounts: new Map(),
       /** @type {Map<string,{comments:number,creates:number,cards:Set<string>,days:Set<number>,lastMs:number}>} */
       memberExtras: new Map(),
-      /** @type {Set<number>} */ dayOrdinals: new Set(),      // jours UTC actifs (global)
+      /** @type {Set<number>} */ dayOrdinals: new Set(),      // jours civils locaux actifs (global)
       comments: 0, creates: 0,
       weekend: 0, weekdays: 0, jour: 0, nuit: 0,
       heatMax: 0
@@ -1856,7 +1934,7 @@
       if (a.type === 'commentCard') ex.comments++;
       if (a.type === 'createCard') ex.creates++;
       if (a.cardName) ex.cards.add(a.cardName);
-      const ord = Math.floor(ms / 864e5);
+      const ord = civilOrdinal(ms);
       ex.days.add(ord);
       st.dayOrdinals.add(ord);
       if (ms > ex.lastMs) ex.lastMs = ms;
@@ -1870,7 +1948,7 @@
     return st;
   }
 
-  /** Plus longue série de jours consécutifs avec ≥1 action (à partir d'un Set d'ordinaux UTC). */
+  /** Plus longue série de jours consécutifs avec ≥1 action (à partir d'un Set d'ordinaux civils locaux). */
   function longestStreak(ordSet) {
     if (!ordSet.size) return 0;
     const arr = Array.from(ordSet).sort((a, b) => a - b);
@@ -1890,19 +1968,18 @@
       const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
       c.set(k, (c.get(k) || 0) + 1);
     }
-    const keys = Array.from(c.keys()).sort();
-    return { labels: keys, data: keys.map(k => c.get(k)) };
+    return periodSeries(c);
   }
 
   /** Équivalent v1 `byMemberPeriod` : nom → {clé de période: nombre}. */
   function byMemberPeriod(actions, gran) {
     /** @type {Record<string,Record<string,number>>} */
-    const m = {};
+    const m = Object.create(null);
     for (const a of actions) {
       const name = a._memberName || a.memberName || 'Inconnu';
       const ms = actionMs(a);
       const k = Number.isFinite(ms) ? periodKeyMs(ms, gran) : '??';
-      if (!m[name]) m[name] = {};
+      if (!m[name]) m[name] = Object.create(null);
       m[name][k] = (m[name][k] || 0) + 1;
     }
     return m;
@@ -1910,8 +1987,20 @@
 
   /** Liste ordonnée {labels,data} depuis un Map de compteurs (timeline etc.). */
   function periodSeries(map) {
-    const keys = Array.from(map.keys()).sort();
-    return { labels: keys, data: keys.map(k => map.get(k)) };
+    const sparse = Array.from(map.keys()).sort();
+    if (!sparse.length) return { labels: [], data: [] };
+    const month = /^-?\d{4,}-\d{2}$/.test(sparse[0]);
+    if (!sparse.every(k => month ? /^-?\d{4,}-\d{2}$/.test(k) : /^-?\d{4,}-\d{2}-\d{2}$/.test(k))) {
+      return { labels: sparse, data: sparse.map(k => map.get(k)) };
+    }
+    const current = localDateFromKey(month ? sparse[0] + '-01' : sparse[0]);
+    const last = localDateFromKey(month ? sparse[sparse.length - 1] + '-01' : sparse[sparse.length - 1]);
+    const labels = [];
+    while (current <= last) {
+      labels.push(month ? periodKey(current, 'month') : localDateKey(current));
+      if (month) current.setMonth(current.getMonth() + 1); else current.setDate(current.getDate() + 7);
+    }
+    return { labels, data: labels.map(k => map.get(k) || 0) };
   }
 
   /** Convertit un Map memberPeriod en datasets triés (chart types-par-période). */
@@ -1965,6 +2054,30 @@
     ticks: { color: '#888', font: { size: 9, family: 'Segoe UI, Arial, sans-serif' } }
   }, extra);
 
+  /** Même sérialiseur pour datasets live et modèles statiques, sans agrégation parallèle. */
+  function dataTableHtml(title, labels, datasets, firstHeading) {
+    const headers = [firstHeading || 'Période / catégorie', ...datasets.map((d, i) => d.label || (datasets.length === 1 ? 'Actions' : 'Série ' + (i + 1)))];
+    const rows = labels.map((label, i) => '<tr><th scope="row">' + esc(label) + '</th>' +
+      datasets.map(d => '<td>' + esc(d.data[i] == null ? 0 : d.data[i]) + '</td>').join('') + '</tr>');
+    return '<table><caption>' + esc(title) + '</caption><thead><tr>' + headers.map(h => '<th scope="col">' + esc(h) + '</th>').join('') +
+      '</tr></thead><tbody>' + (rows.join('') || '<tr><td colspan="' + headers.length + '">Aucune donnée pour cette vue.</td></tr>') + '</tbody></table>';
+  }
+  function detailsHtml(key, title, table) {
+    return '<details class="chart-data" id="data-' + key + '"><summary id="data-' + key + '-summary">Voir les données : ' + esc(title) +
+      '</summary><div class="data-table-wrap" tabindex="0" role="region" aria-label="Données : ' + esc(title) + '">' + table + '</div></details>';
+  }
+  function heatTableHtml(hm, shareMode) {
+    const rows = [];
+    for (let i = 1; i <= 7; i++) rows.push(i % 7);
+    const totals = Array.from({ length: 24 }, (_, h) => hm.cells.reduce((sum, row) => sum + row[h], 0));
+    const datasets = Array.from({ length: 24 }, (_, h) => ({ label: h + 'h', data: rows.map(d => {
+      const count = hm.cells[d][h];
+      return shareMode ? count + ' (' + (totals[h] ? Math.round(count / totals[h] * 100) : 0) + ' % de l’heure)' : count;
+    }) }));
+    return dataTableHtml(shareMode ? 'Heatmap — volume et part de chaque heure' : 'Heatmap — volume d’actions', rows.map(d => DAYS[d]), datasets, 'Jour / heure');
+  }
+  const trendMemberNames = st => Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, TREND_MEMBER_COUNT).map(m => m[0]);
+
   /**
    * (Re)construit un graphique : même cycle destroy+new que la v1 — les
    * datasets changent de taille/labels à chaque rendu, et ce profil de coût
@@ -1977,6 +2090,12 @@
     const heading = el.closest('.chart-card')?.querySelector('h3');
     el.setAttribute('role', 'img');
     el.setAttribute('aria-label', heading ? heading.textContent : 'Graphique d’activité');
+    const alternative = $('data-' + key);
+    if (alternative) {
+      el.setAttribute('aria-describedby', key === 'members' ? 'data-members' : 'data-' + key + '-summary');
+      if (key !== 'members') alternative.querySelector('.data-table-wrap').innerHTML = dataTableHtml(heading ? heading.textContent : 'Graphique d’activité', config.a11yLabels || config.data.labels, config.data.datasets);
+    }
+    delete config.a11yLabels;
     config.options = config.options || {};
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     config.options.animation = (reduced || captureMode) ? false : { duration: 450, easing: 'easeOutQuart' };
@@ -2104,7 +2223,7 @@
         const txt = await res.text();
         if (txt && txt.length > 10000) {
           chartJsSrcMemo = txt;
-          try { await Store.set(CHART_CACHE_SK, txt); log.info('Bundle Chart.js mis en cache local (' + Math.round(txt.length / 1024) + ' Ko) — reprise hors-ligne prête.'); }
+          try { const r = await Store.set(CHART_CACHE_SK, txt); log.info(r.durable ? 'Bundle Chart.js en cache persistant.' : 'Bundle Chart.js en mémoire uniquement.'); }
           catch (e) { log.warn('Cache Chart.js non écrit :', e); }
           return txt;
         }
@@ -2173,31 +2292,40 @@
 
   /* ══════════════════════ 11. PERSISTANCE / BANNIÈRE ══════════════════════ */
 
-  /**
-   * Sauvegarde le dataset « slim » au schéma v3 (boardData/actions/creds/
-   * savedAt + `i` additif par action). Garde-fou de taille identique à v1
-   * (4,8 Mo → « Trop volumineux (x.xx MB) »).
-   * @returns {Promise<boolean>} true si écriture réussie
-   */
-  async function persistData() {
-    if (state.demo) return false; // Ne jamais remplacer une vraie sauvegarde par la démo.
-    setSaveStatus('saving');
-    const slim = state.actions.map(slimAction);
-    const credsToSave = state.keepCreds
-      ? state.creds
-      : { key: '', token: '', boardId: state.creds.boardId || '' };
-    const savedAt = new Date().toISOString();
-    const payload = JSON.stringify({ boardData: state.board, actions: slim, creds: credsToSave, savedAt });
-    const mb = (payload.length / 1024 / 1024).toFixed(2);
-    if (payload.length > STORAGE_MAX_BYTES) {
-      setSaveStatus('Trop volumineux (' + mb + ' MB)');
-      log.warn('Sauvegarde annulée : payload de ' + mb + ' Mo > ' + (STORAGE_MAX_BYTES / 1024 / 1024).toFixed(2) + ' Mo.');
-      return false;
-    }
-    const ok = await Store.set(SK, payload);
-    setSaveStatus(ok ? 'saved' : 'Erreur sauvegarde');
-    if (ok) { state.savedAtIso = savedAt; log.info('Sauvegarde : ' + slim.length.toLocaleString() + ' actions, ' + mb + ' Mo.'); }
-    return !!ok;
+  // Sérialiser les écritures de session et la révocation, y compris window.storage asynchrone.
+  let sessionQueue = Promise.resolve();
+  function sessionOperation(fn) {
+    const next = sessionQueue.then(fn);
+    sessionQueue = next.catch(() => {});
+    return next;
+  }
+  /** @returns {Promise<boolean>} true uniquement après écriture persistante. */
+  function persistData() {
+    if (state.demo) return Promise.resolve(false);
+    return sessionOperation(async () => {
+      if (state.demo) return false;
+      setSaveStatus('saving');
+      const creds = state.keepCreds ? state.creds : { key: '', token: '', boardId: state.creds.boardId || '' };
+      const savedAt = new Date().toISOString();
+      const payload = JSON.stringify({ boardData: state.board, actions: state.actions.map(slimAction), creds, savedAt });
+      const result = await Store.set(SK, payload);
+      setSaveStatus(result.durable ? 'saved' : 'Session non sauvegardée — exporter avant de fermer');
+      if (result.durable) state.savedAtIso = savedAt;
+      return result.durable;
+    });
+  }
+
+  function revokeSavedCredentials() {
+    return sessionOperation(async () => {
+      const data = await readPayload();
+      if (!data) return;
+      if (data === 'corrupt') {
+        toast('Sauvegarde corrompue : retrait impossible. Effacez les données du site.', 'error'); return;
+      }
+      const clean = { ...data, creds: { ...(data.creds || {}), key: '', token: '' } };
+      const result = await Store.set(SK, JSON.stringify(clean));
+      if (!result.durable) toast('Retrait des identifiants impossible : effacez les données du site.', 'error');
+    });
   }
 
   /** Lit et valide le payload sauvegardé. @returns {Promise<*|'corrupt'|null>} */
@@ -2207,17 +2335,19 @@
     let data;
     try { data = JSON.parse(result.value); } catch (e) { return 'corrupt'; }
     if (!validPayload(data)) return 'corrupt';
+    Object.defineProperty(data, '_durable', { value: result.durable });
     return data;
   }
 
   /** Bandeau « session sauvegardée trouvée » (v1 verbatim, format inclus). */
   async function checkSaved() {
     const data = await readPayload();
-    if (!data || data === 'corrupt') return;
+    if (data === 'corrupt') { showError('Données corrompues : sauvegarde conservée sans modification.'); return; }
+    if (!data || !data._durable) return;
     if (!data.actions.length) return;
     const date = new Date(data.savedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     $('saved-banner-text').textContent =
-      data.boardData.name + ' — ' + data.actions.length.toLocaleString() + ' actions sauvegardées le ' + date;
+      (typeof data.boardData.name === 'string' ? data.boardData.name : 'Tableau') + ' — ' + data.actions.length.toLocaleString() + ' actions sauvegardées le ' + date;
     $('saved-banner').style.display = 'flex';
     if (data.creds) {
       $('api-key').value = data.creds.key || '';
@@ -2233,25 +2363,32 @@
     const data = await readPayload();
     if (!data) { showError('Aucune donnée trouvée.'); return; }
     if (data === 'corrupt') { showError('Données corrompues.'); return; }
-    state.board = data.boardData;
+    const actions = normalizeActions(data.actions.map(expandActionKeepId));
+    const board = restoredBoard(data.boardData);
+    state.board = board;
     state.creds = data.creds || {};
-    state.actions = normalizeActions(data.actions.map(expandActionKeepId));
+    state.actions = actions;
     const hasIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
     log.info('Session restaurée : ' + state.actions.length.toLocaleString() + ' actions' + (hasIds ? '' : ' (format v1 — rafraîchissement delta indisponible)'));
     // Styles d'affichage exacts de la v1 (le chargement n'est jamais masqué ici : il est déjà caché).
     $('setup').style.display = 'none';
     $('dashboard').style.display = 'block';
     renderDashboard(state.board && state.board.name != null ? state.board.name : undefined);
-    setSaveStatus('saved');
+    state.savedAtIso = data._durable ? data.savedAt || null : null;
+    setSaveStatus(data._durable ? 'saved' : 'Session non sauvegardée — exporter avant de fermer');
     toast('Session restaurée (' + state.actions.length.toLocaleString() + ' actions).', 'success');
   }
 
   /** Efface la sauvegarde et masque la bannière (v1). */
-  async function clearSaved() {
-    await Store.del(SK);
-    $('saved-banner').style.display = 'none';
-    state.savedAtIso = null;
-    toast('Sauvegarde locale effacée.');
+  function clearSaved() {
+    return sessionOperation(async () => {
+      const result = await Store.del(SK);
+      if (!result.durable) { toast('Impossible d’effacer la sauvegarde : effacez les données du site.', 'error'); return false; }
+      $('saved-banner').style.display = 'none';
+      state.savedAtIso = null;
+      toast('Sauvegarde locale effacée.');
+      return true;
+    });
   }
 
   /* ═════════════════════ 12. FLUX PRINCIPAUX (analyse) ════════════════════ */
@@ -2290,7 +2427,7 @@
       fields.map($).find(el => !el.value.trim()).focus();
       return;
     }
-    state.keepCreds = $('keep-creds').checked;
+    const keepCreds = $('keep-creds').checked;
     const boardId = extractBoardId(boardInput);
     if (!validBoardId(boardId)) {
       $('board-id').setAttribute('aria-invalid', 'true');
@@ -2299,7 +2436,6 @@
       return;
     }
     if (!(await ensureChartLib())) { showError('Impossible de charger la bibliothèque graphique (Chart.js) depuis le CDN.'); return; }
-    state.creds = { key, token, boardId };
     log.info('Démarrage de l\'analyse du board ' + boardId + '.');
     $('setup').style.display = 'none';
     $('loading').style.display = 'block';
@@ -2319,9 +2455,13 @@
       if (!boardData || typeof boardData !== 'object' || boardData.name == null && boardData.id == null) {
         throw new Error('Réponse inattendue lors du chargement du tableau.');
       }
-      state.board = boardData;
       const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal });
-      state.actions = normalizeActions(res.actions);
+      const actions = normalizeActions(res.actions);
+      if (cancel.signal.aborted) throw new CanceledError();
+      state.board = boardData;
+      state.actions = actions;
+      state.creds = { key, token, boardId };
+      state.keepCreds = keepCreds;
       log.info('Analyse terminée : ' + state.actions.length.toLocaleString() + ' actions sur ' + (res.stoppedAtKnown ? 'delta' : 'historique') + ' récupérées.');
       setProgress(90, 'Sauvegarde...', '');
       await persistData();
@@ -2344,8 +2484,8 @@
 
   /**
    * Rafraîchissement depuis le dashboard.
-   * @param {boolean} incremental true = delta (since = dernière action connue,
-   *   arrêt à la première page d'actions déjà connues) ; false = rechargement
+   * @param {boolean} incremental true = delta (since = dernière action connue
+   *   moins une seconde, union par ID) ; false = rechargement
    *   complet exactement comme v1 `refreshData`.
    */
   async function refreshData(incremental) {
@@ -2360,13 +2500,15 @@
     try {
       setProgress(5, 'Mise à jour...', '');
       const haveIds = state.actions.length > 0 && state.actions.every(a => !!a.id);
+      const delta = !!incremental && haveIds;
       let knownIds = null, since = null;
       if (incremental) {
         if (haveIds) {
           knownIds = new Set(state.actions.map(a => a.id));
           let maxMs = -Infinity;
           for (const a of state.actions) if (a.dateMs > maxMs) maxMs = a.dateMs;
-          since = new Date(maxMs).toISOString();
+          // shortcut: delta append-only avec recouvrement d'une seconde, utiliser le rechargement complet pour réconcilier les modifications ou suppressions anciennes
+          since = new Date(maxMs - 1000).toISOString();
         } else {
           log.info('Delta demandé mais sauvegarde au format v1 (sans ids) — repli sur un rechargement complet.');
           toast('Format de sauvegarde ancien — rechargement complet effectué.');
@@ -2374,7 +2516,8 @@
       }
       const res = await fetchAllActions(key, token, boardId, { signal: cancel.signal, knownIds, since });
       const fresh = normalizeActions(res.actions);
-      if (knownIds && res.stoppedAtKnown) {
+      if (cancel.signal.aborted) throw new CanceledError();
+      if (delta) {
         const oldIds = new Set(state.actions.map(a => a.id));
         const additions = fresh.filter(a => !oldIds.has(a.id));
         state.actions = additions.concat(state.actions);
@@ -2382,7 +2525,7 @@
       } else {
         state.actions = fresh;
       }
-      log.info('Rafraîchissement (' + (incremental ? 'delta' : 'complet') + ') : ' + state.actions.length.toLocaleString() + ' actions au total.');
+      log.info('Rafraîchissement (' + (delta ? 'delta' : 'complet') + ') : ' + state.actions.length.toLocaleString() + ' actions au total.');
       setProgress(90, 'Sauvegarde...', '');
       await persistData();
       setProgress(100, 'Terminé !', '');
@@ -2398,7 +2541,7 @@
       $('dashboard').style.display = 'block';
       if (e instanceof CanceledError) { setSaveStatus('Actualisation annulée'); toast('Actualisation annulée.'); }
       else {
-        setSaveStatus('Erreur : ' + redactUrl(String((e && e.message) || e)).slice(0, 30));
+        setSaveStatus('Erreur : ' + redactUrl(String((e && e.message) || e)));
         log.error('Échec du rafraîchissement :', e);
       }
       if (state.board) renderDashboard(state.board.name); // réaffiche l'ancien dashboard (v1 le laissait tel quel)
@@ -2468,99 +2611,87 @@
     return (String(a.cardName || '') + ' ' + String(a.memberName || '') + ' ' + String(a.type || '') + ' ' + classify(a.type)).toLowerCase();
   }
 
+  let reportObservedRange = null;
+  function sourceBounds() {
+    if (exportSnapshot) return exportSnapshot.bounds;
+    if (reportObservedRange) return reportObservedRange;
+    let fromMs = Infinity, toMs = -Infinity;
+    for (const a of state.actions) { fromMs = Math.min(fromMs, a.dateMs); toMs = Math.max(toMs, a.dateMs); }
+    return { fromMs, toMs };
+  }
+  /** Bornes explicites limitées à l'observation ; jours civils inclusifs, pas durée/24h. */
+  function observedPeriod(st) {
+    if (!st.total) return { fromMs: null, toMs: null, days: 0 };
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
+    const source = sourceBounds();
+    const lower = Number.isFinite(source.fromMs) ? source.fromMs : st.oldest;
+    const upper = Number.isFinite(source.toMs) ? source.toMs : st.newest;
+    const fromMs = f.fromMs == null ? (reportObservedRange?.fromMs ?? st.oldest) : Math.max(lower, f.fromMs);
+    const toMs = f.toMs == null ? (reportObservedRange?.toMs ?? st.newest) : Math.min(upper, f.toMs);
+    return { fromMs, toMs, days: Math.max(1, civilOrdinal(toMs) - civilOrdinal(fromMs) + 1) };
+  }
+  const observationLabel = days => 'sur ' + days + ' jours civils observés';
+  const measurementLimit = 'Les actions ne mesurent ni effort, ni qualité, ni livraison ; membres et cartes regroupés par libellé dans cette version.';
   function buildInsights(list, st) {
     const total = st.total || 0;
-    const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const top = ms[0] || null;
+    const period = observedPeriod(st);
+    const days = period.days;
+    const dayAvg = total / Math.max(1, days);
+    const members = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const top = members[0];
     const topShare = top && total ? Math.round(top[1] / total * 100) : 0;
     let hhi = 0;
-    if (total) st.memberCounts.forEach(c => { const p = c / total; hhi += p * p; });
-    const concentration = Math.round(hhi * 100);
-    const days = Math.max(1, st.spanDays || 1);
-    const dayAvg = total / days;
-    const coverage = total ? Math.min(1, st.dayCounts.size / days) : 0;
-    const cadence = clamp(dayAvg / 6, 0, 1);
-    const consistency = total ? clamp(st.longestStreak / Math.max(5, Math.min(21, days)), 0, 1) : 0;
-    const teamwork = st.memberCounts.size <= 1 ? 0.55 : clamp(1 - hhi, 0, 1);
-    const score = total ? Math.round(clamp(cadence * 34 + coverage * 28 + consistency * 22 + teamwork * 16, 0, 100)) : 0;
-    const nuit = total ? st.nuit / total : 0;
-    const wknd = total ? st.weekend / total : 0;
-    const vals = Array.from(st.dayCounts.values());
-    let mean = 0, sd = 0;
-    if (vals.length) {
-      mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-      sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) * (b - mean), 0) / vals.length);
-    }
-    const burst = mean > 0 && sd / mean > 0.85;
-    let rhythm = 'Rythme régulier';
-    if (!total) rhythm = 'Aucune activité';
-    else if (nuit >= 0.4) rhythm = 'Rythme nocturne';
-    else if (wknd >= 0.34) rhythm = 'Charge week-end';
-    else if (burst) rhythm = 'Activité en rafales';
-    const weeks = periodSeries(st.weekCounts);
+    if (total) st.memberCounts.forEach(c => { hhi += (c / total) ** 2; });
     let weekDelta = null;
-    if (weeks.labels.length >= 2) {
-      const cur = weeks.data[weeks.data.length - 1];
-      const prev = weeks.data[weeks.data.length - 2];
-      weekDelta = { cur: cur, prev: prev, pct: prev ? Math.round((cur - prev) / prev * 100) : null };
+    if (total) {
+      const anchor = localDateFromKey(periodKeyMs(st.newest, 'week'));
+      const cur = new Date(anchor); cur.setDate(cur.getDate() - 7);
+      const prev = new Date(anchor); prev.setDate(prev.getDate() - 14);
+      if (period.fromMs <= +prev && period.toMs >= +anchor - 1) {
+        const prevStart = localDateKey(prev), curStart = localDateKey(cur);
+        const prevCount = st.weekCounts.get(prevStart) || 0, curCount = st.weekCounts.get(curStart) || 0;
+        weekDelta = { prev: prevCount, cur: curCount, pct: prevCount ? Math.round((curCount - prevCount) / prevCount * 100) : null,
+          prevStart, prevEnd: dayKeyMs(+cur - 1), curStart, curEnd: dayKeyMs(+anchor - 1) };
+      }
     }
-    const forecast = total ? Math.max(0, Math.round(dayAvg * 7)) : 0;
-    const anomalies = [];
-    if (vals.length >= 5 && sd > 0) {
-      const thr = mean + Math.max(sd * 1.5, 1);
-      st.dayCounts.forEach((count, day) => { if (count >= thr && count >= 3) anomalies.push({ day: day, count: count }); });
-      anomalies.sort((a, b) => b.count - a.count);
-      anomalies.splice(5);
-    }
-    const dow = [0, 0, 0, 0, 0, 0, 0];
-    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) dow[d] += st.dayHour.get(d * 24 + h) || 0;
-    let qi = 0;
-    for (let d = 1; d < 7; d++) if (dow[d] < dow[qi]) qi = d;
-    const quietDay = total ? DAYS[qi] : '—';
-    const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const peakLabel = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    const forecast = total ? Math.round(dayAvg * 7) : 0; // champ public historique : équivalent, jamais prévision.
+    const anomalies = Array.from(st.dayCounts, ([day, count]) => ({ day, count })).sort((a, b) => b.count - a.count || a.day.localeCompare(b.day)).slice(0, 3);
     const bullets = [];
-    if (top) bullets.push(firstWord(top[0]) + ' porte ' + topShare + ' % des actions' + (topShare >= 55 ? ' — concentration élevée' : ''));
-    if (weekDelta) bullets.push('Dernière semaine observée : ' + weekDelta.cur + ' actions' + (weekDelta.pct == null ? '' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' % vs la précédente)'));
-    bullets.push('Projection 7 jours : environ ' + forecast.toLocaleString(LS) + ' actions au rythme actuel');
-    if (total) bullets.push('Jour le plus calme : ' + quietDay + ' · série max ' + st.longestStreak + ' j');
-    if (total && st.comments / total < 0.08) bullets.push('Peu de commentaires (' + Math.round(st.comments / total * 100) + ' %) — activité surtout opérationnelle');
-    if (wknd >= 0.3) bullets.push('Week-end : ' + Math.round(wknd * 100) + ' % du volume');
-    if (nuit >= 0.35) bullets.push('Nuit (18 h–6 h) : ' + Math.round(nuit * 100) + ' % du volume');
-    const briefing = !total
-      ? 'Aucune action dans la vue courante. Élargissez les filtres pour relancer la lecture.'
-      : total.toLocaleString(LS) + ' actions sur ' + Math.round(days) + ' jours, soit ' + dayAvg.toFixed(1) + ' par jour. ' +
-        (top ? firstWord(top[0]) + ' concentre ' + topShare + ' %. ' : '') +
-        'Le jour le plus chargé est le ' + peakLabel + (ds[0] ? ' (' + ds[0][1] + ' actions)' : '') + ', autour de ' + st.peakHour + ' h. ' +
-        rhythm + '. Projection : environ ' + forecast.toLocaleString(LS) + ' actions sur 7 jours si le rythme tient.';
-    return { score: score, rhythm: rhythm, concentration: concentration, topShare: topShare, briefing: briefing, bullets: bullets, anomalies: anomalies, weekDelta: weekDelta, forecast: forecast, quietDay: quietDay };
+    if (top) bullets.push(top[0] + ' : ' + topShare + ' % du volume d’actions');
+    if (weekDelta) bullets.push('Semaines closes ' + weekDelta.prevStart + ' → ' + weekDelta.prevEnd + ' : ' + weekDelta.prev +
+      ' actions ; ' + weekDelta.curStart + ' → ' + weekDelta.curEnd + ' : ' + weekDelta.cur +
+      ' actions' + (weekDelta.pct == null ? ' (base précédente nulle, pas de pourcentage)' : ' (' + (weekDelta.pct > 0 ? '+' : '') + weekDelta.pct + ' %)'));
+    else bullets.push('comparaison indisponible : période insuffisante pour deux semaines closes consécutives');
+    if (total) {
+      bullets.push('Équivalent hebdomadaire du rythme observé : ' + forecast.toLocaleString(LS) + ' actions — pas une prévision');
+      bullets.push('Commentaires : ' + Math.round(st.comments / total * 100) + ' % ; week-end : ' + Math.round(st.weekend / total * 100) + ' % ; 18 h–6 h : ' + Math.round(st.nuit / total * 100) + ' % du volume');
+    }
+    bullets.push(measurementLimit);
+    const briefing = !total ? 'Aucune action dans la vue courante ; aucun ratio ni équivalent chiffré.' :
+      total.toLocaleString(LS) + ' actions ' + observationLabel(days) + ', soit ' + dayAvg.toFixed(1) + ' par jour. ' +
+      'Équivalent hebdomadaire du rythme observé : ' + forecast.toLocaleString(LS) + ' actions — pas une prévision.';
+    return { score: null, rhythm: total ? 'Volume observé' : 'Aucune activité', concentration: Math.round(hhi * 100), topShare,
+      briefing, bullets, anomalies, weekDelta, forecast, quietDay: null };
   }
 
   function briefingPlain() {
     const ins = state.lastInsights;
     if (!ins) return '';
     const name = state.board && state.board.name ? state.board.name : 'Tableau';
-    return [name, ins.briefing, ''].concat(ins.bullets.map(b => '• ' + b)).concat(['', 'Trello Analyzer v' + APP_VERSION + ' — généré localement, sans identifiant.']).join('\n');
+    return [name, calendarLabel(), ins.briefing, ''].concat(ins.bullets.map(b => '• ' + b)).concat(['', 'Trello Analyzer v' + APP_VERSION + ' — généré localement, sans identifiant.']).join('\n');
   }
 
   function renderNexus(list, st) {
     if (!$('nexus')) return;
     const ins = buildInsights(list, st);
     state.lastInsights = ins;
-    $('nx-score').textContent = st.total ? String(ins.score) : '—';
-    const ring = $('nx-ring');
-    if (ring) {
-      ring.style.setProperty('--p', String(ins.score));
-      ring.setAttribute('aria-valuenow', String(ins.score));
-    }
-    $('nx-rhythm').textContent = st.total ? ins.rhythm + ' · concentration ' + ins.concentration : ins.rhythm;
     $('nx-brief').textContent = ins.briefing;
     $('nx-insights').innerHTML = ins.bullets.map(b => '<li>' + esc(b) + '</li>').join('');
     const anom = $('nx-anomalies');
     if (anom) {
-      anom.innerHTML = '<span class="nx-k">Jours atypiques</span>' + (ins.anomalies.length
-        ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(new Date(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
-        : '<span class="nx-quiet">Aucun pic statistique marqué</span>');
+      anom.innerHTML = '<span class="nx-k">Jours les plus actifs</span>' + (ins.anomalies.length
+        ? ins.anomalies.map(a => '<span class="nx-chip">' + esc(localDateFromKey(a.day).toLocaleDateString(LS, { day: '2-digit', month: 'short' })) + ' · ' + a.count + '</span>').join('')
+        : '<span class="nx-quiet">Aucun jour actif dans la vue</span>');
     }
     fillCompareSelects();
     renderCompare();
@@ -2612,7 +2743,7 @@
       if (a.type === 'commentCard') comments++;
       if (a.dateMs > last) last = a.dateMs;
       hours[new Date(a.dateMs).getHours()]++;
-      days.add(Math.floor(a.dateMs / 864e5));
+      days.add(civilOrdinal(a.dateMs));
     }
     let peak = 0;
     for (let h = 1; h < 24; h++) if (hours[h] > hours[peak]) peak = h;
@@ -2656,7 +2787,7 @@
       return;
     }
     const pct = Math.min(100, Math.round(count / goal * 100));
-    el.innerHTML = '<div class="goal-track" role="meter" aria-valuemin="0" aria-valuemax="' + goal + '" aria-valuenow="' + count + '" aria-label="Progression de l’objectif hebdomadaire"><span style="width:' + pct + '%"></span></div><p>' + count + ' / ' + goal + ' actions cette semaine · ' + pct + ' %</p>';
+    el.innerHTML = '<div class="goal-track" role="meter" aria-valuemin="0" aria-valuemax="' + goal + '" aria-valuenow="' + count + '" aria-label="Progression de l’objectif hebdomadaire"><span style="width:' + pct + '%"></span></div><p>' + count + ' / ' + goal + ' actions de la vue cette semaine · ' + pct + ' %</p>';
   }
 
   function saveGoal() {
@@ -2687,6 +2818,8 @@
       const k = periodKeyMs(a.dateMs, 'week');
       m.set(k, (m.get(k) || 0) + 1);
     }
+    const domain = byPeriod(list || [], 'week').labels;
+    by.forEach(m => domain.forEach(k => { if (!m.has(k)) m.set(k, 0); }));
     return by;
   }
 
@@ -2715,8 +2848,10 @@
     } else {
       let newest = -Infinity;
       for (const a of state.actions) if (a.dateMs > newest) newest = a.dateMs;
-      if (!Number.isFinite(newest) || newest < 0) return;
-      $('fl-from').value = msToLocalInput(newest - days * 864e5, false);
+      if (!Number.isFinite(newest)) return;
+      const from = new Date(newest);
+      from.setDate(from.getDate() - days);
+      $('fl-from').value = msToLocalInput(from.getTime(), false);
       $('fl-to').value = msToLocalInput(newest, true);
     }
     applyDateFilter();
@@ -2869,10 +3004,9 @@
     renderMembers(st);
     renderTypes(st);
     renderHeatmap(st);
-    // v1 : le rendu complet recalcule le top 5 des membres de tendances ;
+    // La sélection est bornée à la vue (aussi après filtrage) ;
     // les toggles de granularité réutilisent ensuite cette sélection.
-    renderTrends(Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1])
-      .slice(0, TREND_MEMBER_COUNT).map(m => m[0]));
+    renderTrends(trendMemberNames(st));
     renderTopCards(st);
     renderHourly(st);
     renderExtStats(st);
@@ -2887,7 +3021,7 @@
     warmChartJsCache();
     $('dash-footer').textContent =
       list.length.toLocaleString() + ' action(s) affichée(s) · ' + st.dayCounts.size + ' jour(s) actif(s) · ' +
-      'série la + longue : ' + st.longestStreak + ' j · score ' + (state.lastInsights ? state.lastInsights.score : '—') +
+      'série la + longue : ' + st.longestStreak + ' j' +
       ' · rendu en ' + (Date.now() - t0) + ' ms · v' + APP_VERSION;
   }
 
@@ -2897,20 +3031,21 @@
     const oldest = st.total ? new Date(st.oldest) : new Date();
     const newest = st.total ? new Date(st.newest) : new Date();
     $('d-range').textContent = fmtDate(oldest) + ' → ' + fmtDate(newest);
+    $('calendar-note').textContent = calendarLabel();
   }
 
   /** Les 4 cartes de stats d'origine (mêmes valeurs, mêmes strings, mêmes ties). */
   function renderStats(st) {
     const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
     const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const days = Math.max(1, st.spanMs / 864e5);
+    const days = observedPeriod(st).days;
     $('s-total').textContent = st.total.toLocaleString();
-    $('s-days').textContent = 'sur ' + Math.round(days) + ' jours';
+    $('s-days').textContent = observationLabel(days);
     $('s-members').textContent = String(ms.length);
     $('s-top-member').textContent = ms[0] ? '↑ ' + firstWord(ms[0][0]) : '';
-    $('s-peak-day').textContent = ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
+    $('s-peak-day').textContent = ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—';
     $('s-peak-count').textContent = ds[0] ? ds[0][1] + ' actions' : '';
-    $('s-avg').textContent = String(Math.round(st.total / Math.max(1, days / 7)));
+    $('s-avg').textContent = st.total ? String(Math.round(st.total / Math.max(1, days) * 7)) : '—';
   }
 
   /** Timeline (ligne remplit la largeur) — config d'origine verbatim. */
@@ -3016,6 +3151,7 @@
       }
     }
     $('hm-grid').innerHTML = html;
+    $('data-heat').querySelector('.data-table-wrap').innerHTML = heatTableHtml(heatMatrix(st), shareMode);
     $('hm-scale').innerHTML = shareMode
       ? 'part de l\'heure : ' + [heatShareColor(.005), heatShareColor(.03), heatShareColor(.07), heatShareColor(.13)]
         .map(c => '<span class="sw" style="background:' + c + '"></span>').join('') + ' 0% → ≥12%'
@@ -3030,9 +3166,7 @@
     if (top) state.trendMembers = top;
     const members = state.trendMembers || [];
     const map = byMemberPeriod(state.lastList, state.currentGran);
-    const allKeys = new Set();
-    members.forEach(m => { if (map[m]) Object.keys(map[m]).forEach(k => allKeys.add(k)); });
-    const labels = Array.from(allKeys).sort();
+    const labels = byPeriod(state.lastList, state.currentGran).labels;
     const trendPalette = memberColors(members.length);
     $('leg-trends').innerHTML = members.map((m, i) =>
       '<span class="leg-item"><span class="leg-dot" style="background:' + trendPalette[i] + '"></span>' +
@@ -3064,7 +3198,7 @@
     const full = top.map(t => t.name + ' — ' + t.count);
     $('c-topcards-wrap').style.height = Math.max(120, top.length * 32 + 40) + 'px';
     chart('topcards', 'c-topcards', {
-      type: 'bar',
+      type: 'bar', a11yLabels: top.map(t => t.name),
       data: {
         labels: top.map(t => truncate(t.name, 22, 20)),
         datasets: [{ data: top.map(t => t.count), backgroundColor: cssHex('--chart-2', '#3B8BD4'), borderRadius: 3, borderSkipped: false }]
@@ -3106,8 +3240,9 @@
   function renderExtStats(st) {
     $('s-comments').textContent = st.comments.toLocaleString();
     $('s-comments-sub').textContent = st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action';
-    $('s-dayavg').textContent = (st.total / Math.max(1, st.spanDays)).toFixed(1);
-    $('s-dayavg-sub').textContent = 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)';
+    const days = observedPeriod(st).days;
+    $('s-dayavg').textContent = st.total ? (st.total / Math.max(1, days)).toFixed(1) : '—';
+    $('s-dayavg-sub').textContent = observationLabel(days);
     $('s-peak-hour').textContent = st.total ? st.peakHour + 'h' : '—';
     $('s-peak-hour-sub').textContent = st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '';
     $('s-weekend').textContent = st.total ? Math.round(st.weekend / st.total * 100) + '%' : '—';
@@ -3117,9 +3252,7 @@
   function renderTypeTimeline(list) {
     const byGroup = groupPeriodCounts(list, state.currentGran);
     const groups = Object.keys(ACTION_GROUPS).filter(g => byGroup.has(g));
-    const allKeys = new Set();
-    groups.forEach(g => byGroup.get(g).forEach((count, key) => allKeys.add(key)));
-    const labels = Array.from(allKeys).sort();
+    const labels = byPeriod(list, state.currentGran).labels;
     $('leg-typetl').innerHTML = groups.map(g =>
       '<span class="leg-item"><span class="leg-dot" style="background:' + groupColor(Object.keys(ACTION_GROUPS).indexOf(g)) + '"></span>' +
       esc(g) + '</span>').join('');
@@ -3201,7 +3334,7 @@
       '<span class="chip">' + esc(n) + '<button type="button" data-rm="' + esc(n) + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'
     ).join('');
     const q = String(f.query || '').trim();
-    const active = f.members.size > 0 || f.fromMs || f.toMs || !!q;
+    const active = f.members.size > 0 || f.fromMs != null || f.toMs != null || !!q;
     $('filters').style.display = state.actions.length ? 'flex' : 'none';
     $('fl-count').textContent = active
       ? state.lastList.length.toLocaleString() + ' / ' + state.actions.length.toLocaleString() + ' actions · ' +
@@ -3233,7 +3366,7 @@
     state.lastStats = st;
     renderHeader(st, state.board && state.board.name);
     renderStats(st); renderTimeline(list); renderMembers(st); renderTypes(st);
-    renderHeatmap(st); renderTrends(null); renderTopCards(st); renderHourly(st);
+    renderHeatmap(st); renderTrends(trendMemberNames(st)); renderTopCards(st); renderHourly(st);
     renderExtStats(st); renderTypeTimeline(list); renderWeekend(st); renderMemberTable(st);
     renderNexus(list, st);
     updateFilterUI();
@@ -3259,8 +3392,13 @@
   }
 
   function applyDateFilter() {
-    state.filter.fromMs = parseFilterDate('fl-from', false);
-    state.filter.toMs = parseFilterDate('fl-to', true);
+    const fromMs = parseFilterDate('fl-from', false);
+    const toMs = parseFilterDate('fl-to', true);
+    if (fromMs != null && toMs != null && fromMs > toMs) {
+      toast('Bornes de dates inversées : filtre précédent conservé.', 'error'); return;
+    }
+    state.filter.fromMs = fromMs;
+    state.filter.toMs = toMs;
     markWindow(null);
     flushRerender();
   }
@@ -3277,10 +3415,17 @@
 
   /* ═══════════════════════════ 15. EXPORTS ════════════════════════════════ */
 
-  /** CSV RFC 4180 (pluri-ligne ok, quotes échappées). */
+  /** CSV tableur : neutralisation conservatrice puis échappement RFC 4180. */
   function csvCell(v) {
-    const s = String(v == null ? '' : v);
-    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    const original = String(v == null ? '' : v);
+    // Espaces Unicode/BOM et contrôles initiaux peuvent être ignorés par un tableur.
+    const leading = original.match(/^[\s\u0000-\u001f\u007f]*/)[0];
+    const first = original.charAt(leading.length);
+    // U+FF1D/FF0B/FF0D/FF20 : égal, plus, moins, arobase pleine largeur.
+    const dangerous = /[\u0000-\u001f\u007f]/.test(leading) ||
+      (first !== '' && '=+-@＝＋－＠'.includes(first));
+    const s = dangerous ? '\t' + original : original;
+    return dangerous || /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
   /** Déclenche un téléchargement Blob (ou data-URL) avec nettoyage différé. */
@@ -3325,12 +3470,15 @@
 
   /** Construit le paquet JSON d'analyse (stats + données brutes, sans identifiants). */
   function buildAnalysisJson() {
-    const st = state.lastStats;
+    const list = getVisible();
+    const st = computeStats(list);
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     return JSON.stringify({
       app: 'trello-board-activity-analyzer', version: APP_VERSION,
       exportedAt: new Date().toISOString(),
-      board: state.board,
-      filters: { members: Array.from(state.filter.members), from: st ? new Date(st.oldest).toISOString() : null, to: st ? new Date(st.newest).toISOString() : null },
+      board: exportBoard(), timezone: localTimezone(), weekStart: 'sunday',
+      filters: { members: Array.from(f.members), from: f.fromMs == null ? null : new Date(f.fromMs).toISOString(), to: f.toMs == null ? null : new Date(f.toMs).toISOString(), fromMs: f.fromMs, toMs: f.toMs, query: String(f.query || '') },
+      observedRange: { from: st.total ? new Date(st.oldest).toISOString() : null, to: st.total ? new Date(st.newest).toISOString() : null },
       stats: st ? {
         total: st.total, activeMembers: st.memberCounts.size, comments: st.comments,
         cardCreations: st.creates, weekendShare: st.total ? +(st.weekend / st.total * 100).toFixed(1) : 0,
@@ -3338,24 +3486,29 @@
         byGroup: Object.fromEntries(st.typeCounts),
         timelineByWeek: periodSeries(st.weekCounts), timelineByMonth: periodSeries(st.monthCounts)
       } : null,
-      actions: state.actions.map(a => ({ id: a.id, type: a.type, date: a.date, member: a.memberName, card: a.cardName }))
+      actions: list.map(a => ({ id: a.id, type: a.type, date: a.date, member: a.memberName, card: a.cardName }))
     }, null, 2);
   }
 
   function exportCsv() {
+    return withExport(async () => {
     const list = getVisible();
     download(buildActionsCsv(list), 'text/csv;charset=utf-8',
       fileSlug(state.board && state.board.name) + '-actions-' + todayStamp() + '.csv');
     toast(list.length.toLocaleString() + ' actions exportées (CSV).', 'success');
+    });
   }
 
   function exportJson() {
+    return withExport(async () => {
     download(buildAnalysisJson(), 'application/json',
       fileSlug(state.board && state.board.name) + '-analyse-' + todayStamp() + '.json');
-    toast('Analyse complète exportée (JSON).', 'success');
+    toast('Vue courante exportée (JSON).', 'success');
+    });
   }
 
   function exportPng() {
+    return withExport(async () => {
     const c = state.charts.timeline;
     if (!c || !c.toBase64Image) { toast('Timeline indisponible pour l\'export PNG.', 'error'); return; }
     let url;
@@ -3364,6 +3517,7 @@
     catch (e) { log.error('toBase64Image :', e); toast('Export PNG impossible : canvas non exportable.', 'error'); return; }
     download(url, 'image/png', fileSlug(state.board && state.board.name) + '-timeline-' + todayStamp() + '.png', true);
     toast('PNG de la timeline exporté.', 'success');
+    });
   }
 
   /* ═══════════════════ 15b. MODÈLE DE RAPPORT (partagé) ═══════════════════ */
@@ -3390,7 +3544,7 @@
     const st = computeStats(list);
     const ms = Array.from(st.memberCounts.entries()).sort((a, b) => b[1] - a[1]);
     const ds = Array.from(st.dayCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const days = Math.max(1, st.spanMs / 864e5);
+    const days = observedPeriod(st).days;
     const tl = Array.from(st.typeCounts.keys()).sort((a, b) => st.typeCounts.get(b) - st.typeCounts.get(a));
 
     const members = [];
@@ -3408,18 +3562,19 @@
       .map(e => ({ name: e[0], count: e[1] }))
       .sort((a, b) => b.count - a.count).slice(0, 10);
 
-    const f = state.filter;
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     const q = String(f.query || '').trim();
-    const filterActive = f.members.size > 0 || f.fromMs || f.toMs || !!q;
+    const filterActive = f.members.size > 0 || f.fromMs != null || f.toMs != null || !!q;
 
     const model = {
       app: 'trello-board-activity-analyzer',
       version: APP_VERSION,
-      boardName: state.board && state.board.name != null ? String(state.board.name) : 'Tableau',
+      boardName: model0BoardName(),
       boardId: (state.creds && state.creds.boardId) || (state.board && state.board.id) || '',
       exportedAt: new Date().toISOString(),
-      generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      gran: state.currentGran,
+      timezone: localTimezone(), weekStart: 'sunday',
+      generatedLabel: new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' · ' + calendarLabel(),
+      gran: state.currentGran, heatMetric: state.heatMetric,
       range: {
         oldestMs: st.total ? st.oldest : Date.now(),
         newestMs: st.total ? st.newest : Date.now(),
@@ -3429,12 +3584,12 @@
       filters: {
         active: !!filterActive,
         members: Array.from(f.members),
-        fromMs: f.fromMs, toMs: f.toMs,
+        fromMs: f.fromMs, toMs: f.toMs, query: q,
         label: filterActive
           ? [
               f.members.size ? 'membres : ' + Array.from(f.members).join(', ') : '',
-              f.fromMs ? 'du ' + fmtDate(f.fromMs) : '',
-              f.toMs ? 'au ' + fmtDate(f.toMs) : '',
+              f.fromMs != null ? 'du ' + fmtDate(f.fromMs) : '',
+              f.toMs != null ? 'au ' + fmtDate(f.toMs) : '',
               q ? 'recherche : ' + q : ''
             ].filter(Boolean).join(' · ')
           : 'aucun'
@@ -3443,16 +3598,16 @@
         actions: st.total,
         actionCountAll: state.actions.length,
         spanDaysRounded: Math.round(days),
-        spanDaysExact: st.total ? st.spanDays : 0,
-        dayAvg: st.total / Math.max(1, st.spanDays),
-        weekAvg: Math.round(st.total / Math.max(1, days / 7)),
+        spanDaysExact: days,
+        dayAvg: st.total ? st.total / Math.max(1, days) : null,
+        weekAvg: st.total ? Math.round(st.total / Math.max(1, days) * 7) : null,
         members: ms.length,
         topMember: ms[0] ? ms[0][0] : null,
         topMemberShort: ms[0] ? firstWord(ms[0][0]) : null,
         topMemberCount: ms[0] ? ms[0][1] : 0,
         activeDays: st.dayCounts.size,
         peakDayKey: ds[0] ? ds[0][0] : null,
-        peakDayLabel: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—',
+        peakDayLabel: ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—',
         peakDayCount: ds[0] ? ds[0][1] : 0,
         peakHour: st.peakHour, peakHourCount: st.total ? st.hours[st.peakHour] : 0,
         comments: st.comments,
@@ -3466,12 +3621,12 @@
       },
       /* Mêmes libellés/valeurs que les cartes du dashboard (parité v1). */
       kpis: [
-        { label: 'Total actions', value: st.total.toLocaleString(), sub: 'sur ' + Math.round(days) + ' jours' },
+        { label: 'Total actions', value: st.total.toLocaleString(), sub: observationLabel(days) },
         { label: 'Membres actifs', value: String(ms.length), sub: ms[0] ? '↑ ' + firstWord(ms[0][0]) : '' },
-        { label: 'Jour le + actif', value: ds[0] ? new Date(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
-        { label: 'Moy. / semaine', value: String(Math.round(st.total / Math.max(1, days / 7))), sub: 'actions/semaine' },
+        { label: 'Jour le + actif', value: ds[0] ? localDateFromKey(ds[0][0]).toLocaleDateString(LS, { day: '2-digit', month: 'short' }) : '—', sub: ds[0] ? ds[0][1] + ' actions' : '' },
+        { label: 'Équiv. hebdomadaire', value: st.total ? String(Math.round(st.total / Math.max(1, days) * 7)) : '—', sub: 'rythme observé, pas une prévision' },
         { label: 'Commentaires', value: st.comments.toLocaleString(), sub: st.total ? Math.round(st.comments / st.total * 100) + '% des actions' : 'aucune action' },
-        { label: 'Moyenne / jour', value: (st.total / Math.max(1, st.spanDays)).toFixed(1), sub: 'sur ' + Math.round(st.spanDays) + ' jour(s) écoulé(s)' },
+        { label: 'Moyenne / jour', value: st.total ? (st.total / Math.max(1, days)).toFixed(1) : '—', sub: observationLabel(days) },
         { label: 'Heure de pointe', value: st.total ? st.peakHour + 'h' : '—', sub: st.total ? st.hours[st.peakHour] + ' actions à cet heure' : '' },
         {
           label: 'Part week-end',
@@ -3491,6 +3646,18 @@
       timeline: { week: byPeriod(list, 'week'), month: byPeriod(list, 'month') },
       list
     };
+    // Réutiliser les agrégateurs des graphiques : le repli statique ne dépend
+    // ni d’une instance Chart réussie ni d’un cache global potentiellement périmé.
+    const memberPeriods = byMemberPeriod(list, state.currentGran);
+    const periodLabels = model.timeline[state.currentGran].labels;
+    model.trends = { labels: periodLabels, datasets: trendMemberNames(st).map(name => ({
+      label: name, data: periodLabels.map(k => memberPeriods[name]?.[k] || 0)
+    })) };
+    const groups = groupPeriodCounts(list, state.currentGran);
+    model.typeTimeline = { labels: periodLabels, datasets: Object.keys(ACTION_GROUPS).filter(g => groups.has(g)).map(g => ({
+      label: g, data: periodLabels.map(k => groups.get(g).get(k) || 0)
+    })) };
+    model.insights = buildInsights(list, st);
     return model;
   }
 
@@ -3545,7 +3712,7 @@
     model.types.forEach(ty => md.push('| ' + mdCell(ty.group) + ' | ' + ty.count.toLocaleString() + ' | ' + ty.share + '% |'));
     if (!model.types.length) md.push('| — | 0 | 0% |');
     md.push('');
-    const brief = buildInsights(model.list, computeStats(model.list));
+    const brief = (model.insights || buildInsights(model.list, computeStats(model.list)));
     md.push('## Briefing');
     md.push('');
     md.push(brief.briefing);
@@ -4102,7 +4269,7 @@
     synthRows.push([s('Filtres'), s(model.filters.label)]);
     synthRows.push([s('Généré le'), s(model.generatedLabel)]);
     synthRows.push([s('Application'), s('trello-board-activity-analyzer v' + model.version)]);
-    synthRows.push([s('Briefing'), s(buildInsights(model.list, computeStats(model.list)).briefing)]);
+    synthRows.push([s('Briefing'), s((model.insights || buildInsights(model.list, computeStats(model.list))).briefing)]);
 
     const memRows = [[s('Membre'), s('Actions'), s('Commentaires'), s('Créations'), s('Cartes touchées'), s('Jours actifs'), s('Dernière activité')]];
     model.members.forEach(m => memRows.push([
@@ -4341,25 +4508,28 @@
   }
 
   /**
-   * Payload embarqué dans l'export HTML — TOUTES les actions (format slim v3),
-   * l'état des filtres et des toggles. Jamais d'identifiants API.
+   * Payload embarqué : sous-ensemble visible uniquement, provenance inerte,
+   * filtres initiaux vides. Jamais d'identifiants API.
    */
   function embeddedPayload() {
-    const f = state.filter;
+    const f = exportSnapshot ? exportSnapshot.filter : state.filter;
     return {
       kind: 'trello-activity-export-v1',
       app: 'trello-board-activity-analyzer',
       version: APP_VERSION,
-      board: state.board ? { name: state.board.name, id: state.board.id || (state.creds && state.creds.boardId) || '' } : null,
+      board: exportBoard(),
       exportedAt: new Date().toISOString(),
+      timezone: localTimezone(), weekStart: 'sunday',
       gran: state.currentGran,
       heatMetric: state.heatMetric,
-      filter: {
+      observation: (() => { const r = observedPeriod(computeStats(getVisible())); return { fromMs: r.fromMs, toMs: r.toMs }; })(),
+      filter: { members: [], fromMs: null, toMs: null, query: '' },
+      provenance: { label: 'Sous-ensemble exporté', filters: {
         members: Array.from(f.members),
         fromMs: f.fromMs, toMs: f.toMs,
         query: String(f.query || '')
-      },
-      actions: state.actions.map(slimAction)
+      } },
+      actions: getVisible().map(slimAction)
     };
   }
 
@@ -4376,7 +4546,7 @@
     const name = model0BoardName();
     const banner = 'Export hors-ligne — généré le ' + new Date().toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
       ' · Trello Board Activity Analyzer v' + APP_VERSION +
-      ' · données figées : filtres, tris, granularité et re-exports restent interactifs.';
+      ' · sous-ensemble exporté de la vue courante ; effacer les filtres ne peut pas retrouver les actions exclues.';
     return '<!DOCTYPE html>\n<html lang="fr">\n<head>\n' +
       '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
       '<meta name="color-scheme" content="light dark">\n' +
@@ -4392,12 +4562,17 @@
   }
 
   /** Nom du tableau pour les titres d'export (sans état mutable). */
+  function exportBoard() {
+    const b = exportSnapshot ? exportSnapshot.board : state.board;
+    return b ? { name: String(b.name || 'Tableau'), id: typeof b.id === 'string' ? b.id : '' } : null;
+  }
   function model0BoardName() {
-    return state.board && state.board.name != null ? String(state.board.name) : 'Tableau';
+    const b = exportBoard();
+    return b ? b.name : 'Tableau';
   }
 
   /** Heatmap HTML statique (volume, tooltips) — copie fidèle du rendu live. */
-  function heatHtml(hm) {
+  function heatHtml(hm, shareMode) {
     let html = '<div class="hm-hour-labels"><div></div>' +
       Array.from({ length: 24 }, (_, h) => '<div class="hm-hour-lbl">' + h + '</div>').join('') +
       '</div><div style="overflow-x:auto"><div class="heatmap-grid">';
@@ -4410,7 +4585,7 @@
         html += '<div class="hm-cell" style="background:' + heatColor(v, hm.max) + '" data-tip="' + esc(tip) + '"></div>';
       }
     }
-    return html + '</div></div>';
+    return html + '</div></div>' + detailsHtml('heat', 'Heatmap jour et heure', heatTableHtml(hm, shareMode));
   }
 
   /**
@@ -4437,22 +4612,33 @@
       '<div class="stat-card"><div class="stat-label">' + esc(k.label) + '</div><div class="stat-val">' + esc(k.value) + '</div><div class="stat-sub">' + esc(k.sub) + '</div></div>').join('') + '</div>');
     parts.push('<div class="stat-row">' + model.kpis.slice(4, 8).map(k =>
       '<div class="stat-card"><div class="stat-label">' + esc(k.label) + '</div><div class="stat-val">' + esc(k.value) + '</div><div class="stat-sub">' + esc(k.sub) + '</div></div>').join('') + '</div>');
+    const timeline = model.timeline[model.gran];
+    const chartData = {
+      timeline: { labels: timeline.labels, datasets: [{ data: timeline.data }] },
+      types: { labels: model.types.map(t => t.group), datasets: [{ data: model.types.map(t => t.count) }] },
+      topcards: { labels: model.topCards.map(c => c.name), datasets: [{ data: model.topCards.map(c => c.count) }] },
+      hours: { labels: model.hours.map((_, h) => h + 'h'), datasets: [{ data: model.hours }] },
+      weekend: { labels: ['Semaine', 'Week-end'], datasets: [{ data: [model.totals.weekdays, model.totals.weekend] }] },
+      trends: model.trends, typetl: model.typeTimeline
+    };
     CHART_EXPORT_KEYS.forEach(([key]) => {
       const data = imgPngMap && imgPngMap[key];
-      if (!data) return;
-      const url = typeof data === 'string' ? data : 'data:image/png;base64,' + b64Encode(data);
-      parts.push('<div class="chart-card"><h3>' + esc(CHART_EXPORT_TITLES[key] || key) + '</h3>' +
-        '<img class="chart-snap" alt="' + esc(CHART_EXPORT_TITLES[key] || key) + '" src="' + url + '"></div>');
+      const url = !data ? null : typeof data === 'string' ? data : 'data:image/png;base64,' + b64Encode(data);
+      const title = CHART_EXPORT_TITLES[key] || key;
+      parts.push('<div class="chart-card"' + (key === 'members' ? ' id="sec-members" tabindex="-1"' : '') + '><h3>' + esc(title) + '</h3>' +
+        (url ? '<img class="chart-snap" alt="' + esc(title) + '" src="' + url + '">' : '') +
+        (key === 'members' ? '<a href="#sec-detail">Voir les données complètes des membres</a>' :
+          detailsHtml(key, title, dataTableHtml(title, chartData[key].labels, chartData[key].datasets))) + '</div>');
     });
-    parts.push('<div class="chart-card"><h3>Heatmap — Heure × Jour de la semaine</h3>' + heatHtml(model.heat) + '</div>');
-    parts.push('<div class="chart-card"><h3>Détail par membre</h3><div class="tbl-wrap"><table class="mtable" id="mtable">' +
+    parts.push('<div class="chart-card"><h3>Heatmap — Heure × Jour de la semaine</h3>' + heatHtml(model.heat, model.heatMetric === 'share') + '</div>');
+    parts.push('<div class="chart-card" id="sec-detail" tabindex="-1"><h3>Détail par membre</h3><div class="tbl-wrap"><table class="mtable" id="mtable"><caption>Données complètes par membre de la vue courante</caption>' +
       '<thead><tr>' +
-      '<th data-k="name" data-t="s">Membre <span class="ar"></span></th>' +
-      '<th data-k="count" data-t="n" class="num">Actions <span class="ar">▼</span></th>' +
-      '<th data-k="comments" data-t="n" class="num">Comment. <span class="ar"></span></th>' +
-      '<th data-k="cards" data-t="n" class="num">Cartes <span class="ar"></span></th>' +
-      '<th data-k="days" data-t="n" class="num">Jours actifs <span class="ar"></span></th>' +
-      '<th data-k="last" data-t="s" class="num">Dern. activité <span class="ar"></span></th>' +
+      '<th scope="col" data-k="name" data-t="s">Membre <span class="ar"></span></th>' +
+      '<th scope="col" data-k="count" data-t="n" class="num">Actions <span class="ar">▼</span></th>' +
+      '<th scope="col" data-k="comments" data-t="n" class="num">Comment. <span class="ar"></span></th>' +
+      '<th scope="col" data-k="cards" data-t="n" class="num">Cartes <span class="ar"></span></th>' +
+      '<th scope="col" data-k="days" data-t="n" class="num">Jours actifs <span class="ar"></span></th>' +
+      '<th scope="col" data-k="last" data-t="s" class="num">Dern. activité <span class="ar"></span></th>' +
       '</tr></thead><tbody id="mt-body">' +
       (model.members.length ? model.members.map(m =>
         '<tr data-name="' + esc(m.name) + '" data-count="' + m.count + '" data-comments="' + m.comments +
@@ -4461,7 +4647,7 @@
         '<td class="num">' + m.comments.toLocaleString() + '</td><td class="num">' + m.cards.toLocaleString() + '</td>' +
         '<td class="num">' + m.days + '</td><td class="num">' + esc(m.lastLabel) + '</td></tr>').join('')
         : '<tr><td colspan="6" style="text-align:center">Aucune donnée pour ce filtre.</td></tr>') +
-      '</tbody></table></div></div>');
+      '</tbody></table></div><a href="#sec-members">Retour au graphique des membres</a></div>');
     parts.push('<p class="app-footer">Rapport statique généré localement — aucune donnée transmise hors de votre navigateur.</p>');
     parts.push('</div>\n<script>\n' + inlineJs([
       '(function(){var tbl=document.getElementById("mtable");if(!tbl)return;',
@@ -4516,11 +4702,28 @@
   async function withExport(fn) {
     if (exportBusy) { toast('Export déjà en cours…'); return; }
     exportBusy = true;
-    try { await fn(); }
+    const controls = $$('button,input,select,textarea').map(el => [el, el.disabled]);
+    const dash = $('dashboard'), wasInert = dash.inert, wasCapture = captureMode;
+    try {
+      const f = state.filter;
+      exportSnapshot = { actions: getVisible().map(a => ({ ...a })), board: exportBoard(),
+        filter: { ...f, members: new Set(f.members) }, bounds: sourceBounds() };
+      controls.forEach(([el]) => { el.disabled = true; });
+      dash.inert = true;
+      captureMode = true;
+      flushRerender(); // annule le debounce et reconstruit les canvas sans animation.
+      await fn();
+    }
     catch (e) {
       log.error('Échec de l’export :', e);
       toast('Export impossible : ' + String((e && e.message) || e).slice(0, 90), 'error');
-    } finally { exportBusy = false; }
+    } finally {
+      exportSnapshot = null;
+      captureMode = wasCapture;
+      controls.forEach(([el, disabled]) => { el.disabled = disabled; });
+      dash.inert = wasInert;
+      exportBusy = false;
+    }
   }
 
   /** Nom de fichier d'export : {slug}-{kind}-{date}.{ext}. */
@@ -4641,8 +4844,8 @@
           'Contenu :\r\n' +
           '  rapport.html    rapport interactif autonome (ouvrir dans un navigateur, hors-ligne)\r\n' +
           '  rapport.pdf     rapport A4 (indicateurs, graphiques, heatmap, membres)\r\n' +
-          '  analyse.json    analyse complète (machine)\r\n' +
-          '  actions.csv     actions exportées (CSV UTF-8, Excel)\r\n' +
+          '  analyse.json    analyse de la vue exportée (machine)\r\n' +
+          '  actions.csv     actions pour tableur (CSV UTF-8, préfixe tabulation de protection)\r\n' +
           '  synthese.md     synthèse et tableaux (Markdown)\r\n' +
           '  membres.xlsx    classeur 3 feuilles (Synthèse / Membres / Actions)\r\n' +
           '  graphiques/     chaque graphique en PNG + planche.png (vue d’ensemble)\r\n'
@@ -4674,14 +4877,19 @@
       document.documentElement.classList.add('tba-export');
       Theme.ensureNativePalette();
       const p = EMBEDDED;
+      if (!validEmbedded(p)) throw new Error('Données embarquées invalides');
+      const actions = normalizeActions(p.actions.map(expandActionKeepId));
+      const board = restoredBoard(p.board);
       const bannerEl = $('export-banner');
       if (bannerEl) {
         bannerEl.textContent = 'Export hors-ligne — généré le ' +
           (p.exportedAt ? new Date(p.exportedAt).toLocaleDateString(LS, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?') +
-          ' · v' + (p.version || APP_VERSION) + ' · données figées : filtres, tris, graphiques et re-exports restent interactifs.';
+          ' · v' + (p.version || APP_VERSION) + (p.provenance ? ' · sous-ensemble exporté ; filtres source : ' + JSON.stringify({ members: p.provenance.filters?.members || [], fromMs: p.provenance.filters?.fromMs ?? null, toMs: p.provenance.filters?.toMs ?? null, query: p.provenance.filters?.query || '' }) : ' · ancien rapport, périmètre historique embarqué') + ' · filtres et re-exports limités aux données embarquées.';
       }
-      state.board = p.board || { name: 'Tableau' };
-      state.actions = normalizeActions((p.actions || []).map(expandActionKeepId));
+      reportSourceTimezone = p.timezone || null;
+      reportObservedRange = p.observation || null;
+      state.board = board;
+      state.actions = actions;
       state.currentGran = p.gran === 'month' ? 'month' : 'week';
       state.heatMetric = p.heatMetric === 'share' ? 'share' : 'count';
       if (p.filter && typeof p.filter === 'object') {
@@ -4715,6 +4923,9 @@
       log.info('Rapport hors-ligne chargé : ' + state.actions.length.toLocaleString() + ' action(s) (v' + (p.version || '?') + ').');
     } catch (e) {
       log.error('Chargement du rapport embarqué :', e);
+      $('dashboard').style.display = 'none';
+      $('setup').style.display = 'block';
+      showError('Rapport illisible : données embarquées invalides.');
       toast('Rapport illisible.', 'error');
     }
   }
@@ -4795,6 +5006,7 @@
   /** Raccourcis du dashboard : E export · P PDF · H HTML · G granularité · T thème · / filtre · ? aide. */
   function wireShortcuts() {
     document.addEventListener('keydown', e => {
+      if (exportBusy) return;
       if (isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const dash = $('dashboard');
@@ -4814,6 +5026,7 @@
       }
     });
     document.addEventListener('keydown', e => {
+      if (exportBusy) return;
       if (!(e.ctrlKey || e.metaKey) || (e.key !== 'k' && e.key !== 'K')) return;
       const dash = $('dashboard');
       if (!dash || getComputedStyle(dash).display === 'none') return;
@@ -4916,6 +5129,7 @@
         _memberName: 'Zoé', data: { card: { name: 'Carte « X »' } }
       }]);
       t('normalizeAction', recs.length === 1 && recs[0].memberName === 'Zoé');
+      t('CSV formule neutralisée', csvCell('=1+1') === '"\t=1+1"');
       const csv = buildActionsCsv(recs);
       t('csv BOM+header', csv.charAt(0) === '\uFEFF' && csv.indexOf('id,date,type,membre,carte') === 1);
       const slim = slimAction(recs[0]), back = expandActionKeepId(slim);
@@ -4936,15 +5150,16 @@
       /* — modèle + rapports (sur un état factice) — */
       saved = {
         board: state.board, actions: state.actions, creds: state.creds,
-        filter: { members: new Set(state.filter.members), fromMs: state.filter.fromMs, toMs: state.filter.toMs }
+        filter: state.filter, reportObservedRange
       };
+      reportObservedRange = null;
       state.board = { name: 'SelfTest' };
       state.creds = {};
       state.actions = normalizeActions([
         { id: 'a1', type: 'commentCard', date: '2024-01-02T10:00:00.000Z', _memberName: 'Zoé', data: { card: { name: 'C1' } } },
         { id: 'a2', type: 'createCard', date: '2024-01-03T11:00:00.000Z', _memberName: 'Ada', data: { card: { name: 'C2' } } }
       ]);
-      state.filter.members.clear(); state.filter.fromMs = state.filter.toMs = null;
+      state.filter = { members: new Set(), fromMs: null, toMs: null, query: '' };
       const model = buildReportModel();
       t('model kpis', model.kpis.length === 8 && model.totals.actions === 2);
       const md = buildMarkdownReport(model);
@@ -4971,15 +5186,14 @@
       const htmlS = buildHtmlStatic(model, {});
       t('html statique', htmlS.indexOf('stat-card') > 0 && htmlS.indexOf('hm-cell') > 0);
       t('jetons v7', /^#[0-9a-f]{6}$/i.test(cssHex('--chart-1', '#6d28d9')) && memberColors(4).length === 4 && /^#[0-9a-f]{6}$/i.test(heatColor(3, 3)));
-      t('insights vides', buildInsights([], computeStats([])).score === 0);
+      t('insights vides', buildInsights([], computeStats([])).score === null);
     } catch (e) {
       t('exception', false, String((e && e.message) || e));
     } finally {
       if (saved) {
         state.board = saved.board; state.actions = saved.actions; state.creds = saved.creds;
-        state.filter.members = saved.filter.members;
-        state.filter.fromMs = saved.filter.fromMs;
-        state.filter.toMs = saved.filter.toMs;
+        state.filter = saved.filter;
+        reportObservedRange = saved.reportObservedRange;
       }
     }
     const passed = results.filter(r => r.ok).length;
@@ -5026,7 +5240,10 @@
       $$('#setup input').forEach(inp => inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); startAnalysis(); }
       }));
-      $('keep-creds').addEventListener('change', e => { state.keepCreds = e.target.checked; });
+      $('keep-creds').addEventListener('change', e => {
+        state.keepCreds = e.target.checked;
+        if (!state.keepCreds) revokeSavedCredentials();
+      });
     } else {
       bootEmbedded();
     }

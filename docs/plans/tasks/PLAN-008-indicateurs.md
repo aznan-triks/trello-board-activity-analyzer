@@ -1,6 +1,6 @@
 # PLAN-008 — Un briefing descriptif, pas une note de productivité
 
-**Statut : dépendant d'un autre plan — PLAN-007 · Priorité : P2 — Important.** Interprétation potentiellement trompeuse du volume ; pas de demande validée d'un modèle prédictif.
+**Statut : validé localement (2026-10-21) · Priorité : P2 — Important.** Interprétation potentiellement trompeuse du volume ; pas de demande validée d'un modèle prédictif.
 
 ## 1. Problème et preuves
 
@@ -67,3 +67,21 @@ Formules et libellés alignés sur contrat unique, fixtures vérifiables, retrai
 ## 13. Sources
 
 F07/F08/F10, [R4 et comparaison briefing](../02-recherche-et-options.md), vision C4, roadmap J4, PLAN-007/009.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 007 validé. Inventaire des séries, moyennes UI/modèle, briefing Markdown et XLSX et textes score effectué. Contrat : score null, observation civile bornée, semaines closes consécutives avec zéros ; aucune migration d’identités.
+
+### Métadonnée d’observation nécessaire à la parité des rapports
+
+003 réinitialise volontairement les filtres actifs du HTML. Une vue contenant
+une seule action dans six jours explicitement observés passerait sinon de 1/6
+à 1/j à l’ouverture. Ajout borné `observation:{fromMs,toMs}` au kind existant,
+validé avant boot par les contrôles de 006 ; aucun événement exclu embarqué.
+Les bornes sont des timestamps et les jours restent recalculés dans le fuseau
+lecteur annoncé en 007. Le modèle fige son briefing pour que Markdown/XLSX ne
+recalculent pas à partir d’une autre période après sa création.
+
+## Exécution — 2026-10-21 · validé localement
+
+Implémentation febbdaf. 5 régressions rouges puis 5 ciblées vertes ; 2 contrôles de parité/coverage ajoutés, 7/7 ciblés (5,8 s). Suite complète 91/91 (1,3 min), npm test sous Chromium alternatif. Vérifiés : score null y compris vide, 1 action/jour et équivalent7, aucun ratio vide, zéros semaine/mois et domaines communs timeline/tendances/types/sparks, couverture14j complète, base0/pourcentage100, borne partielle insuffisante, jours civils inclusifs bornés, cohérence UI/Markdown/XLSX/briefing/HTML offline et selfTest. Métadonnée observation additive validée pour conserver les ratios lors du reset initial des filtres ; modèle fige ses insights. Cadence/score/anneau/marketing retirés ; top3 jours descriptifs et limite homonymes visibles ; objectif local préservé. Aucun modèle prédictif ni migration IDs. Prochain lot 009.

@@ -20,8 +20,8 @@ Les rapports HTML exportés restent des fichiers uniques autonomes.
 > **v8.0.0** — console **Nexus** : le thème technologique v7 est poussé
 > (cadres instrumentaux, rail de statut, typographie de données) **sans retirer**
 > les thèmes clair / sombre / auto ni les exports. Ajouts locaux, toujours
-> sans serveur : **briefing tactique** (score, rythme, concentration, projection,
-> jours atypiques), **recherche** carte / type / membre, **fenêtres** 7 / 30 / 90 jours,
+> sans serveur : **briefing tactique** (score/projection historiques, remplacés depuis par
+> le briefing descriptif PLAN-008), **recherche** carte / type / membre, **fenêtres** 7 / 30 / 90 jours,
 > **comparateur** de deux membres, **objectif hebdomadaire** mémorisé à part de la
 > session, **sparklines** dans le tableau, **palette de commandes** (`K` ou `Ctrl+K`)
 > et export **briefing texte**. Le filtre par dates seul fonctionne à nouveau
@@ -83,8 +83,14 @@ localement et mis en cache ; les CDN ne servent que de secours si le bundle
 local est manquant. Aucune police ni ressource graphique distante n’est requise.
 
 Les identifiants ne sont **pas mémorisés par défaut**. La case dédiée permet
-de les conserver sur un appareil de confiance. Les données du tableau restent
-sauvegardées localement indépendamment de ce choix. La démonstration ne remplace
+de les conserver sur un appareil de confiance. La décocher retire immédiatement
+key/token de la copie sauvegardée (sans changer ses actions), ou affiche un
+avertissement si le retrait échoue. Les secrets courants restent en mémoire.
+« Sauvegardé » signifie écriture persistante réussie, sans garantie contre
+l’éviction par le navigateur. Si le stockage est refusé ou plein : consultation
+en mémoire, message « session non sauvegardée — exporter avant de fermer »,
+ancienne copie durable préservée. L’effacement n’est annoncé qu’après succès.
+Le stockage est partagé par origine, pas par chemin de l’application. La démonstration ne remplace
 jamais une sauvegarde existante et ses exports portent « démo » dans le nom du tableau.
 
 ---
@@ -92,9 +98,13 @@ jamais une sauvegarde existante et ses exports portent « démo » dans le nom d
 ## Exports (v5) — menu « ⤓ Export »
 
 Les exports respectent la **vue courante** (filtres membres/dates inclus) ; le
-rapport HTML embarque en plus **toutes** les actions avec l'état des filtres —
-on peut donc les desserrer dans le rapport. Aucun export n'inclut jamais vos
-identifiants API.
+rapport HTML embarque désormais **uniquement ce sous-ensemble**, avec filtres
+initiaux vides et provenance des filtres source affichée. **Rupture de comportement
+(PLAN-003)** : effacer les filtres dans un rapport ne retrouve plus les actions
+exclues. Pour tout exporter, effacer les filtres **dans l’application source**.
+Les anciens rapports déjà partagés conservent leur ancien périmètre ; ce changement
+ne peut pas le retirer rétroactivement. Les noms de tableau/membres/cartes restants
+ne sont pas anonymisés. Aucun export n’inclut les identifiants API.
 
 | Format | Fichier | Contenu |
 |---|---|---|
@@ -190,15 +200,27 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
 ### v4 — robustesse, analyses, sécurité (toutes conservées)
 
 - **Fiabilité réseau** : timeout par requête (30 s), retries avec backoff
-  exponentiel + jitter et respect de `Retry-After` (429/5xx/réseau), fenêtre
-  glissante 90 req/10 s, réserve anti-rate-limit après écritures, garde-fou de
+  exponentiel + jitter ; `Retry-After` entier de secondes ou date HTTP future
+  respecté sans plafonnement à 30 s (429/5xx). Chaque tentative GET, retries
+  inclus, passe par une fenêtre locale de 90 requêtes/10 s **par onglet**.
+  Politique prudente, pas certification des quotas officiels ni coordination
+  inter-onglets. Attentes réseau/backoff/pagination annulables ; garde-fou de
   pagination, dédoublonnage par id.
 - **Annulation** : bouton « ✕ Annuler » pendant le chargement (`AbortController`
   câblé jusqu'au niveau requête) — message dédié, retour au setup propre.
-- **Rafraîchissement Δ (« ⤒ Delta »)** : `since` = dernière action connue + arrêt
-  anticipé dès qu'une page retombe sur des id sauvegardés ; repli automatique
-  sur un rechargement complet pour les sauvegardes v1 sans ids (les payloads
-  écrits depuis la v1 ne contenaient pas `i` — ils restent lisibles à 100 %).
+- **Rafraîchissement Δ (« ⤒ Delta »)** : `since` = dernière action connue moins
+  une seconde ; toutes les pages de cette fenêtre sont parcourues et les ajouts
+  sont fusionnés par ID avec l’historique conservé, même si le delta est vide.
+  L’ordre reçu des ajouts et l’ordre antérieur sont préservés, sans tri global.
+  Le delta est append-only : pour réconcilier les modifications ou suppressions
+  anciennes, utiliser le rechargement complet. Repli automatique sur ce mode
+  pour les sauvegardes v1 sans IDs, toujours lisibles.
+- **Collecte atomique (PLAN-001)** : une page pleine sans curseur valide, un
+  curseur répété ou le garde-fou atteint sans fin de pagination produisent une
+  erreur « Historique incomplet ». Erreur et annulation conservent les données
+  et la sauvegarde précédentes ; un rechargement complet vide réussi peut en
+  revanche remplacer l’historique par zéro action. Cela garantit la terminaison
+  de la pagination reçue, pas l’exhaustivité de l’historique retenu par Trello.
 - **Filtres** : par membres (recherche + chips) et plage de dates — tout le
   dashboard se recalcule sur le sous-ensemble ; la sauvegarde reste les données
   complètes ; état vide = comportement v1 exact.
@@ -233,7 +255,7 @@ Dashboard actif, hors champs de saisie (bouton « ⌨ Raccourcis » ou `?`) :
                   + caches de clés de période/jour et de jetons CSS
 3  LOGGER          anneau 400 entrées, redaction des secrets, never-throw
 4  STORAGE         adapter window.storage / localStorage / mémoire
-5  TRELLO CLIENT   fetchJSON (timeout, retries, limiter), pagination, since/before
+5  TRELLO CLIENT   fetchJSON GET (timeout, retries, limiter par tentative), pagination, since/before
 6  DATA STORE      normalisation, dédoublonnage, slim/expand (contrat v1)
 7  STATE           état unique + styles d'affichage d'origine
 8  STATS ENGINE    computeStats mono-passage + byPeriod/byMemberPeriod (v1)
@@ -377,3 +399,86 @@ BASE_URL=https://aznan-triks.github.io/trello-board-activity-analyzer/ npm test
 En cas de régression, révoquer le changement par une pull request de revert
 vers `main`, puis attendre la nouvelle publication Pages et sa vérification
 automatique.
+
+### CSV destiné au tableur (PLAN-004)
+
+Les cellules textuelles à préfixe dangereux (=, +, -, @, variantes pleine largeur,
+contrôles et espaces initiaux) sont citées et préfixées d’une tabulation **dans**
+le champ CSV. Le texte original suit sans suppression. Cela change volontairement
+la représentation CSV, pas les données sources. Utiliser JSON pour les chaînes
+exactes ou XLSX (cellules typées texte) pour un classeur. BOM UTF-8 et CRLF conservés.
+Cette protection n’est pas une garantie universelle : resauvegarde et réouverture
+par un logiciel tiers peuvent la transformer. Excel/LibreOffice non disponibles
+ici : vérification automatisée des octets et du parseur, pas test manuel tableur.
+
+### Validation des sessions et rapports (PLAN-006)
+
+La restauration valide toutes les actions slim avant de publier le candidat :
+`t/d/m/c` chaînes, date lisible, `i` optionnel chaîne. Les sauvegardes historiques
+sans IDs, credentials, date de sauvegarde ou nom du tableau restent lisibles
+(nom absent : « Tableau »). Les champs optionnels présents doivent avoir un type
+valide. Filtres embarqués, enums et provenance sont contrôlés ; bornes inversées
+ou hors plage Date refusées. Une session invalide affiche « données corrompues »
+et conserve ses octets et l’état précédent sans réparation/effacement automatique.
+Les noms spéciaux (`__proto__`, `constructor`) restent du texte. Cette validation
+ne rend pas sûr un fichier HTML arbitraire d’un tiers : le fichier reste exécutable.
+
+### Calendrier local (PLAN-007)
+
+Jours actifs, séries, jours de semaine, semaines et heures suivent le fuseau local
+IANA affiché ; les semaines commencent le **dimanche**. Les clés jour/semaine JSON
+sont désormais des dates civiles locales (changement intentionnel hors UTC).
+Les timestamps d’actions restent inchangés. Les fenêtres 7/30/90 jours sont des
+jours civils glissants, ancrés sur **la dernière action**, heure locale conservée,
+pas sur aujourd’hui ni sur une durée fixe de 24 h par jour au passage DST.
+Les bornes datetime-local sont inclusives à la minute ; un intervalle inversé
+conserve l’ancien filtre avec erreur explicite. Les exports déclarent le fuseau.
+Un rapport garde le fuseau source en provenance, mais recalcule selon le poste
+lecteur : si les fuseaux diffèrent, les agrégats peuvent différer ; avertissement
+affiché. Aucun sélecteur ni promesse de reproductibilité inter-fuseaux.
+
+### Indicateurs descriptifs (PLAN-008)
+
+Le score composite et son anneau sont retirés. L’API publique
+`buildInsights(list, stats).score` vaut désormais **null**, même dans le vide.
+Le champ historique `forecast` reste numérique pour la compatibilité de forme,
+mais représente seulement l’**équivalent hebdomadaire du rythme observé**
+(moyenne quotidienne ×7), **pas une prévision** ; aucun chiffre suggéré dans le vide.
+La moyenne quotidienne utilise les jours civils inclusifs de la période retenue :
+bornes explicites limitées à l’historique observé, sinon premières/dernières actions.
+Les rapports gardent cette période déclarée comme métadonnée additive validée,
+afin de conserver les ratios à l’ouverture malgré les filtres initiaux vides.
+
+La comparaison porte sur deux semaines closes **consécutives**, avant la semaine
+de la dernière action visible, et seulement si leurs 14 jours sont couverts par
+la période observée/filtrée. Les dates et comptes sont affichés ; base précédente
+zéro : pas de pourcentage. Couverture insuffisante : comparaison indisponible.
+Les séries semaine/mois et sparklines incluent les périodes sans actions à zéro.
+Les « jours atypiques » sont remplacés par les trois jours les plus actifs,
+sans test d’anomalie. L’objectif compte les actions de la vue cette semaine.
+
+**Les actions ne mesurent ni effort, ni qualité, ni livraison.** Membres et cartes
+restent regroupés par libellé : homonymes et renommages ne sont pas réconciliés.
+Aucune migration d’identités ni classement de productivité n’est ajouté.
+Les anciens rapports autonomes gardent leur ancienne logique.
+
+### Accès aux valeurs sans canvas ni survol (PLAN-009)
+
+- Chaque graphique propose « Voir les données » : table HTML native repliée par
+  défaut, avec caption, en-têtes de colonnes/lignes et noms complets échappés.
+  Les valeurs viennent des datasets du graphique, avant construction de Chart.js :
+  son échec n’enlève pas les nombres. Le graphique membres renvoie au tableau
+  détaillé complet, avec lien de retour, plutôt que le dupliquer.
+- La heatmap fournit 7 × 24 nombres ; « Répartition % » ajoute la part de chaque
+  heure, avec 0 % quand cette heure ne contient aucune action. Aucune case ne crée
+  de focus individuel ; la table large défile localement au clavier.
+- Tab atteint les résumés, Entrée/Espace les ouvre ; filtres et granularité
+  mettent les tables à jour sans remplacer le résumé ni son état ouvert.
+  Les séries de tendances ne conservent plus des noms exclus par un filtre.
+- HTML autonome, réexport HTML et HTML du ZIP conservent ces alternatives ; le
+  repli statique les propose même sans capture d’image. Elles sont imprimables
+  depuis le HTML lorsqu’elles sont ouvertes. PDF et PNG restent des formats
+  visuels, sans promesse d’équivalence accessible.
+- Les contrôles automatisés (dont axe avec tables ouvertes) ne constituent pas
+  une certification WCAG ou un audit avec lecteur d’écran. Aucun lecteur d’écran
+  n’a été vérifié dans cet environnement.

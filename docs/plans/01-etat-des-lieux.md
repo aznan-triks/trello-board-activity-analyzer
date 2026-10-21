@@ -45,6 +45,10 @@ Preuves : `index.html:995–1019`, `1385–1439`, `1584–1654`, `1660–1769`, 
 
 Le test `tests/app.spec.js:33–44,197–212` ignore `since/before` et renvoie toujours les 12 anciennes actions ; il exerce précisément le cas qui fonctionne. Autres risques liés à la même frontière : curseur absent et garde-fou MAX_PAGES conduisent à un succès tronqué (`1648–1653`) ; absence de détection de curseur répété. **PLAN-001** : acquisition candidate et fusion gouvernée par le mode demandé, pas par un détail de pagination.
 
+**Suivi 2026-10-20 (PLAN-001, avant correction) :** les régressions confirment F01 et montrent qu’un ID connu en page 1 ne garantit pas l’absence de nouvelles actions au même instant en page 2. Le plan est corrigé pour parcourir toute la fenêtre delta ; le constat historique ci-dessus reste conservé.
+
+**Résultat du lot, 2026-10-20 :** PLAN-001 corrige l’union delta, la publication des candidats et les sorties de pagination tronquées. 36/36 tests passent localement, dont 17 régressions du lot ; preuves et limites dans le plan et le protocole. F02 et les autres constats restent ouverts.
+
 ### F02 — P1 : « Sauvegardé » ne signifie pas durable (V/O)
 
 `Store.set` retourne `true` après son fallback mémoire (`1417–1429`). `persistData` en déduit une sauvegarde réussie et affecte `savedAtIso` (`2182–2200`). Reproduction avec getter localStorage levant SecurityError : `ok:true`, label **Sauvegardé**, timestamp présent. Après fermeture, cette mémoire disparaît. Le seuil `payload.length` est un nombre d'unités UTF-16, pas des octets ni le quota disponible d'origine ; bundle Chart.js/thème/objectif utilisent aussi cette origine. `Store.del` ignore l'échec mais `clearSaved` annonce l'effacement (`2250–2256`).
@@ -118,3 +122,19 @@ README reste le seul document antérieur d'architecture/développement. Déploie
 L'inventaire couvre tous les fichiers suivis : README, application CSS/markup/JS, tests, scripts, configuration, workflow et licence. Lecture approfondie des flux JS et de leurs appelants ; examen structurel du markup, des styles par couches et des générateurs PDF/XLSX, sans revue exhaustive de chaque règle CSS ni validation indépendante de chaque objet binaire. Le vendor minifié a été identifié par sa provenance/entrée/version, pas audité instruction par instruction. Les flux majeurs et leurs appelants internes/globaux sont cartographiés. Pas d'entretien, de trafic réel, de token Trello, d'appel live Trello, d'audit manuel lecteur d'écran, ni de tests Firefox/Safari. L'API officielle Atlassian et le site Pages ne sont pas joignables dans la liste d'hôtes autorisés ; ne pas transformer les sources secondaires en garantie officielle. Recherche ciblée GitHub/npm disponible et effectuée.
 
 Deux passes de couverture ont élargi l'analyse : (1) union delta → simulation biaisée, statut de persistance et portée du ZIP ; (2) calendrier → comparateur/objectif/briefing, dictionnaire de noms, auto-test sous query et nommage canvas dynamique. Les plans ont été révisés pour garder ces causes communes dans leurs frontières et éviter un faux constat d'absence d'ARIA.
+
+## 6. Mise à jour d’exécution — 2026-10-21
+
+Les constats ci-dessus restent ceux du commit d’audit, pas des descriptions
+réécrites du code actuel. Le suivi des neuf corrections est dans le README du
+dossier et leurs plans individuels. PLAN-009 (`638ff9e`) couvre désormais F09 par
+sept tables natives, un lien vers le tableau membres et 168 valeurs de heatmap.
+Il couvre aussi le cas F13 de capture statique manquante : l’image peut manquer,
+mais plus ses valeurs tabulaires. PDF/PNG restent visuels. La couverture F12
+atteint 103 tests locaux, sans étendre cette preuve à la production, au navigateur
+épinglé CI ou à une certification d’accessibilité. Une étiquette de tendances
+exclue par filtrage, non détectée dans la validation initiale de PLAN-003, a été
+reproduite puis corrigée dans PLAN-009, avec documentation des deux étapes.
+Les identités F10 restent regroupées par libellé comme annoncé dans PLAN-008 ;
+aucune migration opportuniste n’a été faite. Les limites de lecture d’écran,
+tableur réel, Trello live, navigateurs et publication sont conservées dans le bilan.

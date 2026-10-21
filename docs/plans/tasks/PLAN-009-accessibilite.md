@@ -1,6 +1,6 @@
 # PLAN-009 — Lire toutes les données sans canvas ni survol
 
-**Statut : dépendant d'un autre plan — PLAN-008 · Priorité : P2 — Important.** Les noms accessibles actuels ne donnent pas toutes les valeurs ; accès essentiel, mais ne doit pas dupliquer des séries encore erronées.
+**Statut : validé localement (2026-10-21) · Priorité : P2 — Important.** Les noms accessibles actuels ne donnent pas toutes les valeurs ; accès essentiel, mais ne doit pas dupliquer des séries encore erronées.
 
 ## 1. Problème / preuves
 
@@ -66,3 +66,41 @@ Accès clavier démontré, tests valeurs/rapports et baseline verts, aucune doub
 ## 13. Sources
 
 F09/F12, [R5 et comparaison accessibilité](../02-recherche-et-options.md), vision C5, roadmap J5, PLAN-003/007/008.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 008 validé. Factory chart, tableaux membres, heatmap, captures SELF_MARKUP et HTML statique relus. Tables natives depuis datasets et helpers existants, pas de bibliothèque ni grille interactive.
+
+### Preuve complémentaire de portée
+
+Avant correction, les cinq tests du lot échouent. Celui des tendances prouve un
+nom exclu conservé dans `charts.trends.data.datasets` après filtrage ; le suivi
+PLAN-003 est corrigé avant poursuite. La sélection top-membres sera recalculée
+avec les compteurs de la vue, et partagée avec le modèle du rapport statique.
+
+## Exécution — 2026-10-21 · validé localement
+
+Implémentation 638ff9e, poussée. Cinq régressions rouges avant correction ; 12/12 ciblés finaux (18,7 s), suites complètes 103/103 (1,6 min puis 1,7 min), Chromium alternatif 153. Commande LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Vérifiés : sept tables égales aux datasets avant constructeur Chart, noms complets échappés, lien membres complet/retour avec focus, 168 cellules et parts horaires sans division par zéro, Enter/Space/Tab et scroll clavier local, ouverture/focus préservés, filtres/granularité/vide/thème/resize, périodes zéro et séries multiples. HTML autonome offline avec filtres/granularité, réexport et ZIP ; repli statique sans images, parité live/statique et mode part. Axe tables ouvertes clair/sombre sans règle désactivée, tailles 360/390/768/1440 sans débordement de page. La sélection des tendances est recalculée depuis la vue : complément PLAN-003 consigné. Ni dépendance/config/vendor modifié, ni nouvelle API publique, ni stockage ajouté. Aucun lecteur d’écran disponible/vérifié, aucune certification ; PDF/PNG restent visuels. Aucun prochain plan 001–009 : les neuf lots sont implémentés. PLAN-004 conserve sa réserve de vérification manuelle tableur ; pas de publication ni CI revendiquée.
+
+### Détails de réalisation et limites
+
+- Conteneurs présents dès le markup initial (capture `SELF_MARKUP`), summary et
+  wrapper de défilement jamais remplacés : seules les tables sont régénérées.
+  Rôle/nom canvas conservés ; description vers le résumé ou lien pertinent.
+- Le factory consomme le nom complet des cartes avant de transmettre le config à
+  Chart.js. Les autres noms de séries sont déjà complets ; le tableau membres
+  existant couvre toutes les lignes du graphique et dispose d’une caption.
+- Le modèle ajoute `heatMetric`, `trends` et `typeTimeline`, construits avec les
+  mêmes helpers de périodes et compteurs que les graphiques. Le repli statique
+  ne capture pas un cache mutable de Chart et conserve ses tables sans image.
+  Aucune formule d’agrégation parallèle ni couche générique d’adapters.
+- Mise au point des tests : les deux premières dates choisies tombaient toutes
+  deux un mardi (une cellule de volume 2) ; la fixture finale répartit les deux
+  actions mardi/mercredi à la même heure pour prouver 50 % chacune. Appels de
+  test corrigés vers l’API réelle `exportZip` et le bouton de métrique (fonction
+  `setHeatMetric` privée), sans ajouter d’API pour faciliter les tests.
+- Tests locaux uniquement ; pas de mesure de performance représentative sur
+  très longues séries, de Firefox/Safari, de lecteur d’écran ou de validation
+  manuelle des impressions. Les details fermés par défaut n’alourdissent pas
+  visuellement le rapport ; leur contenu reste dans le DOM. Aucun format
+  PDF/PNG balisé accessible n’est promis.

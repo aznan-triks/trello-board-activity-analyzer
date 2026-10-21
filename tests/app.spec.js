@@ -13,6 +13,7 @@ async function settleMotion(page) {
   // Audit the settled UI, not an intermediate frame of the entrance fade.
   // v7 : les animations décoratives infinies (accroche pulsante, balayage)
   // tournent en arrière-plan : on attend toutes les autres, pas celles-ci.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.evaluate(() => Promise.all(document.getAnimations()
     .filter(animation => {
       const timing = animation.effect && animation.effect.getTiming ? animation.effect.getTiming() : null;
@@ -38,8 +39,12 @@ const actions = Array.from({ length: 12 }, (_, i) => ({
 }));
 async function mockApi(page, status = 200) {
   await page.route('https://api.trello.com/**', route => {
-    const path = new URL(route.request().url()).pathname;
-    const data = path.endsWith('/actions') ? actions : path.endsWith('/members') ? [{ id: 'member-1', fullName: 'Camille Martin' }] : { id: '1234567890abcdef12345678', name: 'Tableau de test' };
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const windowActions = actions.filter(a => !url.searchParams.has('since') || a.date >= url.searchParams.get('since'));
+    const cursor = windowActions.findIndex(a => a.id === url.searchParams.get('before'));
+    const batch = windowActions.slice(cursor + 1, cursor + 1 + Number(url.searchParams.get('limit') || 1000));
+    const data = path.endsWith('/actions') ? batch : path.endsWith('/members') ? [{ id: 'member-1', fullName: 'Camille Martin' }] : { id: '1234567890abcdef12345678', name: 'Tableau de test' };
     return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(status === 200 ? data : { message: 'Invalid token' }) });
   });
 }
@@ -160,11 +165,13 @@ for (const theme of ['light', 'dark']) {
     // v7 : audits étendus aux surfaces secondaires (menu export, aide, journal).
     await page.locator('#btn-export').click();
     await expect(page.locator('#export-menu')).toBeVisible();
+    await settleMotion(page);
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.keyboard.press('Escape');
     await page.locator('#btn-kbd').click();
     await expect(page.locator('#kbd-overlay')).toBeVisible();
+    await settleMotion(page); // l'audit porte sur le contraste final, pas la transition du dialogue.
     results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     await page.keyboard.press('Escape');
@@ -300,7 +307,8 @@ test('nexus : briefing, recherche, fenêtre, comparateur et commandes', async ({
   const errors = await openApp(page);
   await demo(page);
   await expect(page.locator('#nexus')).toBeVisible();
-  await expect(page.locator('#nx-score')).toHaveText(/^\d{1,3}$/);
+  await expect(page.locator('#nx-score')).toHaveCount(0);
+  expect(await page.evaluate(() => tba.state.lastInsights.score)).toBeNull();
   await expect(page.locator('#nx-brief')).toContainText(/actions/);
   await expect(page.locator('#nx-insights li').first()).toBeVisible();
   await page.locator('#fl-query').fill('accueil');

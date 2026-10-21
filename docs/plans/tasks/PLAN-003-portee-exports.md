@@ -1,6 +1,6 @@
 # PLAN-003 — Un périmètre de données identique dans tous les exports
 
-**Statut : dépendant d'un autre plan — PLAN-002 · Priorité : P1 — Majeur.** Risque de diffusion de données exclues par les filtres et JSON contradictoire, démontrés. Rupture de comportement HTML décidée et à annoncer.
+**Statut : validé localement (2026-10-21) · Priorité : P1 — Majeur.** Risque de diffusion de données exclues par les filtres et JSON contradictoire, démontrés. Rupture de comportement HTML décidée et à annoncer.
 
 ## 1. Problème / preuves
 
@@ -62,3 +62,26 @@ Tests précis des données et pas seulement magic bytes, suite complète verte, 
 ## 13. Sources
 
 F03/F12, [comparaison portée](../02-recherche-et-options.md), vision C3, roadmap J2, PLAN-004/006.
+
+## Exécution — 2026-10-21 · en cours
+
+Prérequis 002 satisfait (47 tests verts). Relecture de tous les constructeurs, capture, ZIP, briefing et bootEmbedded ; changement de portée HTML intentionnel, pas de nouveau format.
+
+## Exécution — 2026-10-21 · validé localement
+
+Implémentation 76b1857. Avant correction : 4/4 régressions échouaient. Après : 6 tests ciblés, répétés trois fois (18/18, 17,4 s), et suite complète 53/53 (59,8 s). Commande standard de session : LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Contrôles JSON/CSV/XLSX/ZIP STORE décodés, HTML offline puis reset/réexport, vue vide, debounce, verrouillage/restitution disabled, snapshot pendant attente et repli statique forcé. Tests d’attente stabilisés en neutralisant le préchauffage idle uniquement dans leurs pages de test ; une assertion de texte de carte dans le rapport statique (cartes rendues en images) remplacée par total/membre réellement présents. API publiques conservées. Aucun live/Pages/navigateur épinglé. Prochain lot 004.
+
+### Complément découvert pendant PLAN-009 — 2026-10-21
+
+La régression de libellés de tendances montre qu’après filtrage, `renderTrends(null)`
+conserve le top-membres de la vue précédente. Les actions exportées étaient bien
+bornées, mais une étiquette de membre exclu pouvait rester dans un graphique
+capturé. PLAN-009 rend cette omission observable et recalcule la sélection des
+séries depuis la vue courante, sans attendre une seconde mutation concurrente.
+La validation PLAN-003 initiale ne couvrait pas cette étiquette graphique ; ne pas
+la transformer rétroactivement en preuve d’absence de tous libellés exclus.
+
+Complément validé avec `638ff9e` (PLAN-009) : le nom `EXCLU_NOM`, initialement
+présent dans les datasets après filtrage, disparaît maintenant du dataset et du
+tableau alternatif. Suite complète 103/103 ; les tests de portée historiques
+restent verts. Le modèle statique choisit lui aussi les séries depuis la vue.

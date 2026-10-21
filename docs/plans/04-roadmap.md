@@ -1,6 +1,6 @@
 # Roadmap et règles d'intégration
 
-Date : 2026-10-20. Tout est **planifié**, rien n'est déclaré corrigé. [Plans/statuts](README.md), [contrats cibles](03-vision-cible.md), [preuves](01-etat-des-lieux.md).
+Date : 2026-10-20. **PLAN-001 validé localement** ; autres lots non implémentés. [Plans/statuts](README.md), [contrats cibles](03-vision-cible.md), [preuves](01-etat-des-lieux.md).
 
 ## Ordre motivé
 
@@ -70,3 +70,48 @@ Travaux en parallèle possibles **sans conflit d'édition** : concevoir les fixt
 Chaque lot : régression montrée avant correction → plus petit changement de cause commune → nouveaux tests + suite complète → mise à jour de sa documentation → diff borné. Version/release à gérer au jalon par l'intégrateur avec les emplacements existants (`package.json`, lock, `APP_VERSION`, HTML/README) si une release est effectivement préparée, pas à chaque plan par automatisme. Aucun changement vendor/dépendance sans justification propre.
 
 Une exécution n'est terminée qu'avec critères du plan et preuves ; mettre alors son statut à jour avec date/commit et résultats réels. Ce dossier initial ne coche aucun travail implémenté. Validation de publication : `npm run verify:pages` **après** publication effective du commit sur main uniquement ; ne pas demander à Pages de servir une branche de travail. Suivre les jobs existants plutôt que considérer un hash local comme preuve de déploiement.
+
+### Reprise d’exécution — 2026-10-20
+
+J0 vérifié sur `b164f95`, branche active autorisée et arbre propre ; baseline 19/19 avec Chromium alternatif. PLAN-001 exécuté seul : 36/36 tests passent (19 existants + 17 régressions), sur Chromium alternatif 153. Son prérequis est levé pour PLAN-002, prochain lot prêt ; J1 reste incomplet tant que 002 n’est pas validé. J2 et les autres jalons restent planifiés. Aucun déploiement/release vérifié.
+
+- 2026-10-21 · PLAN-002 : en cours. Prérequis PLAN-001 validé, branche autorisée active, arbre propre. Relecture Store et de tous ses consommateurs ; aucune migration requise. Tests de panne et consentement à ajouter avant correction.
+
+- 2026-10-21 · PLAN-002 : validé localement. Implémentation 6298d9d. Avant correction : 10/10 tests ciblés échouaient ; après : 10/10 passent (6,5 s), puis test de sérialisation ajouté. Suite complète : 47/47 passent (48,3 s), commande LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Tous consommateurs Store relus (cache, thème, objectif, session), sans changement de leur signature publique ; suppression du faux plafond UTF-16. SecurityError, quota, rechargement ancien snapshot, date, retrait depuis démo, hôte succès/rejet et changements rapides vérifiés. Aucun test live ni navigateur épinglé ; Chromium alternatif 153. PLAN-003 et PLAN-006 ont leur prérequis satisfait ; prochain lot 003.
+
+- 2026-10-21 · PLAN-003 : en cours. Prérequis 002 satisfait (47 tests verts). Relecture de tous les constructeurs, capture, ZIP, briefing et bootEmbedded ; changement de portée HTML intentionnel, pas de nouveau format.
+
+- 2026-10-21 · PLAN-003 : validé localement. Implémentation 76b1857. Avant correction : 4/4 régressions échouaient. Après : 6 tests ciblés, répétés trois fois (18/18, 17,4 s), et suite complète 53/53 (59,8 s). Commande standard de session : LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Contrôles JSON/CSV/XLSX/ZIP STORE décodés, HTML offline puis reset/réexport, vue vide, debounce, verrouillage/restitution disabled, snapshot pendant attente et repli statique forcé. Tests d’attente stabilisés en neutralisant le préchauffage idle uniquement dans leurs pages de test ; une assertion de texte de carte dans le rapport statique (cartes rendues en images) remplacée par total/membre réellement présents. API publiques conservées. Aucun live/Pages/navigateur épinglé. Prochain lot 004.
+
+- 2026-10-21 · PLAN-004 : en cours. Prérequis 003 validé (53 tests). Sérialiseur unique csvCell, deux appelants et SELF_SRC relus ; neutralisation tableur uniquement, JSON/XLSX exacts.
+
+- 2026-10-21 · PLAN-004 : validé localement, tableur non vérifié. Implémentation 56c2418. 2 régressions rouges avant correction puis 2/2 ciblées (2,3 s) ; suite complète 55/55 (55,2 s). Même commande npm test et Chromium alternatif. Parseur de test RFC multiline, 15 préfixes hostiles et cas français, octets CSV direct/ZIP/offline, JSON/XLSX exacts sans formule vérifiés. Pas de tableur installé (command -v libreoffice/soffice vide) : vérification manuelle et universalité explicitement non revendiquées. Aucun mode raw ajouté. Prochain lot 006.
+
+- 2026-10-21 · PLAN-006 : en cours. Prérequis 002 et provenance 003 intégrés ; lecture des validations, expansion, normalisation, tendances et selfTest. Objectif : rejet entier avant mutation, compatibilité v1/v3 et ancien rapport préservée.
+
+- 2026-10-21 · PLAN-006 : validé localement. Implémentation a124b1d. 7 tests ciblés échouaient avant puis passent (7,0 s), 2 contrôles complémentaires ajoutés. Suite complète finale : 64/64 (1,1 min), npm test avec Chromium alternatif 153. Sessions invalides sans mutation/suppression, legacy sans ID/nom/creds/date, noms spéciaux/prototypes, raw objets, selfTest avec query et références restaurées, 10 rapports invalides et ancien rapport, membres non array, révocation sur snapshot corrompu vérifiés. Bornes finies hors plage Date refusées car non réexportables. Mesure axe stabilisée sur toutes les surfaces animées et après deux frames ; seconde série 6/6 audits répétés (32,2 s), sans règle désactivée. Pas de lecteur d’écran manuel ni publication. Jalon prioritaire implémenté, limite tableur 004 inchangée. Prochain lot 005.
+
+- 2026-10-21 · PLAN-005 : en cours. Après le jalon P1, prérequis 001 satisfait. fetchJSON privé, tous appels internes GET ; réserve écritures inactive, suppression prévue. Tests à horloge virtuelle, sans attente longue réelle.
+
+- 2026-10-21 · PLAN-005 : validé localement. Implémentation 1ca6d64. 8 tests rouges avant correction puis 8 verts, 2 contrôles ajoutés ; 30/30 ciblés à répétition (18,3 s), suite complète 74/74 (1,2 min). Commande npm test sous Chromium alternatif. Harness réseau privé injecté uniquement dans la réponse HTML locale et ignoré sur BASE_URL ; horloge virtuelle pour 90/10s retries inclus (header zéro et attente explicitement observée avant avancement pour supprimer une course du test), 120s/date HTTP, auth sans retry, JSON invalide, 4 tentatives réseau/timeout, délais au-delà de setTimeout, pré-aborted sans timer/fetch. Annulations isolées <500ms réelles, parcours UI <1000ms avec tolérance justifiée (519,5ms observé sous charge), ancien snapshot intact. Export sleep sans signal toujours couvert. Aucune réserve écriture restante, aucune requête non GET, politique locale non garantie officielle. Prochain lot 007.
+
+- 2026-10-21 · PLAN-007 : en cours. Prérequis 003/006 validés ; inventaire des usages Date, clés, ordinaux, bornes et fenêtres effectué. Durée écoulée des moyennes conservée pour 008 ; calendrier local/dimanche déclaré, pas de sélecteur de fuseau.
+
+- 2026-10-21 · PLAN-007 : validé localement. Implémentation 56b3e4c. 7 régressions rouges avant correction puis 7/7 ciblées (5,9 s), 3 tests de frontières complémentaires ajoutés. Suite complète 84/84 (1,2 min), Chromium alternatif, commande npm test de session. Contextes UTC/Paris/New_York, minuit, dimanche, année, DST printemps/automne et heures répétées, séries/jours membres, fenêtre civile 167h, epoch zéro, minute inclusive et borne inversée sans mutation, rapport inter-fuseaux et réexport timezone lecteur vérifiés. Ordinaux via composantes locales, affichage des clés par composantes et non parsing UTC. Durées écoulées conservées pour moyennes jusqu’à 008 ; todayStamp des noms de fichiers reste délibérément UTC (pas un agrégat). Fuseau déclaré via modèle partagé dans PDF/PNG/MD/XLSX/HTML/ZIP/briefing et JSON explicite ; aucune invariance inter-fuseaux revendiquée. API signatures inchangées, clés semaine changées intentionnellement hors UTC et annoncées. Prochain lot 008.
+
+- 2026-10-21 · PLAN-008 : en cours. Prérequis 007 validé. Inventaire des séries, moyennes UI/modèle, briefing Markdown et XLSX et textes score effectué. Contrat : score null, observation civile bornée, semaines closes consécutives avec zéros ; aucune migration d’identités.
+
+- 2026-10-21 · PLAN-008 : validé localement. Implémentation febbdaf. 5 régressions rouges puis 5 ciblées vertes ; 2 contrôles de parité/coverage ajoutés, 7/7 ciblés (5,8 s). Suite complète 91/91 (1,3 min), npm test sous Chromium alternatif. Vérifiés : score null y compris vide, 1 action/jour et équivalent7, aucun ratio vide, zéros semaine/mois et domaines communs timeline/tendances/types/sparks, couverture14j complète, base0/pourcentage100, borne partielle insuffisante, jours civils inclusifs bornés, cohérence UI/Markdown/XLSX/briefing/HTML offline et selfTest. Métadonnée observation additive validée pour conserver les ratios lors du reset initial des filtres ; modèle fige ses insights. Cadence/score/anneau/marketing retirés ; top3 jours descriptifs et limite homonymes visibles ; objectif local préservé. Aucun modèle prédictif ni migration IDs. Prochain lot 009.
+
+- 2026-10-21 · PLAN-009 : en cours. Prérequis 008 validé. Factory chart, tableaux membres, heatmap, captures SELF_MARKUP et HTML statique relus. Tables natives depuis datasets et helpers existants, pas de bibliothèque ni grille interactive.
+
+- 2026-10-21 · PLAN-009 : validé localement. Implémentation 638ff9e, poussée. Cinq régressions rouges avant correction ; 12/12 ciblés finaux (18,7 s), suites complètes 103/103 (1,6 min puis 1,7 min), Chromium alternatif 153. Commande LD_LIBRARY_PATH=/tmp/lib:/tmp CHROMIUM_PATH=/tmp/chromium npm test. Vérifiés : sept tables égales aux datasets avant constructeur Chart, noms complets échappés, lien membres complet/retour avec focus, 168 cellules et parts horaires sans division par zéro, Enter/Space/Tab et scroll clavier local, ouverture/focus préservés, filtres/granularité/vide/thème/resize, périodes zéro et séries multiples. HTML autonome offline avec filtres/granularité, réexport et ZIP ; repli statique sans images, parité live/statique et mode part. Axe tables ouvertes clair/sombre sans règle désactivée, tailles 360/390/768/1440 sans débordement de page. La sélection des tendances est recalculée depuis la vue : complément PLAN-003 consigné. Ni dépendance/config/vendor modifié, ni nouvelle API publique, ni stockage ajouté. Aucun lecteur d’écran disponible/vérifié, aucune certification ; PDF/PNG restent visuels. Aucun prochain plan 001–009 : les neuf lots sont implémentés. PLAN-004 conserve sa réserve de vérification manuelle tableur ; pas de publication ni CI revendiquée.
+
+### Clôture des neuf lots — 2026-10-21
+
+J5/PLAN-009 validé localement : 103/103, dont 12 tests d’alternatives tabulaires.
+Les dépendances 001 → 002 → 003 → 004 → 006 → 005 → 007 → 008 → 009 ont été
+exécutées sur la branche de travail, un lot à la fois. Le jalon 004 garde sa
+réserve d’essai dans un tableur réel, pas masquée par la réussite automatisée.
+Aucun nouveau lot produit ne suit implicitement 009 : revue de branche et
+vérifications externes restantes, sans PR/merge/publication autonome.
