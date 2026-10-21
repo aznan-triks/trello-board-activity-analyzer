@@ -80,3 +80,8 @@ capturé. PLAN-009 rend cette omission observable et recalcule la sélection des
 séries depuis la vue courante, sans attendre une seconde mutation concurrente.
 La validation PLAN-003 initiale ne couvrait pas cette étiquette graphique ; ne pas
 la transformer rétroactivement en preuve d’absence de tous libellés exclus.
+
+Complément validé avec `638ff9e` (PLAN-009) : le nom `EXCLU_NOM`, initialement
+présent dans les datasets après filtrage, disparaît maintenant du dataset et du
+tableau alternatif. Suite complète 103/103 ; les tests de portée historiques
+restent verts. Le modèle statique choisit lui aussi les séries depuis la vue.

@@ -122,3 +122,19 @@ README reste le seul document antérieur d'architecture/développement. Déploie
 L'inventaire couvre tous les fichiers suivis : README, application CSS/markup/JS, tests, scripts, configuration, workflow et licence. Lecture approfondie des flux JS et de leurs appelants ; examen structurel du markup, des styles par couches et des générateurs PDF/XLSX, sans revue exhaustive de chaque règle CSS ni validation indépendante de chaque objet binaire. Le vendor minifié a été identifié par sa provenance/entrée/version, pas audité instruction par instruction. Les flux majeurs et leurs appelants internes/globaux sont cartographiés. Pas d'entretien, de trafic réel, de token Trello, d'appel live Trello, d'audit manuel lecteur d'écran, ni de tests Firefox/Safari. L'API officielle Atlassian et le site Pages ne sont pas joignables dans la liste d'hôtes autorisés ; ne pas transformer les sources secondaires en garantie officielle. Recherche ciblée GitHub/npm disponible et effectuée.
 
 Deux passes de couverture ont élargi l'analyse : (1) union delta → simulation biaisée, statut de persistance et portée du ZIP ; (2) calendrier → comparateur/objectif/briefing, dictionnaire de noms, auto-test sous query et nommage canvas dynamique. Les plans ont été révisés pour garder ces causes communes dans leurs frontières et éviter un faux constat d'absence d'ARIA.
+
+## 6. Mise à jour d’exécution — 2026-10-21
+
+Les constats ci-dessus restent ceux du commit d’audit, pas des descriptions
+réécrites du code actuel. Le suivi des neuf corrections est dans le README du
+dossier et leurs plans individuels. PLAN-009 (`638ff9e`) couvre désormais F09 par
+sept tables natives, un lien vers le tableau membres et 168 valeurs de heatmap.
+Il couvre aussi le cas F13 de capture statique manquante : l’image peut manquer,
+mais plus ses valeurs tabulaires. PDF/PNG restent visuels. La couverture F12
+atteint 103 tests locaux, sans étendre cette preuve à la production, au navigateur
+épinglé CI ou à une certification d’accessibilité. Une étiquette de tendances
+exclue par filtrage, non détectée dans la validation initiale de PLAN-003, a été
+reproduite puis corrigée dans PLAN-009, avec documentation des deux étapes.
+Les identités F10 restent regroupées par libellé comme annoncé dans PLAN-008 ;
+aucune migration opportuniste n’a été faite. Les limites de lecture d’écran,
+tableur réel, Trello live, navigateurs et publication sont conservées dans le bilan.

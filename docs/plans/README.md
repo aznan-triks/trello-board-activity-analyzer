@@ -23,7 +23,7 @@ Ce dossier conserve les constats initiaux et suit désormais leur exécution. Le
 | [PLAN-006](tasks/PLAN-006-frontieres.md) | P1 | validé localement (2026-10-21) | Sessions et rapports invalides refusés sans mutation ni effacement |
 | [PLAN-007](tasks/PLAN-007-calendrier.md) | P2 | validé localement (2026-10-21) | Jours, semaines et heures cohérents dans le fuseau local déclaré |
 | [PLAN-008](tasks/PLAN-008-indicateurs.md) | P2 | validé localement (2026-10-21) | Comparaisons et briefing descriptifs, sans surinterprétation du volume |
-| [PLAN-009](tasks/PLAN-009-accessibilite.md) | P2 | en cours (2026-10-21) | Données des graphiques disponibles sans vision ni survol |
+| [PLAN-009](tasks/PLAN-009-accessibilite.md) | P2 | validé localement (2026-10-21) | Données des graphiques disponibles sans vision ni survol |
 
 **Arbitrage principal :** conserver le fichier applicatif autonome, Chart.js local, les formats slim historiques, les API globales et l'hébergement statique. Réparer les frontières et les contrats dans ces sections existantes ; pas de framework, backend, stockage réécrit ou nouveau format d'export.
 
@@ -37,3 +37,18 @@ Les neuf lots ont des périmètres de session bornés. Ils ne sont pas tous requ
 - Les besoins utilisateur restent des hypothèses déduites des parcours : aucun entretien ni métrique d'usage n'a été obtenu.
 
 Aucun plan antérieur n'a été trouvé parmi les fichiers suivis. Le README existant est préservé : ses assertions historiques ne valent pas preuve des contrats actuels. Les contradictions importantes sont recensées plutôt qu'effacées.
+
+## Bilan d’exécution — 2026-10-21
+
+Les neuf lots sont implémentés et validés localement, avec **103/103 tests** au
+terme de PLAN-009 (Chromium 153 alternatif, pas le navigateur épinglé CI).
+Le complément de portée des noms de tendances découvert dans 009 est documenté
+avec son test rouge puis vert dans PLAN-003 ; les preuves initiales restent datées.
+
+**Limites encore ouvertes :** essai CSV dans Excel/LibreOffice (PLAN-004), audit
+avec lecteur d’écran, Firefox/Safari, données et API Trello réelles, publication
+Pages et vérification CI non réalisées. Les audits axe ne valent pas certification.
+Aucun PR ni merge réalisé pendant cette exécution, aucun changement sur main.
+Il ne reste pas de prochain plan exécutable parmi 001–009 ; ces vérifications
+externes et une revue de branche sont la suite, pas l’autorisation d’implémenter
+les évolutions explicitement différées de la vision.
